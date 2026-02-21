@@ -52,6 +52,7 @@
     "librarian": { "deny": ["write", "edit", "sessions_spawn"] },
     "explore": { "deny": ["write", "edit", "sessions_spawn"] },
     "multimodal-looker": { "allow": ["read", "browser", "canvas"] },
+    "metis": { "deny": ["write", "edit", "sessions_spawn"] },
     "momus": { "deny": ["write", "edit", "sessions_spawn"] }
   },
   "skills": {

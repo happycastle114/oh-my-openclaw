@@ -115,6 +115,11 @@ For tasks that need deep codebase work (LSP, AST-Grep, build verification):
 4. Monitor progress and collect results
 5. Report back to user via messaging channel
 
+### `tool-patterns` - OmO Tool Mapping Reference
+1. Maps OmO `src/tools/*` patterns to OpenClaw-native tool usage
+2. Standardizes planning/implementation/verification tool flow
+3. Documents background task collection and cleanup rules
+
 ## Wisdom Accumulation
 
 The notepad system persists learnings across sessions:
@@ -189,8 +194,11 @@ oh-my-openclaw/
     categories.json     # Category-to-model mapping + tool restrictions + skill triggers
   agents/
     prometheus.md       # Strategic planner agent profile
+    metis.md            # Pre-planning consultant (intent classification + anti-slop directives)
+    momus.md            # Practical plan reviewer (critical blocker checks)
     atlas.md            # Task orchestrator agent profile
     sisyphus-junior.md  # Primary worker agent profile
+    hephaestus.md       # Autonomous deep worker for complex execution
     oracle.md           # Architect/debugger agent profile
     librarian.md        # Documentation specialist agent profile
     explore.md          # Search specialist agent profile
@@ -204,6 +212,7 @@ oh-my-openclaw/
     plan.md             # Planning-only workflow
     start-work.md       # Execute existing plan workflow
     delegate-to-omo.md  # Delegate to OpenCode tmux (OmO)
+    tool-patterns.md    # OmO src/tools to OpenClaw usage pattern mapping
   scripts/
     setup.sh            # One-command install + notepad initialization
     init-deep.sh        # Generate hierarchical AGENTS.md files
