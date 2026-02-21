@@ -3,26 +3,38 @@
     "quick": {
       "model": "claude-sonnet-4-6",
       "description": "Simple fixes, searches, small tasks, file operations",
-      "max_tokens": 8192,
       "agents": ["sisyphus-junior", "explore", "librarian"]
     },
     "deep": {
       "model": "claude-opus-4-6-thinking",
-      "description": "Complex refactoring, analysis, gap detection, plan review",
-      "max_tokens": 8192,
+      "description": "Complex refactoring, analysis, gap detection, plan review. Goal-oriented autonomous problem-solving.",
       "agents": ["hephaestus", "metis", "momus"]
     },
     "ultrabrain": {
-      "model": "claude-opus-4-5-thinking",
-      "description": "Architecture decisions, strategic planning, root cause analysis",
-      "max_tokens": 8192,
+      "model": "gpt-5.3-codex",
+      "description": "Deep logical reasoning, complex architecture decisions requiring extensive analysis",
       "agents": ["prometheus", "atlas", "oracle"]
     },
     "visual-engineering": {
       "model": "claude-opus-4-6-thinking",
-      "description": "UI/UX design, frontend implementation, visual components",
-      "max_tokens": 8192,
-      "agents": ["frontend"]
+      "description": "Frontend, UI/UX, design, styling, animation",
+      "agents": ["frontend", "multimodal-looker"]
+    },
+    "artistry": {
+      "model": "claude-opus-4-6-thinking",
+      "description": "Highly creative/artistic tasks, novel ideas, design exploration"
+    },
+    "unspecified-low": {
+      "model": "claude-sonnet-4-6",
+      "description": "Tasks that don't fit other categories, low effort required"
+    },
+    "unspecified-high": {
+      "model": "claude-opus-4-6-thinking",
+      "description": "Tasks that don't fit other categories, high effort required"
+    },
+    "writing": {
+      "model": "claude-sonnet-4-6",
+      "description": "Documentation, prose, technical writing"
     }
   },
   "defaults": {
@@ -34,5 +46,26 @@
   "todo_enforcer": {
     "enabled": true,
     "directive": "[SYSTEM DIRECTIVE: OH-MY-OPENCLAW - TODO CONTINUATION]\nYou MUST continue working on incomplete todos.\n- Do NOT stop until all tasks are marked complete\n- Do NOT ask for permission to continue\n- Mark each task complete immediately when finished\n- If blocked, document the blocker and move to next task"
+  },
+  "tool_restrictions": {
+    "oracle": { "deny": ["write", "edit", "sessions_spawn"] },
+    "librarian": { "deny": ["write", "edit", "sessions_spawn"] },
+    "explore": { "deny": ["write", "edit", "sessions_spawn"] },
+    "multimodal-looker": { "allow": ["read", "browser", "canvas"] },
+    "momus": { "deny": ["write", "edit", "sessions_spawn"] }
+  },
+  "skills": {
+    "git-master": {
+      "trigger": ["commit", "rebase", "squash", "who wrote", "when was", "git history", "blame"],
+      "path": "skills/git-master.md"
+    },
+    "frontend-ui-ux": {
+      "trigger": ["UI", "UX", "frontend", "design", "styling", "CSS", "layout"],
+      "path": "skills/frontend-ui-ux.md"
+    },
+    "comment-checker": {
+      "trigger": ["comment check", "AI slop", "code quality", "clean comments"],
+      "path": "skills/comment-checker.md"
+    }
   }
 }

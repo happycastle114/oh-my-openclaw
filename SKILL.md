@@ -154,6 +154,31 @@ Self-referential completion mechanism:
 3. Loop terminates only when all todos are complete or explicitly cancelled
 4. Maximum iterations configurable (default: 10)
 
+## Built-in Skills
+
+Skills inject specialized knowledge and workflows into agents. Load them via `load_skills` when delegating tasks.
+
+| Skill | Trigger Keywords | Description |
+|-------|-----------------|-------------|
+| **git-master** | commit, rebase, squash, blame | Atomic commits, rebase surgery, history archaeology. Auto-detects commit style. |
+| **frontend-ui-ux** | UI, UX, frontend, design, CSS | Designer-turned-developer. Bold aesthetics, distinctive typography, cohesive palettes. |
+| **comment-checker** | comment check, AI slop, code quality | Anti-AI-slop guard. Removes obvious comments, keeps WHY comments. |
+
+### Category + Skill Combos
+
+| Combo | Category | Skills | Effect |
+|-------|----------|--------|--------|
+| **The Designer** | visual-engineering | frontend-ui-ux | Implements aesthetic UI with design-first approach |
+| **The Maintainer** | quick | git-master | Quick fixes with clean atomic commits |
+| **The Reviewer** | deep | comment-checker | Deep code review with AI slop detection |
+
+## Quick Setup
+
+Run the setup script to install as an OpenClaw skill + initialize notepad structure:
+```bash
+bash /home/happycastle/Projects/oh-my-openclaw/scripts/setup.sh
+```
+
 ## File Structure
 
 ```
@@ -161,7 +186,7 @@ oh-my-openclaw/
   SKILL.md              # This file - main skill instructions
   README.md             # Project documentation
   config/
-    categories.json     # Category-to-model mapping configuration
+    categories.json     # Category-to-model mapping + tool restrictions + skill triggers
   agents/
     prometheus.md       # Strategic planner agent profile
     atlas.md            # Task orchestrator agent profile
@@ -170,13 +195,18 @@ oh-my-openclaw/
     librarian.md        # Documentation specialist agent profile
     explore.md          # Search specialist agent profile
     multimodal-looker.md # Visual analysis agent profile
+  skills/
+    git-master.md       # Git expert skill (commits, rebase, history)
+    frontend-ui-ux.md   # Design-first UI development skill
+    comment-checker.md  # Anti-AI-slop code quality skill
   workflows/
     ultrawork.md        # Full automation workflow
     plan.md             # Planning-only workflow
     start-work.md       # Execute existing plan workflow
     delegate-to-omo.md  # Delegate to OpenCode tmux (OmO)
   scripts/
-    init-deep.sh        # Initialize workspace notepad structure
+    setup.sh            # One-command install + notepad initialization
+    init-deep.sh        # Generate hierarchical AGENTS.md files
 ```
 
 ## Usage Examples
