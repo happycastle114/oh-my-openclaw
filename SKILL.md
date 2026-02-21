@@ -19,15 +19,27 @@ Oh-My-OpenClaw ports the proven patterns from oh-my-opencode into OpenClaw-nativ
 
 ## Installation
 
-Copy this skill directory to your OpenClaw project's `.opencode/skills/oh-my-openclaw/` directory, or symlink it:
-
+### Option 1: OpenClaw Workspace Skill (Recommended)
 ```bash
-# Option 1: Symlink (recommended for development)
-ln -s /home/happycastle/Projects/oh-my-openclaw ~/.opencode/skills/oh-my-openclaw
-
-# Option 2: Copy to project
-cp -r /home/happycastle/Projects/oh-my-openclaw /path/to/project/.opencode/skills/oh-my-openclaw
+# Symlink into OpenClaw workspace skills directory
+ln -s /home/happycastle/Projects/oh-my-openclaw ~/.openclaw/workspace/skills/oh-my-openclaw
 ```
+
+### Option 2: Global Shared Skill
+```bash
+# Available to all agents on this host
+ln -s /home/happycastle/Projects/oh-my-openclaw ~/.openclaw/skills/oh-my-openclaw
+```
+
+### Option 3: Clone from GitHub
+```bash
+# Clone the repo
+gh repo clone happycastle114/oh-my-openclaw ~/.openclaw/workspace/skills/oh-my-openclaw
+```
+
+### Verify Installation
+The skill should appear in OpenClaw's available skills list. Test by asking:
+> "Read the oh-my-openclaw skill and tell me what it does"
 
 ## Trigger
 
@@ -58,6 +70,7 @@ This skill activates when:
 | **Oracle** | Architect/debugger - design decisions, root cause analysis | ultrabrain |
 | **Explore** | Search specialist - codebase exploration, pattern finding | quick |
 | **Librarian** | Documentation specialist - docs, research, knowledge retrieval | quick |
+| **Multimodal Looker** | Visual analyst - screenshots, UI review, PDF quality check | visual-engineering |
 
 ### Category-to-Model Mapping
 
@@ -93,6 +106,14 @@ Categories map user intent to optimal model selection:
 2. Atlas distributes tasks to appropriate workers
 3. Workers execute with Todo tracking
 4. Verification loop until completion
+
+### `/delegate-to-omo` - Delegate to OpenCode tmux
+For tasks that need deep codebase work (LSP, AST-Grep, build verification):
+1. Verify opencode tmux session is running
+2. Select appropriate OmO agent (Sisyphus/Hephaestus/Prometheus)
+3. Send task via tmux send-keys
+4. Monitor progress and collect results
+5. Report back to user via messaging channel
 
 ## Wisdom Accumulation
 
@@ -148,10 +169,12 @@ oh-my-openclaw/
     oracle.md           # Architect/debugger agent profile
     librarian.md        # Documentation specialist agent profile
     explore.md          # Search specialist agent profile
+    multimodal-looker.md # Visual analysis agent profile
   workflows/
     ultrawork.md        # Full automation workflow
     plan.md             # Planning-only workflow
     start-work.md       # Execute existing plan workflow
+    delegate-to-omo.md  # Delegate to OpenCode tmux (OmO)
   scripts/
     init-deep.sh        # Initialize workspace notepad structure
 ```
