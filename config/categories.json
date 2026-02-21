@@ -1,0 +1,38 @@
+{
+  "categories": {
+    "quick": {
+      "model": "claude-sonnet-4-6",
+      "description": "Simple fixes, searches, small tasks, file operations",
+      "max_tokens": 8192,
+      "agents": ["sisyphus-junior", "explore", "librarian"]
+    },
+    "deep": {
+      "model": "claude-opus-4-6-thinking",
+      "description": "Complex refactoring, analysis, gap detection, plan review",
+      "max_tokens": 8192,
+      "agents": ["hephaestus", "metis", "momus"]
+    },
+    "ultrabrain": {
+      "model": "claude-opus-4-5-thinking",
+      "description": "Architecture decisions, strategic planning, root cause analysis",
+      "max_tokens": 8192,
+      "agents": ["prometheus", "atlas", "oracle"]
+    },
+    "visual-engineering": {
+      "model": "claude-opus-4-6-thinking",
+      "description": "UI/UX design, frontend implementation, visual components",
+      "max_tokens": 8192,
+      "agents": ["frontend"]
+    }
+  },
+  "defaults": {
+    "fallback_category": "quick",
+    "max_ralph_iterations": 10,
+    "notepad_dir": "workspace/notepads",
+    "plans_dir": "workspace/plans"
+  },
+  "todo_enforcer": {
+    "enabled": true,
+    "directive": "[SYSTEM DIRECTIVE: OH-MY-OPENCLAW - TODO CONTINUATION]\nYou MUST continue working on incomplete todos.\n- Do NOT stop until all tasks are marked complete\n- Do NOT ask for permission to continue\n- Mark each task complete immediately when finished\n- If blocked, document the blocker and move to next task"
+  }
+}
