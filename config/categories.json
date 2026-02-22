@@ -87,12 +87,13 @@
     "directive": "[SYSTEM DIRECTIVE: OH-MY-OPENCLAW - TODO CONTINUATION]\nYou MUST continue working on incomplete todos.\n- Do NOT stop until all tasks are marked complete\n- Do NOT ask for permission to continue\n- Mark each task complete immediately when finished\n- If blocked, document the blocker and move to next task"
   },
   "tool_restrictions": {
-    "oracle": { "deny": ["write", "edit", "sessions_spawn"] },
-    "librarian": { "deny": ["write", "edit", "sessions_spawn"] },
-    "explore": { "deny": ["write", "edit", "sessions_spawn"] },
-    "multimodal-looker": { "allow": ["read", "browser", "canvas", "exec"] },
-    "metis": { "deny": ["write", "edit", "sessions_spawn"] },
-    "momus": { "deny": ["write", "edit", "sessions_spawn"] }
+    "_comment": "Prompt-level guidance. For runtime enforcement, use config/openclaw.sample.json (agents.list[].tools.profile/allow/deny).",
+    "oracle": { "deny": ["write", "edit", "apply_patch", "sessions_spawn"] },
+    "librarian": { "deny": ["write", "edit", "apply_patch", "sessions_spawn"] },
+    "explore": { "deny": ["write", "edit", "apply_patch", "sessions_spawn"] },
+    "multimodal-looker": { "allow": ["read", "image", "group:ui", "exec"] },
+    "metis": { "deny": ["write", "edit", "apply_patch", "sessions_spawn"] },
+    "momus": { "deny": ["write", "edit", "apply_patch", "sessions_spawn"] }
   },
   "skills": {
     "git-master": {

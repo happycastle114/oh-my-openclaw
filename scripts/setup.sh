@@ -7,46 +7,65 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILL_NAME="oh-my-openclaw"
 
-# Detect OpenClaw workspace
-if [ -d "$HOME/.openclaw/workspace" ]; then
-    WORKSPACE="$HOME/.openclaw/workspace"
-elif [ -n "$OPENCLAW_WORKSPACE" ]; then
-    WORKSPACE="$OPENCLAW_WORKSPACE"
+# Detect OpenClaw skills directory
+# Precedence: workspace/skills > ~/.openclaw/skills > $OPENCLAW_WORKSPACE/skills
+if [ -n "$OPENCLAW_WORKSPACE" ] && [ -d "$OPENCLAW_WORKSPACE" ]; then
+    SKILLS_DIR="$OPENCLAW_WORKSPACE/skills"
+elif [ -d "$HOME/.openclaw" ]; then
+    SKILLS_DIR="$HOME/.openclaw/skills"
 else
-    echo "❌ OpenClaw workspace not found."
-    echo "   Expected: ~/.openclaw/workspace"
+    echo "❌ OpenClaw directory not found."
+    echo "   Expected: ~/.openclaw/"
     echo "   Or set OPENCLAW_WORKSPACE environment variable."
     exit 1
 fi
+
+# Workspace for notepads/plans (default to project-local)
+WORKSPACE="${OPENCLAW_WORKSPACE:-$(pwd)}"
 
 echo "🔧 oh-my-openclaw Setup"
 echo "========================"
 echo ""
 echo "Source: $SCRIPT_DIR"
-echo "Target: $WORKSPACE/skills/$SKILL_NAME"
+echo "Target: $SKILLS_DIR/$SKILL_NAME"
 echo ""
 
 # Create skills directory if needed
-mkdir -p "$WORKSPACE/skills"
+mkdir -p "$SKILLS_DIR"
+
+# Resolve real path (macOS + Linux compatible)
+resolve_path() {
+    if command -v realpath &>/dev/null; then
+        realpath "$1"
+    elif command -v greadlink &>/dev/null; then
+        greadlink -f "$1"
+    elif readlink -f / &>/dev/null 2>&1; then
+        readlink -f "$1"
+    else
+        # Fallback: Python
+        python3 -c "import os; print(os.path.realpath('$1'))"
+    fi
+}
 
 # Check if already installed
-if [ -L "$WORKSPACE/skills/$SKILL_NAME" ]; then
-    EXISTING_TARGET=$(readlink -f "$WORKSPACE/skills/$SKILL_NAME")
-    if [ "$EXISTING_TARGET" = "$SCRIPT_DIR" ]; then
+if [ -L "$SKILLS_DIR/$SKILL_NAME" ]; then
+    EXISTING_TARGET=$(resolve_path "$SKILLS_DIR/$SKILL_NAME")
+    EXPECTED_TARGET=$(resolve_path "$SCRIPT_DIR")
+    if [ "$EXISTING_TARGET" = "$EXPECTED_TARGET" ]; then
         echo "✅ Already installed (symlink exists)."
     else
         echo "⚠️  Existing symlink points to: $EXISTING_TARGET"
         echo "   Updating to: $SCRIPT_DIR"
-        rm "$WORKSPACE/skills/$SKILL_NAME"
-        ln -s "$SCRIPT_DIR" "$WORKSPACE/skills/$SKILL_NAME"
+        rm "$SKILLS_DIR/$SKILL_NAME"
+        ln -s "$SCRIPT_DIR" "$SKILLS_DIR/$SKILL_NAME"
         echo "✅ Symlink updated."
     fi
-elif [ -d "$WORKSPACE/skills/$SKILL_NAME" ]; then
+elif [ -d "$SKILLS_DIR/$SKILL_NAME" ]; then
     echo "⚠️  Directory already exists at target. Skipping."
-    echo "   Remove it first: rm -rf $WORKSPACE/skills/$SKILL_NAME"
+    echo "   Remove it first: rm -rf $SKILLS_DIR/$SKILL_NAME"
     exit 1
 else
-    ln -s "$SCRIPT_DIR" "$WORKSPACE/skills/$SKILL_NAME"
+    ln -s "$SCRIPT_DIR" "$SKILLS_DIR/$SKILL_NAME"
     echo "✅ Symlink created."
 fi
 
