@@ -53,22 +53,23 @@ export function registerDelegateTool(api: OmocPluginApi) {
 
       api.logger.info('[omoc] Delegating task:', { category: params.category, model });
 
+      const instruction = [
+        `Category "${params.category}" → model "${model}"`,
+        '',
+        '⚡ NOW CALL sessions_spawn with these parameters:',
+        `  task: "${params.task_description}"`,
+        `  mode: "run"`,
+        `  model: "${model}"`,
+        params.background ? '  (background execution — results will arrive via push notification)' : '',
+        '',
+        'Do NOT just return this metadata. Actually call sessions_spawn NOW.',
+      ].filter(Boolean).join('\n');
+
       return {
         content: [
           {
             type: 'text',
-            text: JSON.stringify(
-              {
-                action: 'delegate',
-                task_description: params.task_description,
-                category: params.category,
-                model,
-                skills: params.skills || [],
-                background: params.background || false,
-              },
-              null,
-              2,
-            ),
+            text: instruction,
           },
         ],
       };

@@ -77,7 +77,7 @@ describe('registerDelegateTool', () => {
     expect(toolConfig.optional).toBe(true);
   });
 
-  it('execute returns delegation metadata for valid category', async () => {
+  it('execute returns sessions_spawn instruction for valid category', async () => {
     registerDelegateTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
 
@@ -86,11 +86,10 @@ describe('registerDelegateTool', () => {
       category: 'quick',
     });
 
-    const parsed = JSON.parse(result.content[0].text);
-    expect(parsed.model).toBe('claude-sonnet-4-6');
-    expect(parsed.action).toBe('delegate');
-    expect(parsed.task_description).toBe('test task');
-    expect(parsed.category).toBe('quick');
+    const text = result.content[0].text;
+    expect(text).toContain('claude-sonnet-4-6');
+    expect(text).toContain('sessions_spawn');
+    expect(text).toContain('test task');
   });
 
   it('execute returns error for invalid category', async () => {
