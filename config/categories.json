@@ -1,28 +1,41 @@
 {
+  "_comment": "oh-my-openclaw 설정 파일. 카테고리별 모델, 도구 제한, 스킬 트리거를 여기서 변경할 수 있다.",
   "categories": {
     "quick": {
       "model": "claude-sonnet-4-6",
       "description": "Simple fixes, searches, small tasks, file operations",
-      "agents": ["sisyphus-junior", "explore", "librarian"]
+      "agents": ["sisyphus-junior", "explore", "librarian"],
+      "alternatives": ["gpt-5.3-codex-spark", "gemini-3-flash"]
     },
     "deep": {
       "model": "claude-opus-4-6-thinking",
       "description": "Complex refactoring, analysis, gap detection, plan review. Goal-oriented autonomous problem-solving.",
-      "agents": ["hephaestus", "metis", "momus"]
+      "agents": ["hephaestus", "metis", "momus"],
+      "alternatives": ["gpt-5.3-codex", "gemini-3.1-pro"]
     },
     "ultrabrain": {
       "model": "gpt-5.3-codex",
       "description": "Deep logical reasoning, complex architecture decisions requiring extensive analysis",
-      "agents": ["prometheus", "atlas", "oracle"]
+      "agents": ["prometheus", "atlas", "oracle"],
+      "alternatives": ["claude-opus-4-6-thinking", "gemini-3.1-pro-high"]
     },
     "visual-engineering": {
-      "model": "claude-opus-4-6-thinking",
-      "description": "Frontend, UI/UX, design, styling, animation",
-      "agents": ["frontend", "multimodal-looker"]
+      "model": "gemini-3.1-pro",
+      "description": "Frontend, UI/UX, design, styling, animation, visual analysis",
+      "agents": ["frontend", "multimodal-looker"],
+      "alternatives": ["claude-opus-4-6-thinking", "gemini-2.5-pro"]
+    },
+    "multimodal": {
+      "model": "gemini-2.5-flash",
+      "description": "PDF/이미지/비디오 분석. Gemini CLI tmux 세션으로 실행.",
+      "agents": ["multimodal-looker"],
+      "tool": "gemini-cli",
+      "alternatives": ["gemini-2.5-pro", "gemini-3.1-pro"]
     },
     "artistry": {
       "model": "claude-opus-4-6-thinking",
-      "description": "Highly creative/artistic tasks, novel ideas, design exploration"
+      "description": "Highly creative/artistic tasks, novel ideas, design exploration",
+      "alternatives": ["gemini-3.1-pro"]
     },
     "unspecified-low": {
       "model": "claude-sonnet-4-6",
@@ -34,7 +47,8 @@
     },
     "writing": {
       "model": "claude-sonnet-4-6",
-      "description": "Documentation, prose, technical writing"
+      "description": "Documentation, prose, technical writing",
+      "alternatives": ["gemini-3.1-pro"]
     }
   },
   "defaults": {
@@ -42,6 +56,31 @@
     "max_ralph_iterations": 10,
     "notepad_dir": "workspace/notepads",
     "plans_dir": "workspace/plans"
+  },
+  "tmux": {
+    "_comment": "tmux 세션 설정. 소켓 경로와 세션 이름을 여기서 변경 가능.",
+    "socket": "/tmp/openclaw-tmux-sockets/openclaw.sock",
+    "sessions": {
+      "opencode": {
+        "description": "OmO (OpenCode) 코딩 에이전트",
+        "default_agent": "sisyphus",
+        "agents": {
+          "sisyphus": { "switch": "default", "description": "Quick implementation" },
+          "hephaestus": { "switch": "Tab x1", "description": "Deep autonomous work" },
+          "prometheus": { "switch": "Tab x2", "description": "Strategic planning" }
+        },
+        "startup": "export NODE_OPTIONS=\"--max-old-space-size=8192\" && cd $PROJECT_DIR && opencode"
+      },
+      "gemini": {
+        "description": "Gemini CLI 멀티모달 분석",
+        "default_model": "gemini-2.5-flash",
+        "models": {
+          "gemini-2.5-flash": { "flag": "-m gemini-2.5-flash", "speed": "fast", "description": "빠른 확인" },
+          "gemini-2.5-pro": { "flag": "-m gemini-2.5-pro", "speed": "medium", "description": "상세 분석" },
+          "gemini-3.1-pro": { "flag": "-m gemini-3.1-pro", "speed": "slow", "description": "최고 품질" }
+        }
+      }
+    }
   },
   "todo_enforcer": {
     "enabled": true,
@@ -51,7 +90,7 @@
     "oracle": { "deny": ["write", "edit", "sessions_spawn"] },
     "librarian": { "deny": ["write", "edit", "sessions_spawn"] },
     "explore": { "deny": ["write", "edit", "sessions_spawn"] },
-    "multimodal-looker": { "allow": ["read", "browser", "canvas"] },
+    "multimodal-looker": { "allow": ["read", "browser", "canvas", "exec"] },
     "metis": { "deny": ["write", "edit", "sessions_spawn"] },
     "momus": { "deny": ["write", "edit", "sessions_spawn"] }
   },
@@ -67,6 +106,22 @@
     "comment-checker": {
       "trigger": ["comment check", "AI slop", "code quality", "clean comments"],
       "path": "skills/comment-checker.md"
+    },
+    "gemini-look-at": {
+      "trigger": ["look at", "PDF", "screenshot", "diagram", "visual", "이미지 분석", "PDF 확인"],
+      "path": "skills/gemini-look-at.md"
+    },
+    "steering-words": {
+      "trigger": ["ultrawork", "search", "analyze", "분석해", "찾아봐"],
+      "path": "skills/steering-words.md"
+    },
+    "delegation-prompt": {
+      "trigger": ["delegate", "위임", "서브에이전트", "sub-agent"],
+      "path": "skills/delegation-prompt.md"
+    },
+    "multimodal-analysis": {
+      "trigger": ["multimodal", "멀티모달", "image analysis"],
+      "path": "skills/multimodal-analysis.md"
     }
   }
 }
