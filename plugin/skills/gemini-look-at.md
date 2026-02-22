@@ -2,7 +2,6 @@
 name: gemini-look-at
 description: Gemini CLI 기반 멀티모달 분석 스킬. PDF, 이미지, 스크린샷, 다이어그램을 Gemini의 네이티브 멀티모달 능력으로 분석한다. tmux gemini 세션을 통해 실행.
 ---
-
 # Gemini Look-At — Multimodal Analysis via Gemini CLI
 
 OmO의 `look-at` 도구를 Gemini CLI + tmux로 재구현한 스킬.
@@ -15,6 +14,25 @@ OpenClaw의 `read` 도구는 이미지를 첨부로 보내줄 수 있지만, **P
 - **다이어그램 해석** — 아키텍처, 플로우차트, ER 다이어그램 분석
 - **멀티 파일 비교** — 두 PDF/이미지를 동시에 비교
 - **OCR + 해석** — 스크린샷에서 텍스트 추출 + 의미 분석
+
+## Gemini CLI 기본 사용법
+
+```bash
+# 빠른 시작
+gemini "질문..."
+
+# 모델 지정
+gemini --model <name> "프롬프트..."
+
+# JSON 형식 출력
+gemini --output-format json "JSON 반환"
+
+# 확장(extensions) 목록 확인
+gemini --list-extensions
+```
+
+- 첫 실행 시 인터랙티브 로그인/인증이 필요하다.
+- `--yolo` 플래그는 사용하지 않는다.
 
 ## 실행 방법
 

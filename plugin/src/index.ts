@@ -13,7 +13,7 @@ import { registerRalphCommands } from './commands/ralph-commands.js';
 export default function register(api: OmocPluginApi) {
   const config = getConfig(api);
 
-  api.logger.info(`[${PLUGIN_ID}] Initializing plugin v0.2.2`);
+  api.logger.info(`[${PLUGIN_ID}] Initializing plugin v0.3.0`);
 
   try {
     registerTodoEnforcer(api);
@@ -83,7 +83,7 @@ export default function register(api: OmocPluginApi) {
     return {
       ok: true,
       plugin: PLUGIN_ID,
-      version: '0.2.2',
+      version: '0.3.0',
       hooks: ['todo-enforcer', 'comment-checker', 'message-monitor'],
       services: ['ralph-loop'],
       tools: ['omoc_delegate', 'omoc_look_at', 'omoc_checkpoint'],
