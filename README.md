@@ -2,11 +2,13 @@
 
 # Oh-My-OpenClaw (OmOC)
 
-**Agent orchestration framework for [OpenClaw](https://openclaw.ai)**
+![GitHub release](https://img.shields.io/github/v/release/happycastle114/oh-my-openclaw)
+![npm](https://img.shields.io/npm/v/@happycastle/oh-my-openclaw)
+![license](https://img.shields.io/github/license/happycastle114/oh-my-openclaw)
 
-*Ports the proven patterns from [Oh-My-OpenCode](https://github.com/code-yeongyu/oh-my-opencode) into OpenClaw-native constructs.*
+**Install. Type `/ultrawork`. Done.**
 
-**Planning → Orchestration → Execution → Verification**
+Agent orchestration for [OpenClaw](https://openclaw.ai) — brought to you by the patterns that made [OmO](https://github.com/code-yeongyu/oh-my-opencode) unstoppable.
 
 [English](#installation) | [한국어](#한국어-설치-가이드)
 
@@ -14,81 +16,125 @@
 
 ---
 
-> **What is this?**
-> OmO (Oh-My-OpenCode) revolutionized AI coding agents with structured orchestration — 3-layer planning, category-based model routing, and self-correcting execution loops.
->
-> **Oh-My-OpenClaw** brings those patterns to [OpenClaw](https://openclaw.ai), an AI agent platform that connects to Discord, Telegram, and more. Now you get OmO-style orchestration *outside* the terminal — with messaging, memory, browser control, and multi-device access.
+## Skip This README
+For the impatient:
+
+```bash
+openclaw plugins install @happycastle/oh-my-openclaw
+```
+
+Or the manual way:
+
+```bash
+git clone https://github.com/happycastle114/oh-my-openclaw.git
+ln -s "$(pwd)/oh-my-openclaw" ~/.openclaw/workspace/skills/oh-my-openclaw
+bash oh-my-openclaw/scripts/init-deep.sh
+```
+Now open your messaging channel and type `/ultrawork`. You're done.
 
 ---
 
-## ✨ Features
+## What is This?
 
-- **3-Layer Agent Architecture** — Planning (Prometheus/Metis/Momus) → Orchestration (Atlas) → Execution (Workers)
-- **Category-Based Model Routing** — Auto-select the best model for each task type (quick/deep/ultrabrain/visual)
-- **Configurable Models** — Swap models per category via `config/categories.json`
-- **Ultrawork Mode** — One command (`/ultrawork`) for full planning → execution → verification
-- **Wisdom Accumulation** — File-based notepad system for persistent knowledge across sessions
-- **Todo Enforcer + Ralph Loop** — Self-correcting completion mechanism
-- **Gemini CLI Integration** — Native multimodal analysis (PDF/images/video) via Gemini CLI tmux
-- **OmO Delegation** — Route complex coding tasks to OpenCode (OmO) running in tmux
-- **tmux Multi-Tool Orchestration** — Coordinate OpenCode + Gemini CLI + OpenClaw together
+OmO-style multi-agent orchestration for OpenClaw. Your AI agent gets 10 specialized personas, category-based model routing, and self-correcting execution loops — all through Discord, Telegram, or any messaging channel OpenClaw supports.
 
-## 📋 Prerequisites
+---
+
+## Features
+
+| Feature | What It Does |
+|---------|-------------|
+| **3-Layer Architecture** | Planning → Orchestration → Execution → Verification. No shortcuts. |
+| **Category Routing** | Auto-selects the best model per task — quick, deep, ultrabrain, or visual. |
+| **Ultrawork Mode** | One command. Full planning-to-verification pipeline. `/ultrawork` and walk away. |
+| **Ralph Loop** | Self-correcting execution. Never stops halfway. Hard cap at 100 iterations. |
+| **Todo Enforcer** | Forces task completion. No "I'm done" lies. Every step tracked. |
+| **Comment Checker** | 11 regex patterns detect and kill AI slop comments on sight. |
+| **Gemini CLI** | Native multimodal — PDF, images, video analysis via tmux integration. |
+| **OmO Delegation** | Route coding tasks to OpenCode running in tmux. Full OmO power. |
+| **Checkpoints** | Save/load execution state. Crash recovery. Pick up where you left off. |
+| **10 Agents** | Specialized team: planners, workers, reviewers. Each with a job. |
+| **7 Skills** | git-master, frontend-ui-ux, comment-checker, multimodal, and more. |
+| **7 Workflows** | ultrawork, plan, start-work, delegate-to-omo, auto-rescue, and more. |
+
+---
+
+## Agent Personas
+
+These aren't generic "assistant" prompts. Each agent has a personality and a mandate.
+
+| Agent | Personality |
+|-------|------------|
+| **Atlas** | The conductor. Doesn't play instruments. Ensures perfect harmony. |
+| **Prometheus** | The interviewer. Won't let you start until you know what you want. |
+| **Sisyphus-Junior** | The workhorse. Focused. Disciplined. Doesn't stop until done. |
+| **Oracle** | The architect. Read-only. Expensive. Worth every token. |
+| **Hephaestus** | The craftsman. Give him a hard problem, come back in an hour. |
+| **Metis** | The gap-finder. Spots what everyone else missed. |
+| **Momus** | The critic. Your plan has holes — Momus will find them. |
+| **Explore** | The scout. Knows where everything is in the codebase. |
+| **Librarian** | The researcher. Docs, knowledge, context — on demand. |
+| **Multimodal Looker** | The eye. Screenshots, PDFs, UI reviews — sees what text can't. |
+
+---
+
+## Prerequisites
 
 - [OpenClaw](https://openclaw.ai) installed and running (gateway mode)
 - A messaging channel configured (Discord, Telegram, etc.)
-- *(Optional)* [OpenCode](https://opencode.ai) for coding delegation
-- *(Optional)* [Gemini CLI](https://ai.google.dev/) for multimodal analysis
+- *(Optional)* [OpenCode](https://opencode.ai) — for coding delegation
+- *(Optional)* [Gemini CLI](https://ai.google.dev/) — for multimodal analysis
 
-## 🚀 Installation
-
-### Option 1: Clone + Symlink (Recommended)
+## Installation
+### Option 1: Official Plugin Install (Recommended)
 
 ```bash
-# Clone the repo
+openclaw plugins install @happycastle/oh-my-openclaw
+```
+
+One command. Skills, hooks, tools — all registered automatically.
+
+### Option 2: Clone + Symlink
+
+```bash
 git clone https://github.com/happycastle114/oh-my-openclaw.git
 cd oh-my-openclaw
-
-# Symlink into OpenClaw workspace skills directory
 ln -s "$(pwd)" ~/.openclaw/workspace/skills/oh-my-openclaw
-
-# Initialize notepad structure
 bash scripts/init-deep.sh
 ```
 
-### Option 2: Direct Clone into Skills
+### Option 3: Direct Clone into Skills
 
 ```bash
-# Clone directly into the skills folder
 git clone https://github.com/happycastle114/oh-my-openclaw.git \
   ~/.openclaw/workspace/skills/oh-my-openclaw
-
-# Initialize
 bash ~/.openclaw/workspace/skills/oh-my-openclaw/scripts/init-deep.sh
 ```
 
-### Option 3: Global Skill (Shared across all workspaces)
+### Option 4: Global Skill
 
 ```bash
 git clone https://github.com/happycastle114/oh-my-openclaw.git \
   ~/.openclaw/skills/oh-my-openclaw
 ```
 
-### Verify Installation
+### Verify
 
-After installing, the skill should appear in OpenClaw's available skills. Test by sending this to your OpenClaw agent:
+Send this to your OpenClaw agent:
 
 > "Read the oh-my-openclaw skill and tell me what it does"
 
-Your agent should find and describe the skill, confirming it's properly loaded.
+If it responds with a description, you're good.
 
-## ⚙️ Configuration
+---
 
-All configuration lives in `config/categories.json`. Edit this file to customize models, tools, and behavior.
+## Configuration
+
+Everything lives in `config/categories.json`. One file. All the knobs.
 
 ### Model Routing
 
-Each category maps to a default model with alternatives you can swap in:
+Each category maps to a model. Swap anytime:
 
 ```json
 {
@@ -113,60 +159,11 @@ Each category maps to a default model with alternatives you can swap in:
 }
 ```
 
-To change a category's model, simply edit the `"model"` field. The `"alternatives"` list shows other tested options.
+Edit the `"model"` field. Done. `"alternatives"` shows what else works.
 
-### tmux Sessions
+---
 
-Configure OpenCode and Gemini CLI tmux sessions:
-
-```json
-{
-  "tmux": {
-    "socket": "/tmp/openclaw-tmux-sockets/openclaw.sock",
-    "sessions": {
-      "opencode": {
-        "default_agent": "sisyphus",
-        "agents": {
-          "sisyphus": { "switch": "default" },
-          "hephaestus": { "switch": "Tab x1" },
-          "prometheus": { "switch": "Tab x2" }
-        }
-      },
-      "gemini": {
-        "default_model": "gemini-2.5-flash",
-        "models": {
-          "gemini-2.5-flash": { "speed": "fast" },
-          "gemini-2.5-pro": { "speed": "medium" },
-          "gemini-3.1-pro": { "speed": "slow" }
-        }
-      }
-    }
-  }
-}
-```
-
-### Skill Triggers
-
-Skills auto-activate based on keyword detection:
-
-```json
-{
-  "skills": {
-    "git-master": {
-      "trigger": ["commit", "rebase", "squash", "blame"],
-      "path": "skills/git-master.md"
-    },
-    "gemini-look-at": {
-      "trigger": ["look at", "PDF", "screenshot", "diagram"],
-      "path": "skills/gemini-look-at.md"
-    }
-  }
-}
-```
-
-## 🏗️ Architecture
-
-### System Overview
+## Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -175,9 +172,9 @@ Skills auto-activate based on keyword detection:
 ├──────────┬───────────┬────────────────┬──────────────────┤
 │  Discord │ Telegram  │    Browser     │  Node Devices    │
 │  Channel │   Bot     │   Control      │  (Camera, etc.)  │
-└────┬─────┴─────┬─────┴───���───┬────────┴──────┬───────────┘
-     │           │             │               │
-     ▼           ▼             ▼               ▼
+└────┬─────┴─────┬─────┴────────┬───────┴──────┬───────────┘
+     │           │              │              │
+     ▼           ▼              ▼              ▼
 ┌─────────────────────────────────────────────────────────┐
 │              oh-my-openclaw Skill Layer                   │
 │                                                           │
@@ -187,14 +184,14 @@ Skills auto-activate based on keyword detection:
 │  │  │ Prometheus  │ │  Metis   │ │  Momus   │          │ │
 │  │  │ (Planner)   │ │ (Gaps)   │ │ (Review) │          │ │
 │  │  └─────┬──────┘ └────┬─────┘ └────┬─────┘          │ │
-│  ├────────┼──────────���───┼────────────┼────────────────┤ │
-│  │        ▼              ▼            ▼                 │ │
+│  ├────────┼─────────────┼────────────┼─────────────────┤ │
+│  │        ▼             ▼            ▼                  │ │
 │  │           Layer 2: ORCHESTRATION                     │ │
 │  │  ┌──────────────────────────────────────────┐       │ │
 │  │  │              Atlas                        │       │ │
 │  │  │   (Task Distribution + Verification)      │       │ │
 │  │  └────┬────┬────┬────┬────┬────┬────────────┘       │ │
-│  ├───────┼────┼────┼────┼────┼────┼─────────────────────┤ │
+│  ├───────┼────┼────┼────┼────┼────┼────────────────────┤ │
 │  │       ▼    ▼    ▼    ▼    ▼    ▼                     │ │
 │  │           Layer 3: WORKERS                           │ │
 │  │  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────────┐ │ │
@@ -214,21 +211,6 @@ Skills auto-activate based on keyword detection:
 └──────────────────────────────────────────────────────────┘
 ```
 
-### Agent Roles
-
-| Layer | Agent | Role | Category |
-|-------|-------|------|----------|
-| **Planning** | **Prometheus** | Strategic planner — interviews user, creates phased plans | ultrabrain |
-| | **Metis** | Gap analyzer — identifies missing context before execution | deep |
-| | **Momus** | Plan reviewer — critiques and finds blockers | deep |
-| **Orchestration** | **Atlas** | Task distributor — breaks plans into units, verifies completion | ultrabrain |
-| **Workers** | **Sisyphus-Junior** | Primary coder — quick implementations, bug fixes | quick |
-| | **Hephaestus** | Deep worker — complex refactoring, architecture changes | deep |
-| | **Oracle** | Architect/debugger — design decisions, root cause analysis | ultrabrain |
-| | **Explore** | Search specialist — codebase exploration, pattern finding | quick |
-| | **Librarian** | Documentation — docs, research, knowledge retrieval | quick |
-| | **Multimodal Looker** | Visual analyst — screenshots, UI review, PDF quality check | visual-engineering |
-
 ### Category → Model Mapping
 
 | Category | Default Model | Alternatives | Use Case |
@@ -239,122 +221,50 @@ Skills auto-activate based on keyword detection:
 | `visual-engineering` | Gemini 3.1 Pro | Claude Opus 4.6 | UI/UX, visual analysis |
 | `multimodal` | Gemini 2.5 Flash | Gemini 3.1 Pro | PDF/image/video via CLI |
 
+### Agent Roles
+
+| Layer | Agent | Role | Category |
+|-------|-------|------|----------|
+| **Planning** | **Prometheus** | Strategic planner — interviews, creates phased plans | ultrabrain |
+| | **Metis** | Gap analyzer — finds missing context before execution | deep |
+| | **Momus** | Plan reviewer — critiques and surfaces blockers | deep |
+| **Orchestration** | **Atlas** | Task distributor — breaks plans into units, verifies | ultrabrain |
+| **Workers** | **Sisyphus-Junior** | Primary coder — quick implementations, bug fixes | quick |
+| | **Hephaestus** | Deep worker — complex refactoring, architecture | deep |
+| | **Oracle** | Architect — design decisions, root cause analysis | ultrabrain |
+| | **Explore** | Search specialist — codebase exploration | quick |
+| | **Librarian** | Docs and research — knowledge retrieval | quick |
+| | **Multimodal Looker** | Visual analyst — screenshots, UI, PDF review | visual-engineering |
+
 ### Skills
 
-| Skill | Trigger Keywords | Description |
-|-------|-----------------|-------------|
+| Skill | Triggers | Description |
+|-------|----------|-------------|
 | `git-master` | commit, rebase, squash, blame | Atomic commits, rebase surgery |
 | `frontend-ui-ux` | UI, UX, frontend, design, CSS | Design-first UI development |
-| `comment-checker` | comment check, AI slop | Anti-AI-slop code quality guard |
-| `gemini-look-at` | look at, PDF, screenshot, diagram | Gemini CLI multimodal analysis |
+| `comment-checker` | comment check, AI slop | Anti-AI-slop quality guard |
+| `gemini-look-at` | look at, PDF, screenshot | Gemini CLI multimodal analysis |
 | `steering-words` | ultrawork, search, analyze | Keyword detection, mode routing |
 | `delegation-prompt` | delegate, sub-agent | 7-element delegation prompt guide |
 | `multimodal-analysis` | multimodal, image analysis | Analysis pattern templates |
 
 ### Workflows
 
-| Workflow | Command | Description |
+| Workflow | Command | What Happens |
 |----------|---------|-------------|
-| `ultrawork` | `/ultrawork` | Full planning → execution → verification loop |
+| `ultrawork` | `/ultrawork` | Full planning → execution → verification |
 | `plan` | `/plan` | Planning only (Prometheus + Momus) |
 | `start-work` | `/start-work` | Execute an existing plan |
-| `delegate-to-omo` | `/delegate-to-omo` | Route task to OpenCode tmux |
-| `tmux-orchestration` | — | OpenCode + Gemini CLI coordination |
-| `tool-patterns` | — | OmO tool → OpenClaw mapping reference |
+| `delegate-to-omo` | `/delegate-to-omo` | Route to OpenCode in tmux |
+| `tmux-orchestration` | — | Coordinate OpenCode + Gemini CLI |
+| `tool-patterns` | — | OmO tool → OpenClaw mapping |
 | `auto-rescue` | — | Checkpoint + failure recovery |
 
-## 📁 File Structure
+---
 
-```
-oh-my-openclaw/
-├── SKILL.md                    # Main skill definition (OpenClaw reads this)
-├── README.md                   # This file
-├── config/
-│   └── categories.json         # Model routing, skills, tmux, tool restrictions
-├── agents/                     # Agent profile definitions (10)
-│   ├── prometheus.md           # Strategic planner
-│   ├── metis.md                # Gap analyzer
-│   ├── momus.md                # Plan reviewer
-│   ├── atlas.md                # Task orchestrator
-│   ├── sisyphus-junior.md      # Primary coder
-│   ├── hephaestus.md           # Deep worker
-│   ├── oracle.md               # Architect/debugger
-│   ├── explore.md              # Search specialist
-│   ├── librarian.md            # Documentation
-│   └── multimodal-looker.md    # Visual analyst
-├── skills/                     # Skill definitions (7)
-│   ├── git-master.md
-│   ├── frontend-ui-ux.md
-│   ├── comment-checker.md
-│   ├── gemini-look-at.md       # Gemini CLI multimodal
-│   ├── steering-words.md
-│   ├── delegation-prompt.md
-│   └── multimodal-analysis.md
-├── workflows/                  # Workflow definitions (7)
-│   ├── ultrawork.md
-│   ├── plan.md
-│   ├── start-work.md
-│   ├── delegate-to-omo.md
-│   ├── tmux-orchestration.md   # Multi-tool coordination
-│   ├── tool-patterns.md
-│   └── auto-rescue.md
-└── scripts/
-├── plugin/                     # @omoc/plugin (TypeScript)
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── openclaw.plugin.json    # Plugin manifest
-│   ├── vitest.config.ts
-│   └── src/
-│       ├── index.ts            # Entry point
-│       ├── types.ts            # Shared interfaces
-│       ├── hooks/              # 3 hooks
-│       ├── tools/              # 3 tools
-│       ├── commands/           # 6 slash commands
-│       ├── services/           # Ralph loop service
-│       ├── utils/              # Config, state, validation
-│       └── __tests__/          # 37 unit tests
-    ├── setup.sh                # One-command install
-    └── init-deep.sh            # Generate AGENTS.md hierarchy
-```
+## OmO vs Oh-My-OpenClaw
 
-## 🔧 Usage
-
-### Quick Task
-
-```
-User: Fix the type error in auth.ts
-Agent: [Uses Sisyphus-Junior directly — category: quick]
-```
-
-### Complex Feature
-
-```
-User: /ultrawork Add user authentication with OAuth2
-Agent: [Prometheus plans → Momus reviews → Atlas distributes → Workers execute → Verify]
-```
-
-### Research Task
-
-```
-User: /plan Research the best approach for real-time notifications
-Agent: [Prometheus + Librarian + Oracle collaborate on research plan]
-```
-
-### Visual Analysis
-
-```
-User: Check this PDF layout
-Agent: [Multimodal Looker via Gemini CLI → analyzes PDF → reports findings]
-```
-
-### Coding Delegation
-
-```
-User: Refactor the entire auth module
-Agent: [Delegates to OpenCode via tmux → monitors progress → reports back]
-```
-
-## 🔄 OmO vs Oh-My-OpenClaw
+Same DNA. Different runtime.
 
 | Aspect | OmO (Oh-My-OpenCode) | Oh-My-OpenClaw |
 |--------|---------------------|----------------|
@@ -362,30 +272,31 @@ Agent: [Delegates to OpenCode via tmux → monitors progress → reports back]
 | **Format** | TypeScript runtime hooks | Markdown prompts + **TypeScript plugin** |
 | **Agents** | 11 (TypeScript) | 10 (Markdown) |
 | **Hooks** | 55+ runtime interceptors | 3 plugin hooks + workflow-based |
-| **Tools** | 17 custom tools | 3 plugin tools + OpenClaw native tools |
+| **Tools** | 17 custom tools | 3 plugin tools + OpenClaw native |
 | **Skills** | 4 built-in | 7 skill documents |
 | **Channels** | Terminal only | Discord, Telegram, Web, etc. |
 | **Memory** | Session-scoped | Graphiti knowledge graph |
 | **Devices** | Local machine | Multi-node (phone, IoT, etc.) |
 
-## 🔌 Plugin (`@omoc/plugin`)
+---
 
-Phase 2 of Oh-My-OpenClaw: a TypeScript plugin that enforces orchestration patterns at the code level via the OpenClaw Plugin API.
+## Plugin (`@happycastle/oh-my-openclaw`)
+
+The TypeScript plugin. Enforces orchestration patterns at the code level via the OpenClaw Plugin API.
 
 ### Install
 
 ```bash
 cd plugin
-npm install
-npm run build
+npm install && npm run build
 ```
 
-### What it provides
+### What It Provides
 
 | Type | Name | Description |
 |------|------|-------------|
-| Hook | `todo-enforcer` | Injects TODO continuation directive on `agent:bootstrap` |
-| Hook | `comment-checker` | Detects AI slop comments on `tool_result_persist` (11 regex patterns) |
+| Hook | `todo-enforcer` | Injects TODO continuation on `agent:bootstrap` |
+| Hook | `comment-checker` | 11 regex patterns kill AI slop on `tool_result_persist` |
 | Hook | `message-monitor` | Audit logging + message counter on `message:sent` |
 | Tool | `omoc_delegate` | Category-based task delegation with model routing |
 | Tool | `omoc_look_at` | Multimodal analysis via Gemini CLI + tmux |
@@ -396,7 +307,7 @@ npm run build
 | Command | `/ralph-loop` | Start self-correcting execution loop |
 | Command | `/ralph-stop` | Stop ralph loop |
 | Command | `/omoc-status` | Plugin status summary |
-| Service | `ralph-loop` | Background loop with hard cap (100 iterations) |
+| Service | `ralph-loop` | Background loop — hard cap at 100 iterations |
 
 ### Scripts
 
@@ -406,32 +317,34 @@ npm run typecheck  # Type-check without emit
 npm run test       # Run vitest (37 tests)
 ```
 
-### Publishing
-
-CI/CD is configured via GitHub Actions. To publish:
+### Publish
 
 ```bash
 git tag v0.1.0
 git push origin v0.1.0  # Triggers .github/workflows/publish.yml
 ```
 
-Requires `NPM_TOKEN` secret in GitHub repository settings.
+Requires `NPM_TOKEN` secret in GitHub repo settings.
 
-## 🌱 Roadmap
+---
 
-~~Based on gap analysis (GPT 5.3 Codex + Gemini 3.1 Pro):~~
+## Documentation
 
-1. ~~🔴 **Agent Procedural Strictness** — Port OmO's mandatory checklists and defensive grammar~~
-2. ~~🟡 **Quality Gate Workflow** — Auto-verify error rates and task completion per turn~~
-3. ~~🟢 **Tool Pattern Templates** — `ast-grep`, `lsp` via `exec` wrapper patterns~~
-4. ~~🔵 **Boulder-State Management** — File-based task tracking protocol~~
+| Document | What's Inside |
+|----------|--------------|
+| [Overview](docs/guide/overview.md) | Big picture — what OmOC is and why |
+| [Installation](docs/guide/installation.md) | Step-by-step setup guide |
+| [Orchestration](docs/guide/orchestration.md) | How the 3-layer system works |
+| [Features Reference](docs/reference/features.md) | Every feature, explained |
+| [Configuration](docs/reference/configuration.md) | All config options |
+| [Similarity Analysis](docs/SIMILARITY.md) | OmO → OmOC port analysis |
 
-✅ All roadmap items addressed by `@omoc/plugin` (v0.1.0) — hooks enforce procedural strictness, comment-checker is the quality gate, tools provide pattern templates, and ralph-loop + checkpoint handle boulder-state management.
+---
 
-## 📜 Credits
+## Credits
 
-- [Oh-My-OpenCode](https://github.com/code-yeongyu/oh-my-opencode) by [@code-yeongyu](https://github.com/code-yeongyu) — Original patterns and agent architecture
-- [OpenClaw](https://openclaw.ai) — Agent platform providing the runtime
+- [Oh-My-OpenCode](https://github.com/code-yeongyu/oh-my-opencode) by [@code-yeongyu](https://github.com/code-yeongyu) — The original. The patterns. The philosophy.
+- [OpenClaw](https://openclaw.ai) — The runtime that makes messaging-channel orchestration possible.
 
 ---
 
@@ -468,6 +381,8 @@ OpenClaw에 연결된 채널(Discord, Telegram 등)에서:
 - `/ultrawork 기능 설명` — 자동 계획 + 실행 + 검증
 - `/plan 기능 설명` — 계획만 생성
 - `/start-work` — 기존 계획 기반 실행
+
+---
 
 ## License
 

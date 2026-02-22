@@ -1,3 +1,28 @@
 node_modules/
 dist/
 .sisyphus/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.tgz
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.*
+
+# Workspace runtime data
+workspace/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

@@ -109,7 +109,7 @@ Categories map user intent to optimal model selection:
 {
   "quick": "claude-sonnet-4-6",
   "deep": "claude-opus-4-6-thinking",
-  "ultrabrain": "claude-opus-4-5-thinking",
+  "ultrabrain": "gpt-5.3-codex",
   "visual-engineering": "claude-opus-4-6-thinking"
 }
 ```
