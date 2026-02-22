@@ -1,5 +1,5 @@
 {
-  "name": "@omoc/plugin",
+  "name": "@happycastle/oh-my-openclaw",
   "version": "0.1.0",
   "description": "Oh-My-OpenClaw plugin — multi-agent orchestration, todo enforcer, ralph loop, and custom tools for OpenClaw",
   "type": "module",
