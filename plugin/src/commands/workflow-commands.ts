@@ -1,12 +1,17 @@
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { OmocPluginApi } from '../types.js';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+// From dist/commands/ → plugin root is ../../
+const PLUGIN_ROOT = join(__dirname, '..', '..');
 function readWorkflow(workflowName: string): string {
   try {
-    const workflowPath = join(process.cwd(), 'workflows', `${workflowName}.md`);
+    const workflowPath = join(PLUGIN_ROOT, 'workflows', `${workflowName}.md`);
     return readFileSync(workflowPath, 'utf-8');
   } catch {
-    return `Error: Could not read workflow file 'workflows/${workflowName}.md'. Make sure the oh-my-openclaw skill directory is accessible.`;
+    return `Error: Could not read workflow file 'workflows/${workflowName}.md'. Plugin root: ${PLUGIN_ROOT}`;
   }
 }
 
