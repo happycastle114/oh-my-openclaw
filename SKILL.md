@@ -214,6 +214,7 @@ Skills inject specialized knowledge and workflows into agents. Load them via `lo
 | **frontend-ui-ux**  | UI, UX, frontend, design, CSS             | Designer-turned-developer. Bold aesthetics, distinctive typography, cohesive palettes. |
 | **comment-checker** | comment check, AI slop, code quality      | Anti-AI-slop guard. Removes obvious comments, keeps WHY comments.                      |
 | **gemini-look-at**  | look at, PDF, screenshot, diagram, visual | Gemini CLI 기반 멀티모달 분석. tmux gemini 세션으로 PDF/이미지/비디오 네이티브 분석.   |
+| **web-search**      | web search, 웹 검색, exa, context7, grep.app | OmO 웹서치 패턴 통합. Exa/Context7/grep.app MCP + web_fetch + web-search-prime.       |
 
 ### Category + Skill Combos
 
@@ -223,6 +224,7 @@ Skills inject specialized knowledge and workflows into agents. Load them via `lo
 | **The Maintainer** | quick              | git-master      | Quick fixes with clean atomic commits                     |
 | **The Reviewer**   | deep               | comment-checker | Deep code review with AI slop detection                   |
 | **The Looker**     | visual-engineering | gemini-look-at  | Gemini CLI로 PDF/이미지/다이어그램 네이티브 멀티모달 분석 |
+| **The Researcher** | quick              | web-search      | Exa/Context7/grep.app으로 웹 검색 + 코드 검색 + 문서 검색 |
 
 ## Quick Setup
 
@@ -257,6 +259,7 @@ oh-my-openclaw/
     frontend-ui-ux.md   # Design-first UI development skill
     comment-checker.md  # Anti-AI-slop code quality skill
     gemini-look-at.md   # Gemini CLI multimodal analysis (PDF/image/video)
+    web-search.md       # Web search integration (Exa/Context7/grep.app MCP)
   workflows/
     ultrawork.md        # Full automation workflow
     plan.md             # Planning-only workflow

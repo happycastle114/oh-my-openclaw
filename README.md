@@ -247,6 +247,7 @@ Edit the `"model"` field. Done. `"alternatives"` shows what else works.
 | `steering-words` | ultrawork, search, analyze | Keyword detection, mode routing |
 | `delegation-prompt` | delegate, sub-agent | 7-element delegation prompt guide |
 | `multimodal-analysis` | multimodal, image analysis | Analysis pattern templates |
+| `web-search` | web search, 웹 검색, exa, context7 | OmO websearch MCP 통합 (Exa + Context7 + grep.app) |
 
 ### Workflows
 

@@ -137,6 +137,10 @@
     "multimodal-analysis": {
       "trigger": ["multimodal", "멀티모달", "image analysis"],
       "path": "skills/multimodal-analysis.md"
+    },
+    "web-search": {
+      "trigger": ["web search", "웹 검색", "검색해", "search the web", "찾아줘", "look up", "exa", "context7", "grep.app"],
+      "path": "skills/web-search.md"
     }
   }
 }
