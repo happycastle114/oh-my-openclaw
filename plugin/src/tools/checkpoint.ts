@@ -10,7 +10,9 @@ export function registerCheckpointTool(api: OmocPluginApi) {
     name: 'omoc_checkpoint',
     description: 'Save, load, or list session checkpoints for crash recovery',
     parameters: Type.Object({
-      action: Type.Union([Type.Literal('save'), Type.Literal('load'), Type.Literal('list')], {
+      action: Type.Unsafe<'save' | 'load' | 'list'>({
+        type: 'string',
+        enum: ['save', 'load', 'list'],
         description: 'Checkpoint operation',
       }),
       task: Type.Optional(Type.String({ description: 'Current task name (for save)' })),

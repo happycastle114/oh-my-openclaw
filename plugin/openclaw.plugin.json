@@ -2,8 +2,8 @@
   "id": "oh-my-openclaw",
   "name": "Oh-My-OpenClaw",
   "description": "Multi-agent orchestration plugin \u2014 10 agents, category-based model routing, todo enforcer, ralph loop, and custom tools",
-  "version": "0.2.1",
-  "skills": ["../skills"],
+  "version": "0.2.2",
+  "skills": ["skills"],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,

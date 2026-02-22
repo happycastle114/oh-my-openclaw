@@ -1,4 +1,5 @@
 import { promises as fs } from 'fs';
+import { getConfig } from '../utils/config.js';
 import { join } from 'path';
 
 import {
@@ -65,7 +66,8 @@ async function saveStateToFile(): Promise<void> {
 
 export function registerRalphLoop(api: OmocPluginApi): void {
   apiRef = api;
-  stateFilePath = join(api.config.checkpoint_dir, 'ralph-loop-state.json');
+  const config = getConfig(api);
+  stateFilePath = join(config.checkpoint_dir, 'ralph-loop-state.json');
 
   api.registerService({
     id: 'omoc-ralph-loop',
