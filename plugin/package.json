@@ -45,7 +45,7 @@
     "multi-agent",
     "orchestration"
   ],
-  "license": "UNLICENSED",
+  "license": "MIT",
   "author": "happycastle",
   "dependencies": {
     "@sinclair/typebox": "^0.34.0"
