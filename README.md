@@ -299,6 +299,20 @@ oh-my-openclaw/
 │   ├── tool-patterns.md
 │   └── auto-rescue.md
 └── scripts/
+├── plugin/                     # @omoc/plugin (TypeScript)
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── openclaw.plugin.json    # Plugin manifest
+│   ├── vitest.config.ts
+│   └── src/
+│       ├── index.ts            # Entry point
+│       ├── types.ts            # Shared interfaces
+│       ├── hooks/              # 3 hooks
+│       ├── tools/              # 3 tools
+│       ├── commands/           # 6 slash commands
+│       ├── services/           # Ralph loop service
+│       ├── utils/              # Config, state, validation
+│       └── __tests__/          # 37 unit tests
     ├── setup.sh                # One-command install
     └── init-deep.sh            # Generate AGENTS.md hierarchy
 ```
@@ -345,23 +359,74 @@ Agent: [Delegates to OpenCode via tmux → monitors progress → reports back]
 | Aspect | OmO (Oh-My-OpenCode) | Oh-My-OpenClaw |
 |--------|---------------------|----------------|
 | **Platform** | OpenCode plugin (terminal) | OpenClaw skill (messaging + web) |
-| **Format** | TypeScript runtime hooks | Markdown prompts + workflows |
+| **Format** | TypeScript runtime hooks | Markdown prompts + **TypeScript plugin** |
 | **Agents** | 11 (TypeScript) | 10 (Markdown) |
-| **Hooks** | 55+ runtime interceptors | Workflow-based (manual) |
-| **Tools** | 17 custom tools | OpenClaw native tools |
+| **Hooks** | 55+ runtime interceptors | 3 plugin hooks + workflow-based |
+| **Tools** | 17 custom tools | 3 plugin tools + OpenClaw native tools |
 | **Skills** | 4 built-in | 7 skill documents |
 | **Channels** | Terminal only | Discord, Telegram, Web, etc. |
 | **Memory** | Session-scoped | Graphiti knowledge graph |
 | **Devices** | Local machine | Multi-node (phone, IoT, etc.) |
 
+## 🔌 Plugin (`@omoc/plugin`)
+
+Phase 2 of Oh-My-OpenClaw: a TypeScript plugin that enforces orchestration patterns at the code level via the OpenClaw Plugin API.
+
+### Install
+
+```bash
+cd plugin
+npm install
+npm run build
+```
+
+### What it provides
+
+| Type | Name | Description |
+|------|------|-------------|
+| Hook | `todo-enforcer` | Injects TODO continuation directive on `agent:bootstrap` |
+| Hook | `comment-checker` | Detects AI slop comments on `tool_result_persist` (11 regex patterns) |
+| Hook | `message-monitor` | Audit logging + message counter on `message:sent` |
+| Tool | `omoc_delegate` | Category-based task delegation with model routing |
+| Tool | `omoc_look_at` | Multimodal analysis via Gemini CLI + tmux |
+| Tool | `omoc_checkpoint` | Save/load/list execution checkpoints |
+| Command | `/ultrawork` | Full planning → execution → verification |
+| Command | `/plan` | Planning workflow |
+| Command | `/start-work` | Execute existing plan |
+| Command | `/ralph-loop` | Start self-correcting execution loop |
+| Command | `/ralph-stop` | Stop ralph loop |
+| Command | `/omoc-status` | Plugin status summary |
+| Service | `ralph-loop` | Background loop with hard cap (100 iterations) |
+
+### Scripts
+
+```bash
+npm run build      # Compile TypeScript
+npm run typecheck  # Type-check without emit
+npm run test       # Run vitest (37 tests)
+```
+
+### Publishing
+
+CI/CD is configured via GitHub Actions. To publish:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0  # Triggers .github/workflows/publish.yml
+```
+
+Requires `NPM_TOKEN` secret in GitHub repository settings.
+
 ## 🌱 Roadmap
 
-Based on gap analysis (GPT 5.3 Codex + Gemini 3.1 Pro):
+~~Based on gap analysis (GPT 5.3 Codex + Gemini 3.1 Pro):~~
 
-1. 🔴 **Agent Procedural Strictness** — Port OmO's mandatory checklists and defensive grammar
-2. 🟡 **Quality Gate Workflow** — Auto-verify error rates and task completion per turn
-3. 🟢 **Tool Pattern Templates** — `ast-grep`, `lsp` via `exec` wrapper patterns
-4. 🔵 **Boulder-State Management** — File-based task tracking protocol
+1. ~~🔴 **Agent Procedural Strictness** — Port OmO's mandatory checklists and defensive grammar~~
+2. ~~🟡 **Quality Gate Workflow** — Auto-verify error rates and task completion per turn~~
+3. ~~🟢 **Tool Pattern Templates** — `ast-grep`, `lsp` via `exec` wrapper patterns~~
+4. ~~🔵 **Boulder-State Management** — File-based task tracking protocol~~
+
+✅ All roadmap items addressed by `@omoc/plugin` (v0.1.0) — hooks enforce procedural strictness, comment-checker is the quality gate, tools provide pattern templates, and ralph-loop + checkpoint handle boulder-state management.
 
 ## 📜 Credits
 

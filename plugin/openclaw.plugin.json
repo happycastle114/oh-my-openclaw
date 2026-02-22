@@ -1,0 +1,54 @@
+{
+  "id": "oh-my-openclaw",
+  "name": "Oh-My-OpenClaw",
+  "description": "Multi-agent orchestration plugin with todo enforcer, ralph loop, comment checker, and custom delegation tools",
+  "version": "0.1.0",
+  "skills": ["../skills"],
+  "tools": ["omoc_delegate", "omoc_look_at", "omoc_checkpoint"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "max_ralph_iterations": {
+        "type": "number",
+        "default": 10,
+        "description": "Maximum ralph loop iterations before auto-stop"
+      },
+      "todo_enforcer_enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable todo continuation enforcement on session idle"
+      },
+      "todo_enforcer_cooldown_ms": {
+        "type": "number",
+        "default": 2000,
+        "description": "Cooldown in ms before injecting continuation prompt"
+      },
+      "todo_enforcer_max_failures": {
+        "type": "number",
+        "default": 5,
+        "description": "Max consecutive failures before extended pause"
+      },
+      "comment_checker_enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable AI slop comment detection"
+      },
+      "notepad_dir": {
+        "type": "string",
+        "default": "workspace/notepads",
+        "description": "Directory for wisdom notepad files"
+      },
+      "plans_dir": {
+        "type": "string",
+        "default": "workspace/plans",
+        "description": "Directory for plan files"
+      },
+      "checkpoint_dir": {
+        "type": "string",
+        "default": "workspace/checkpoints",
+        "description": "Directory for checkpoint files"
+      }
+    }
+  }
+}

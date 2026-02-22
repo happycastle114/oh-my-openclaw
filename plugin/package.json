@@ -1,0 +1,51 @@
+{
+  "name": "@omoc/plugin",
+  "version": "0.1.0",
+  "description": "Oh-My-OpenClaw plugin — multi-agent orchestration, todo enforcer, ralph loop, and custom tools for OpenClaw",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --experimental-vm-modules node_modules/.bin/vitest run",
+    "test:watch": "node --experimental-vm-modules node_modules/.bin/vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "openclaw": {
+    "extensions": [
+      "dist/index.js"
+    ]
+  },
+  "files": [
+    "dist",
+    "openclaw.plugin.json",
+    "skills"
+  ],
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "multi-agent",
+    "orchestration"
+  ],
+  "license": "UNLICENSED",
+  "author": "happycastle",
+  "devDependencies": {
+    "@sinclair/typebox": "^0.34.0",
+    "@types/node": "^25.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
