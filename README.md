@@ -6,7 +6,7 @@
 [![GitHub Issues](https://img.shields.io/github/issues/happycastle114/oh-my-openclaw?color=ff80eb&labelColor=black&style=flat-square)](https://github.com/happycastle114/oh-my-openclaw/issues)
 [![License](https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square)](https://github.com/happycastle114/oh-my-openclaw/blob/master/LICENSE)
 
-**Install. Type `/ultrawork`. Done.**
+**Install. Type `/omoc`. Done.**
 
 Agent orchestration for [OpenClaw](https://openclaw.ai) — brought to you by the patterns that made [OmO](https://github.com/code-yeongyu/oh-my-opencode) unstoppable.
 
@@ -30,7 +30,7 @@ git clone https://github.com/happycastle114/oh-my-openclaw.git
 ln -s "$(pwd)/oh-my-openclaw" ~/.openclaw/workspace/skills/oh-my-openclaw
 bash oh-my-openclaw/scripts/init-deep.sh
 ```
-Now open your messaging channel and type `/ultrawork`. You're done.
+Now open your messaging channel and type `/omoc` to activate, then `/ultrawork`. You're done.
 
 ---
 
@@ -57,7 +57,7 @@ OmO-style multi-agent orchestration for OpenClaw. Your AI agent gets 11 speciali
 | **Agent Setup CLI** | `omoc-setup` injects agent configs into `openclaw.json5` for sub-agent spawning. |
 | **13 Skill Docs** | Core skills + workflow/reference skills bundled in `plugin/skills/`. |
 | **2 Health Commands** | `/omoc_health` for plugin checks, `/omoc_config` for masked config inspection. |
-| **3 Workflow Commands** | `/ultrawork`, `/plan`, `/start_work` — executable pipelines. |
+| **4 Workflow Commands** | `/omoc`, `/ultrawork`, `/plan`, `/start_work` — persona activation + executable pipelines. |
 | **5 Operational Skills** | opencode-controller, tmux, tmux-agents, workflow-auto-rescue, workflow-tool-patterns — tmux/OmO delegation + recovery. |
 
 ---
@@ -267,6 +267,7 @@ Edit the `"model"` field. Done. `"alternatives"` shows what else works.
 
 | Workflow | Command | What Happens |
 |----------|---------|-------------|
+| `omoc` | `/omoc` | Activate OmOC mode (persona injection). `/omoc list` to see all, `/omoc <name>` to switch |
 | `ultrawork` | `/ultrawork` | Full planning → execution → verification |
 | `plan` | `/plan` | Planning only (Prometheus + Momus) |
 | `start_work` | `/start_work` | Execute an existing plan |
@@ -329,6 +330,7 @@ npm install && npm run build
 | Tool | `omoc_delegate` | Category-based task delegation with model routing |
 | Tool | `omoc_look_at` | Multimodal analysis via Gemini CLI + tmux |
 | Tool | `omoc_checkpoint` | Save/load/list execution checkpoints |
+| Command | `/omoc` | Activate/switch/list OmOC personas |
 | Command | `/ultrawork` | Full planning → execution → verification |
 | Command | `/plan` | Planning workflow |
 | Command | `/start_work` | Execute existing plan |
@@ -404,10 +406,23 @@ bash oh-my-openclaw/scripts/init-deep.sh
 }
 ```
 
+### 에이전트 설정
+
+플러그인 설치 후, 11개 에이전트 페르소나를 OpenClaw에 등록:
+
+```bash
+openclaw omoc-setup
+```
+
+인터랙티브 위저드가 뜨면 프로바이더를 선택하면 끝. `--force`로 기존 설정 덮어쓰기 가능.
+
 ### 사용법
 
 OpenClaw에 연결된 채널(Discord, Telegram 등)에서:
 
+- `/omoc` — OmOC 모드 활성화 (페르소나 주입 시작)
+- `/omoc list` — 11개 페르소나 목록 보기
+- `/omoc prometheus` — 특정 페르소나로 전환
 - `/ultrawork 기능 설명` — 자동 계획 + 실행 + 검증
 - `/plan 기능 설명` — 계획만 생성
 - `/start_work` — 기존 계획 기반 실행
