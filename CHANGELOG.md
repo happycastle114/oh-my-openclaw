@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.0] - 2026-02-23
+
+### Added
+- Synced all 13 skills to root `skills/` directory (was 8, now 13 — full parity with `plugin/skills/`)
+- `opencode-controller` skill: tmux-based OpenCode/OmO delegation (session management, agent switching, task templates, monitoring, error recovery)
+- `tmux` skill: multi-session orchestration (parallel coding, verification, polling patterns)
+- `tmux-agents` skill: agent spawning/monitoring (Claude, Codex, Gemini, Ollama in tmux)
+- `workflow-auto-rescue` skill: checkpoint-based session recovery
+- `workflow-tool-patterns` skill: OmO→OpenClaw tool mapping reference
+
+### Changed
+- All agent configs inherit full skill set (including tmux/OmO delegation) via OpenClaw's `skills` allowlist behavior (omit = load all)
+
 ## [0.6.2] - 2026-02-23
 
 ### Fixed
