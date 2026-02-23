@@ -6,6 +6,12 @@ description: Start execution from an approved plan - delegate tasks to worker ag
 
 Execute an approved plan by delegating tasks to appropriate worker agents, tracking progress, and verifying completion.
 
+## Hard Boundary
+
+- Implementation must run through delegated worker execution.
+- Prefer OmO/OpenCode tmux orchestration for coding work (`opencode-controller`, `tmux`, `tmux-agents`).
+- Do not complete coding phases via direct inline implementation by the orchestrator.
+
 ## Prerequisites
 
 - An approved plan exists in `workspace/plans/`
@@ -51,6 +57,11 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
    - <criterion 2>
    Context: <relevant files, dependencies>
    ```
+
+   c-1. **Mandatory execution path for coding tasks**
+   - Use `sessions_spawn` for worker execution
+   - For implementation-heavy tasks, route to OmO via tmux orchestration stack
+   - Require execution evidence (changed files, test/build outputs) before marking done
 
    d. **Verify task completion** against acceptance criteria
 

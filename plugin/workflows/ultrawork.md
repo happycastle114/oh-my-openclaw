@@ -34,7 +34,7 @@ When the user invokes `/ultrawork [task description]` or ultrawork mode is activ
 ```
 5. For each step in the plan:
    a. Mark step as in_progress in todo list
-   b. Execute the step using appropriate tools
+   b. Delegate coding execution to worker sessions (sessions_spawn; OmO/OpenCode tmux orchestration preferred)
    c. Verify the step's completion criteria
    d. Record any learnings in wisdom notepad
    e. Mark step as completed

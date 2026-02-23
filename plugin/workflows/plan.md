@@ -6,6 +6,11 @@ description: Strategic planning workflow - analyze requirements and create execu
 
 Strategic planning workflow that analyzes requirements and creates a structured execution plan before any implementation begins.
 
+## Hard Boundary
+
+- Planning role does not implement code.
+- If execution is needed, plan MUST include OmO delegation steps using `sessions_spawn` and tmux orchestration (`opencode-controller`, `tmux`, `tmux-agents`).
+
 ## When to Use
 
 - Starting a new feature or project
@@ -66,6 +71,7 @@ Strategic planning workflow that analyzes requirements and creates a structured 
 - **Agent**: sisyphus-junior | oracle | explore | librarian
 - **Dependencies**: none | Task N
 - **Description**: What needs to be done
+- **Execution Mode**: `omoc-delegated` | `planning-only`
 - **Acceptance Criteria**:
   - [ ] Criterion 1
   - [ ] Criterion 2
@@ -106,6 +112,7 @@ Strategic planning workflow that analyzes requirements and creates a structured 
 - After plan approval, use `/start_work` to begin execution
 - Or use `/ultrawork` for fully automated execution without stops
 - Plan files persist in `workspace/plans/` for future reference
+- Implementation tasks must be executed through delegated OmO/tmux sessions, not direct planner execution
 
 ## Wisdom Integration
 
