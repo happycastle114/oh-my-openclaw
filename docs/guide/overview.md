@@ -181,7 +181,7 @@ The plugin registers:
 
 - **5 hooks** — lifecycle integration with OpenClaw events (`agent:bootstrap`, `tool_result_persist`, `message:sent`, `message:received`, `gateway:startup`)
 - **3 tools** — utilities available to all agents
-- **8 commands** — workflow, ralph-loop, status, health, and config commands
+- **8 commands** — workflow, ralph_loop, status, health, and config commands
 - **1 service** — background orchestration service
 
 10 markdown agent definitions and 13 skill docs ship alongside the plugin. 7 workflow templates cover the most common task patterns.

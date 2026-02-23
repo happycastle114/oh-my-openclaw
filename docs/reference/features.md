@@ -259,7 +259,7 @@ Consider removing these obvious/narrating comments to keep code clean.
 - Logs every outgoing message with preview (first 100 chars), channel ID, timestamp, and running count
 - Maintains a per-channel `Map` counter keyed by channel ID
 - Returns `undefined` (never modifies messages)
-- Counter value is exposed via `getMessageCount()` and used by `/omoc-status`
+- Counter value is exposed via `getMessageCount()` and used by `/omoc_status`
 
 ### 4. message-received-monitor
 
@@ -672,7 +672,7 @@ Strategic planning workflow that analyzes requirements and creates a structured 
 - Starting a new feature or project
 - Complex multi-step tasks
 - Ambiguous requirements needing clarification
-- Before `/ultrawork` or `/start-work`
+- Before `/ultrawork` or `/start_work`
 
 **Phases:**
 1. Context Gathering: read existing context, codebase structure, relevant documentation
@@ -682,9 +682,9 @@ Strategic planning workflow that analyzes requirements and creates a structured 
 
 **Output:** Plan file saved to `workspace/plans/`.
 
-#### start-work
+#### start_work
 
-**Trigger:** `/start-work [plan-file]`
+**Trigger:** `/start_work [plan-file]`
 
 Execute an approved plan by delegating tasks to appropriate worker agents.
 
