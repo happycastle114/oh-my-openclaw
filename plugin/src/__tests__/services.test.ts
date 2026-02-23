@@ -10,7 +10,7 @@ vi.mock('fs', () => ({
 }));
 
 vi.mock('../utils/state.js', () => ({
-  readState: vi.fn().mockResolvedValue(null),
+  readState: vi.fn().mockResolvedValue({ ok: false, error: 'not_found', message: 'File not found' }),
   writeState: vi.fn().mockResolvedValue(undefined),
   ensureDir: vi.fn().mockResolvedValue(undefined),
 }));
@@ -34,6 +34,7 @@ function createMockApi(configOverrides = {}): any {
       notepad_dir: 'workspace/notepads',
       plans_dir: 'workspace/plans',
       checkpoint_dir: 'workspace/checkpoints',
+      tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
       ...configOverrides,
     },
     logger: {

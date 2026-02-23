@@ -13,6 +13,7 @@ export interface PluginConfig {
   notepad_dir: string;
   plans_dir: string;
   checkpoint_dir: string;
+  tmux_socket: string;
 }
 
 // RalphLoopState interface
@@ -74,17 +75,49 @@ export interface CategoryConfig {
   tool?: string;
 }
 
+// Hook/Tool/Command/Service registration types
+export interface HookMeta {
+  name: string;
+  description?: string;
+}
+
+export interface ToolResult {
+  content: Array<{ type: string; text: string }>;
+}
+
+export interface ToolRegistration<TParams = unknown> {
+  name: string;
+  description: string;
+  parameters: unknown;
+  execute: (params: TParams) => Promise<ToolResult>;
+  optional?: boolean;
+}
+
+export interface CommandRegistration<TCtx = { args?: string }> {
+  name: string;
+  description: string;
+  handler: (ctx: TCtx) => { text: string } | Promise<{ text: string }>;
+}
+
+export interface ServiceRegistration {
+  id: string;
+  name: string;
+  description?: string;
+  start?: () => Promise<void>;
+  stop?: () => Promise<void>;
+}
+
 // OmocPluginApi interface
 export interface OmocPluginApi {
   config: PluginConfig;
   logger: {
-    info: (...args: any[]) => void;
-    warn: (...args: any[]) => void;
-    error: (...args: any[]) => void;
+    info: (...args: unknown[]) => void;
+    warn: (...args: unknown[]) => void;
+    error: (...args: unknown[]) => void;
   };
-  registerHook: (event: string, handler: any, meta?: any) => void;
-  registerTool: (config: any) => void;
-  registerCommand: (config: any) => void;
-  registerService: (config: any) => void;
-  registerGatewayMethod: (name: string, handler: any) => void;
+  registerHook: <TEvent>(event: string, handler: (event: TEvent) => TEvent | void | undefined, meta?: HookMeta) => void;
+  registerTool: <TParams>(config: ToolRegistration<TParams>) => void;
+  registerCommand: <TCtx = { args?: string }>(config: CommandRegistration<TCtx>) => void;
+  registerService: (config: ServiceRegistration) => void;
+  registerGatewayMethod: (name: string, handler: () => unknown) => void;
 }

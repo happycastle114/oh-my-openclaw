@@ -1,7 +1,11 @@
 import { OmocPluginApi } from '../types.js';
 
-// Module-level state for tracking messages
-let messageCount = 0;
+interface MessageContext {
+  content?: string;
+  channelId?: string;
+}
+
+const messageCounts = new Map<string, number>();
 
 /**
  * Registers the message monitor hook
@@ -10,23 +14,23 @@ let messageCount = 0;
 export function registerMessageMonitor(api: OmocPluginApi) {
   api.registerHook(
     'message:sent',
-    (context: any) => {
+    (context: MessageContext) => {
       // Extract relevant info from event context
       const content = context?.content || '';
       const preview = content.substring(0, 100);
       const channelId = context?.channelId || 'unknown';
       const timestamp = new Date().toISOString();
+      const currentCount = messageCounts.get(channelId) ?? 0;
+      const nextCount = currentCount + 1;
+      messageCounts.set(channelId, nextCount);
 
       // Log the message event
       api.logger.info('[omoc] Message sent:', {
         preview,
         channelId,
         timestamp,
-        messageCount: messageCount + 1
+        messageCount: nextCount
       });
-
-      // Increment message counter
-      messageCount++;
 
       // Return undefined to not modify the message
       return undefined;
@@ -42,6 +46,14 @@ export function registerMessageMonitor(api: OmocPluginApi) {
  * Returns the current message count
  * Useful for status reporting
  */
-export function getMessageCount(): number {
-  return messageCount;
+export function getMessageCount(channelId?: string): number {
+  if (channelId) {
+    return messageCounts.get(channelId) ?? 0;
+  }
+
+  let total = 0;
+  for (const count of messageCounts.values()) {
+    total += count;
+  }
+  return total;
 }

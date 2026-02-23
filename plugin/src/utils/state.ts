@@ -1,15 +1,24 @@
 import { promises as fs } from 'fs';
 import { dirname } from 'path';
 
-export async function readState<T>(filePath: string): Promise<T | null> {
+export type StateResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: 'not_found' | 'corrupted' | 'io_error'; message: string };
+
+export async function readState<T>(filePath: string): Promise<StateResult<T>> {
   try {
     const data = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(data) as T;
+    try {
+      return { ok: true, data: JSON.parse(data) as T };
+    } catch {
+      return { ok: false, error: 'corrupted', message: `Malformed JSON in ${filePath}` };
+    }
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return null;
+      return { ok: false, error: 'not_found', message: `File not found: ${filePath}` };
     }
-    return null;
+    const msg = error instanceof Error ? error.message : String(error);
+    return { ok: false, error: 'io_error', message: msg };
   }
 }
 

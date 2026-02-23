@@ -1,4 +1,3 @@
-import { promises as fs } from 'fs';
 import { getConfig } from '../utils/config.js';
 import { join } from 'path';
 
@@ -36,25 +35,17 @@ async function loadStateFromFile(): Promise<void> {
     return;
   }
 
-  const loadedState = await readState<RalphLoopState>(stateFilePath);
-  if (loadedState) {
-    currentState = loadedState;
+  const result = await readState<RalphLoopState>(stateFilePath);
+  if (result.ok) {
+    currentState = result.data;
     return;
   }
 
-  let hasExistingFile = false;
-  try {
-    await fs.access(stateFilePath);
-    hasExistingFile = true;
-  } catch {
-    hasExistingFile = false;
+  if (result.error === 'corrupted') {
+    getApi().logger.warn(`[${PLUGIN_ID}] Ralph Loop state was corrupted; recovering with default state`);
   }
 
   currentState = { ...DEFAULT_STATE };
-
-  if (hasExistingFile) {
-    getApi().logger.warn(`[${PLUGIN_ID}] Ralph Loop state was corrupted; recovering with default state`);
-  }
 }
 
 async function saveStateToFile(): Promise<void> {

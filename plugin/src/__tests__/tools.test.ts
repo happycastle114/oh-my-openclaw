@@ -47,6 +47,7 @@ function createMockApi(configOverrides = {}): any {
       notepad_dir: 'workspace/notepads',
       plans_dir: 'workspace/plans',
       checkpoint_dir: '/tmp/test-checkpoints',
+      tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
       ...configOverrides,
     },
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -266,12 +267,12 @@ describe('registerCheckpointTool', () => {
     ] as any);
     vi.mocked(readState).mockImplementation(async (filePath: string) => {
       if (filePath.includes('300')) {
-        return { timestamp: '2025-01-03', task: 'task-c', step: 'step-3' };
+        return { ok: true, data: { timestamp: '2025-01-03', task: 'task-c', step: 'step-3' } };
       }
       if (filePath.includes('200')) {
-        return { timestamp: '2025-01-02', task: 'task-b', step: 'step-2' };
+        return { ok: true, data: { timestamp: '2025-01-02', task: 'task-b', step: 'step-2' } };
       }
-      return { timestamp: '2025-01-01', task: 'task-a', step: 'step-1' };
+      return { ok: true, data: { timestamp: '2025-01-01', task: 'task-a', step: 'step-1' } };
     });
 
     registerCheckpointTool(mockApi);

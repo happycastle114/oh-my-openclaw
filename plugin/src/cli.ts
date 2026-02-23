@@ -69,16 +69,20 @@ function commandExists(cmd: string): boolean {
   }
 }
 
-function run(cmd: string, opts?: { cwd?: string; silent?: boolean }): string {
+function run(cmd: string, opts?: { cwd?: string; silent?: boolean; throwOnError?: boolean }): string {
+  const throwOnError = opts?.throwOnError ?? false;
   try {
     return execSync(cmd, {
       cwd: opts?.cwd,
       stdio: opts?.silent ? 'pipe' : 'inherit',
       encoding: 'utf-8',
     })?.toString().trim() ?? '';
-  } catch (e) {
-    const err = e as Error & { stdout?: string };
-    return err.stdout?.toString().trim() ?? '';
+  } catch (e: unknown) {
+    if (!throwOnError) {
+      const err = e as { stdout?: Buffer | string };
+      return err.stdout?.toString().trim() ?? '';
+    }
+    throw e;
   }
 }
 
@@ -167,11 +171,17 @@ function install(installDir: string): void {
   const pluginDir = join(installDir, 'plugin');
   if (existsSync(join(pluginDir, 'package.json'))) {
     info('Installing dependencies...');
-    run('npm install', { cwd: pluginDir });
+    run('npm install', { cwd: pluginDir, throwOnError: true });
     ok('Dependencies installed');
 
     info('Building TypeScript...');
-    run('npm run build', { cwd: pluginDir });
+    try {
+      run('npm run build', { cwd: pluginDir, throwOnError: true });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      fail(`Plugin build failed: ${message}`);
+      process.exit(1);
+    }
     ok('Plugin built');
 
     // Run tests silently to verify

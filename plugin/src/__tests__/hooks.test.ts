@@ -48,6 +48,7 @@ function createMockApi(configOverrides: Partial<PluginConfig> = {}): MockApi {
       notepad_dir: 'workspace/notepads',
       plans_dir: 'workspace/plans',
       checkpoint_dir: 'workspace/checkpoints',
+      tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
       ...configOverrides,
     },
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
