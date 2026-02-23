@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('fs', () => ({
   readFileSync: vi.fn().mockReturnValue('# Mock Persona Content\nYou are Atlas.'),
+  statSync: vi.fn().mockReturnValue({ mtimeMs: 1000 }),
   promises: {
     readFile: vi.fn().mockResolvedValue('# Mock Persona Content\nYou are Atlas.'),
   },
@@ -16,7 +17,7 @@ vi.mock('../utils/config.js', () => ({
   })),
 }));
 
-import { readFileSync, promises as fsPromises } from 'fs';
+import { readFileSync, statSync, promises as fsPromises } from 'fs';
 import {
   setActivePersona,
   getActivePersona,
@@ -25,8 +26,10 @@ import {
 import {
   resolvePersonaId,
   readPersonaPrompt,
+  readPersonaPromptSync,
   listPersonas,
   DEFAULT_PERSONA_ID,
+  clearPersonaCache,
 } from '../agents/persona-prompts.js';
 import { registerPersonaInjector } from '../hooks/persona-injector.js';
 import { registerPersonaCommands } from '../commands/persona-commands.js';
@@ -103,6 +106,7 @@ describe('persona-prompts', () => {
   describe('readPersonaPrompt', () => {
     beforeEach(() => {
       vi.clearAllMocks();
+      clearPersonaCache();
     });
 
     it('reads persona markdown for valid agent ID', async () => {
@@ -123,6 +127,58 @@ describe('persona-prompts', () => {
       vi.mocked(fsPromises.readFile).mockRejectedValueOnce(new Error('ENOENT'));
       const content = await readPersonaPrompt('omoc_atlas');
       expect(content).toContain('Could not read persona file');
+    });
+  });
+
+  describe('readPersonaPromptSync caching', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      clearPersonaCache();
+      vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
+      vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
+    });
+
+    it('reads from disk on first call', () => {
+      readPersonaPromptSync('omoc_atlas');
+      expect(readFileSync).toHaveBeenCalledTimes(1);
+      expect(statSync).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns cached content on second call with same mtime', () => {
+      readPersonaPromptSync('omoc_atlas');
+      vi.mocked(readFileSync).mockClear();
+
+      const result = readPersonaPromptSync('omoc_atlas');
+      expect(readFileSync).not.toHaveBeenCalled();
+      expect(result).toContain('Mock Persona Content');
+    });
+
+    it('invalidates cache when mtime changes', () => {
+      readPersonaPromptSync('omoc_atlas');
+      vi.mocked(readFileSync).mockClear();
+      vi.mocked(statSync).mockReturnValue({ mtimeMs: 2000 } as any);
+      vi.mocked(readFileSync).mockReturnValue('# Updated Content');
+
+      const result = readPersonaPromptSync('omoc_atlas');
+      expect(readFileSync).toHaveBeenCalledTimes(1);
+      expect(result).toBe('# Updated Content');
+    });
+
+    it('clearPersonaCache forces re-read on next call', () => {
+      readPersonaPromptSync('omoc_atlas');
+      clearPersonaCache();
+      vi.mocked(readFileSync).mockClear();
+
+      readPersonaPromptSync('omoc_atlas');
+      expect(readFileSync).toHaveBeenCalledTimes(1);
+    });
+
+    it('clears cache entry on error', () => {
+      readPersonaPromptSync('omoc_atlas');
+      vi.mocked(statSync).mockImplementation(() => { throw new Error('ENOENT'); });
+
+      const result = readPersonaPromptSync('omoc_atlas');
+      expect(result).toContain('Could not read persona file');
     });
   });
 
@@ -160,7 +216,10 @@ describe('persona-prompts', () => {
 describe('persona-injector hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearPersonaCache();
     resetPersonaState();
+    vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
+    vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
   });
 
   it('registers agent:bootstrap hook', () => {
