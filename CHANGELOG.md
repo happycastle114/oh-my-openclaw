@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.3] - 2026-02-23
+
+### Added
+- **Prometheus**: Hard execution boundary — planner role cannot implement code directly; must delegate to OmO via OpenCode tmux orchestration
+- **Atlas**: Orchestrator boundary — coding phases must go through delegated worker sessions, not inline execution
+- **delegation-prompt**: Narrowed "direct handling" scope to non-code tasks only; added mandatory OmO execution path for implementation
+- **Workflows (plan, start-work, ultrawork)**: All coding execution steps now require `sessions_spawn` + tmux orchestration stack (`opencode-controller`, `tmux`, `tmux-agents`)
+
 ## [0.8.2] - 2026-02-23
 
 ### Performance
