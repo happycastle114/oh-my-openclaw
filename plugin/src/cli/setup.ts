@@ -1,7 +1,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import * as readline from 'node:readline';
 import JSON5 from 'json5';
 import { OMOC_AGENT_CONFIGS, type OmocAgentConfig } from '../agents/agent-configs.js';
+import {
+  PROVIDER_PRESETS,
+  PROVIDER_LABELS,
+  AGENT_TIER_MAP,
+  applyProviderPreset,
+  getProviderNames,
+  type ModelTier,
+} from './model-presets.js';
 
 type AgentsSection = {
   defaults?: Record<string, unknown>;
@@ -103,16 +112,116 @@ export function mergeAgentConfigs(
   return { merged, result };
 }
 
+export function applyProviderToConfigs(
+  configs: OmocAgentConfig[],
+  provider: string,
+): OmocAgentConfig[] {
+  return configs.map((agent) => {
+    const modelOverride = applyProviderPreset(agent.id, provider);
+    if (!modelOverride) return agent;
+
+    return {
+      ...agent,
+      model: modelOverride.fallbacks
+        ? { primary: modelOverride.primary, fallbacks: modelOverride.fallbacks }
+        : modelOverride.primary,
+    };
+  });
+}
+
+function askQuestion(rl: readline.Interface, question: string): Promise<string> {
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => resolve(answer.trim()));
+  });
+}
+
+const TIER_LABELS: Record<ModelTier, string> = {
+  planning: 'Planning/Architecture',
+  worker: 'Implementation Workers',
+  orchestrator: 'Task Orchestrator',
+  lightweight: 'Search/Research',
+  visual: 'Visual/Frontend',
+};
+
+export async function runInteractiveSetup(logger: Logger): Promise<{ provider: string }> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  try {
+    logger.info('');
+    logger.info('🗺️  Oh-My-OpenClaw Agent Setup');
+    logger.info('─'.repeat(40));
+    logger.info('');
+
+    const providers = getProviderNames();
+    logger.info('Step 1/2: Select your primary AI provider');
+    logger.info('');
+    providers.forEach((p, i) => {
+      logger.info(`  ${i + 1}. ${PROVIDER_LABELS[p] ?? p}`);
+    });
+    logger.info('');
+
+    let provider = '';
+    while (!provider) {
+      const answer = await askQuestion(rl, '  Select (1-3): ');
+      const idx = parseInt(answer, 10) - 1;
+      if (idx >= 0 && idx < providers.length) {
+        provider = providers[idx]!;
+      } else if (providers.includes(answer.toLowerCase())) {
+        provider = answer.toLowerCase();
+      } else {
+        logger.info('  Invalid choice. Enter 1, 2, or 3.');
+      }
+    }
+
+    logger.info('');
+    logger.info(`  ✓ Selected: ${PROVIDER_LABELS[provider]}`);
+    logger.info('');
+
+    logger.info('Step 2/2: Model configuration preview');
+    logger.info('');
+    const preset = PROVIDER_PRESETS[provider]!;
+    for (const [tier, label] of Object.entries(TIER_LABELS)) {
+      const config = preset[tier as ModelTier];
+      const agents = Object.entries(AGENT_TIER_MAP)
+        .filter(([, t]) => t === tier)
+        .map(([id]) => id.replace('omoc_', ''))
+        .join(', ');
+      logger.info(`  ${label} (${agents}):`);
+      logger.info(`    → ${config.primary}`);
+      if (config.fallbacks.length > 0) {
+        logger.info(`      fallback: ${config.fallbacks.join(', ')}`);
+      }
+    }
+    logger.info('');
+
+    const confirm = await askQuestion(rl, '  Apply this configuration? (Y/n): ');
+    if (confirm.toLowerCase() === 'n' || confirm.toLowerCase() === 'no') {
+      logger.info('  Setup cancelled.');
+      return { provider: '' };
+    }
+
+    logger.info('');
+    return { provider };
+  } finally {
+    rl.close();
+  }
+}
+
 export interface SetupOptions {
   configPath?: string;
   workspaceDir?: string;
   force?: boolean;
   dryRun?: boolean;
+  provider?: string;
+  interactive?: boolean;
   logger: Logger;
 }
 
 export function runSetup(options: SetupOptions): MergeResult {
-  const { logger, force = false, dryRun = false } = options;
+  const { logger, force = false, dryRun = false, provider } = options;
 
   const configPath = options.configPath ?? findConfigPath(options.workspaceDir);
   if (!configPath) {
@@ -147,7 +256,15 @@ export function runSetup(options: SetupOptions): MergeResult {
     config.agents.list = [];
   }
 
-  const { merged, result } = mergeAgentConfigs(config.agents.list, OMOC_AGENT_CONFIGS, force);
+  const agentConfigs = provider
+    ? applyProviderToConfigs(OMOC_AGENT_CONFIGS, provider)
+    : OMOC_AGENT_CONFIGS;
+
+  if (provider) {
+    logger.info(`Using provider preset: ${PROVIDER_LABELS[provider] ?? provider}`);
+  }
+
+  const { merged, result } = mergeAgentConfigs(config.agents.list, agentConfigs, force);
   config.agents.list = merged;
 
   if (dryRun) {
@@ -188,16 +305,39 @@ export function registerSetupCli(ctx: {
     .option('--force', 'Overwrite existing OmOC agent configs', false)
     .option('--dry-run', 'Preview changes without writing', false)
     .option('--config <path>', 'Path to OpenClaw config file')
-    .action((...args: unknown[]) => {
-      const opts = (args[0] ?? {}) as { force?: boolean; dryRun?: boolean; config?: string };
+    .option('--provider <name>', 'AI provider preset: anthropic, openai, google (skips interactive)')
+    .action(async (...args: unknown[]) => {
+      const opts = (args[0] ?? {}) as {
+        force?: boolean;
+        dryRun?: boolean;
+        config?: string;
+        provider?: string;
+      };
       try {
+        let provider = opts.provider;
+
+        if (provider && !PROVIDER_PRESETS[provider]) {
+          const valid = getProviderNames().join(', ');
+          throw new Error(`Unknown provider "${provider}". Valid: ${valid}`);
+        }
+
+        if (!provider && process.stdin.isTTY) {
+          const result = await runInteractiveSetup(ctx.logger);
+          if (!result.provider) return;
+          provider = result.provider;
+        }
+
         runSetup({
           configPath: opts.config,
           workspaceDir: ctx.workspaceDir,
-          force: opts.force,
+          force: provider ? true : opts.force,
           dryRun: opts.dryRun,
+          provider,
           logger: ctx.logger,
         });
+
+        ctx.logger.info('');
+        ctx.logger.info('✓ Setup complete! Restart OpenClaw to apply changes.');
       } catch (err) {
         ctx.logger.error(
           `Setup failed: ${err instanceof Error ? err.message : String(err)}`,

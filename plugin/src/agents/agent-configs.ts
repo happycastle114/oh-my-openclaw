@@ -25,7 +25,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     id: 'omoc_prometheus',
     name: 'Prometheus',
     model: {
-      primary: 'openai/o3',
+      primary: 'openai/gpt-5.3-codex',
       fallbacks: ['anthropic/claude-opus-4-6'],
     },
     identity: {
@@ -58,7 +58,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     name: 'Sisyphus-Junior',
     model: {
       primary: 'anthropic/claude-opus-4-6',
-      fallbacks: ['openai/o3'],
+      fallbacks: ['openai/gpt-5.3-codex'],
     },
     identity: {
       name: 'Sisyphus-Junior',
@@ -76,7 +76,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     name: 'Hephaestus',
     model: {
       primary: 'anthropic/claude-opus-4-6',
-      fallbacks: ['openai/o3'],
+      fallbacks: ['openai/gpt-5.3-codex'],
     },
     identity: {
       name: 'Hephaestus',
@@ -93,7 +93,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     id: 'omoc_oracle',
     name: 'Oracle',
     model: {
-      primary: 'openai/o3',
+      primary: 'openai/gpt-5.3-codex',
       fallbacks: ['anthropic/claude-opus-4-6'],
     },
     identity: {
@@ -142,7 +142,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     name: 'Metis',
     model: {
       primary: 'anthropic/claude-opus-4-6',
-      fallbacks: ['openai/o3'],
+      fallbacks: ['openai/gpt-5.3-codex'],
     },
     identity: {
       name: 'Metis',
@@ -160,7 +160,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     name: 'Momus',
     model: {
       primary: 'anthropic/claude-opus-4-6',
-      fallbacks: ['openai/o3'],
+      fallbacks: ['openai/gpt-5.3-codex'],
     },
     identity: {
       name: 'Momus',

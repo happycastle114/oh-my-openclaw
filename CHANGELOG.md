@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.0] - 2026-02-23
+
+### Added
+- `/omoc` slash command for per-session persona selection
+  - `/omoc` → activate OmOC mode with Atlas (default persona)
+  - `/omoc off` → deactivate persona injection
+  - `/omoc list` → show all 11 available personas with roles
+  - `/omoc <name>` → switch persona (accepts short name, full ID, or display name)
+- Persona injector `agent:bootstrap` hook — injects selected persona's markdown prompt into agent sessions
+- Interactive `omoc-setup` wizard — step-by-step onboarding with provider selection
+- `--provider` flag for `omoc-setup` (anthropic, openai, google) — non-interactive provider preset
+- Model tier presets: planning, worker, orchestrator, lightweight, visual — each provider maps to appropriate models per tier
+- 42 new tests (162 total): persona state, commands, injector, model presets, provider setup
+
+### Changed
+- Default agent models: `openai/o3` → `openai/gpt-5.3-codex` across all agents
+- `omoc-setup` now auto-forces when provider is selected (replaces existing agent configs with new models)
+
 ## [0.7.0] - 2026-02-23
 
 ### Added

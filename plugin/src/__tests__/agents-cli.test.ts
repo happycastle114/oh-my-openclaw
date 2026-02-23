@@ -11,8 +11,15 @@ import {
   mergeAgentConfigs,
   runSetup,
   serializeConfig,
+  applyProviderToConfigs,
   type MergeResult,
 } from '../cli/setup.js';
+import {
+  PROVIDER_PRESETS,
+  AGENT_TIER_MAP,
+  applyProviderPreset,
+  getProviderNames,
+} from '../cli/model-presets.js';
 
 describe('Agent Configs', () => {
   describe('OMOC_AGENT_CONFIGS structure', () => {
@@ -538,5 +545,115 @@ describe('runSetup', () => {
     } finally {
       fs.rmSync(dir, { recursive: true });
     }
+  });
+
+  it('should apply provider preset when provider is specified', () => {
+    const { dir, configPath } = createTempConfig('{"agents": {"list": []}}');
+
+    try {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      runSetup({ configPath, logger, provider: 'anthropic' });
+
+      const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+      const prometheus = (config.agents?.list as Array<{ id: string; model?: any }>).find(
+        (a) => a.id === 'omoc_prometheus',
+      );
+      expect(prometheus?.model?.primary).toBe('anthropic/claude-opus-4-6');
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+
+  it('should apply openai provider preset', () => {
+    const { dir, configPath } = createTempConfig('{"agents": {"list": []}}');
+
+    try {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      runSetup({ configPath, logger, provider: 'openai' });
+
+      const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+      const prometheus = (config.agents?.list as Array<{ id: string; model?: any }>).find(
+        (a) => a.id === 'omoc_prometheus',
+      );
+      expect(prometheus?.model?.primary).toBe('openai/gpt-5.3-codex');
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+
+  it('should log provider preset info when provider is specified', () => {
+    const { dir, configPath } = createTempConfig('{"agents": {"list": []}}');
+
+    try {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      runSetup({ configPath, logger, provider: 'google' });
+
+      const calls = (logger.info as any).mock.calls.map((c: any[]) => c[0]);
+      expect(calls.some((msg: string) => msg.includes('Using provider preset'))).toBe(true);
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+});
+
+describe('model-presets', () => {
+  it('should have 3 provider presets', () => {
+    expect(getProviderNames()).toEqual(['anthropic', 'openai', 'google']);
+  });
+
+  it('should have all 11 agents mapped to tiers', () => {
+    const mappedIds = Object.keys(AGENT_TIER_MAP);
+    expect(mappedIds).toHaveLength(11);
+    OMOC_AGENT_CONFIGS.forEach((agent) => {
+      expect(AGENT_TIER_MAP[agent.id]).toBeDefined();
+    });
+  });
+
+  it('each preset should cover all 5 tiers', () => {
+    const tiers = ['planning', 'worker', 'orchestrator', 'lightweight', 'visual'];
+    for (const provider of getProviderNames()) {
+      const preset = PROVIDER_PRESETS[provider]!;
+      tiers.forEach((tier) => {
+        expect(preset[tier as keyof typeof preset]).toBeDefined();
+      });
+    }
+  });
+
+  it('applyProviderPreset returns model config for valid agent + provider', () => {
+    const result = applyProviderPreset('omoc_prometheus', 'anthropic');
+    expect(result).toBeDefined();
+    expect(result?.primary).toBe('anthropic/claude-opus-4-6');
+  });
+
+  it('applyProviderPreset returns undefined for unknown agent', () => {
+    expect(applyProviderPreset('unknown_agent', 'anthropic')).toBeUndefined();
+  });
+
+  it('applyProviderPreset returns undefined for unknown provider', () => {
+    expect(applyProviderPreset('omoc_atlas', 'unknown')).toBeUndefined();
+  });
+});
+
+describe('applyProviderToConfigs', () => {
+  it('overrides all agent models with the selected provider', () => {
+    const modified = applyProviderToConfigs(OMOC_AGENT_CONFIGS, 'anthropic');
+    expect(modified).toHaveLength(11);
+
+    const prometheus = modified.find((a) => a.id === 'omoc_prometheus');
+    const model = prometheus?.model as { primary: string; fallbacks?: string[] };
+    expect(model.primary).toBe('anthropic/claude-opus-4-6');
+  });
+
+  it('preserves non-model fields', () => {
+    const modified = applyProviderToConfigs(OMOC_AGENT_CONFIGS, 'openai');
+    const oracle = modified.find((a) => a.id === 'omoc_oracle');
+    expect(oracle?.identity?.name).toBe('Oracle');
+    expect(oracle?.tools?.deny).toContain('write');
+  });
+
+  it('lightweight agents get string model (no fallbacks)', () => {
+    const modified = applyProviderToConfigs(OMOC_AGENT_CONFIGS, 'anthropic');
+    const explore = modified.find((a) => a.id === 'omoc_explore');
+    expect(explore?.model).toBe('anthropic/claude-sonnet-4-6');
   });
 });

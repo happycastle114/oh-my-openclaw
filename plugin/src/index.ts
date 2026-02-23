@@ -12,6 +12,8 @@ import { registerCheckpointTool } from './tools/checkpoint.js';
 import { registerWorkflowCommands } from './commands/workflow-commands.js';
 import { registerRalphCommands } from './commands/ralph-commands.js';
 import { registerStatusCommands } from './commands/status-commands.js';
+import { registerPersonaCommands } from './commands/persona-commands.js';
+import { registerPersonaInjector } from './hooks/persona-injector.js';
 import { registerSetupCli } from './cli/setup.js';
 
 const registry = {
@@ -57,6 +59,14 @@ export default function register(api: OmocPluginApi) {
     api.logger.info(`[${PLUGIN_ID}] Gateway startup hook registered`);
   } catch (err) {
     api.logger.error(`[${PLUGIN_ID}] Failed to register startup hook:`, err);
+  }
+
+  try {
+    registerPersonaInjector(api);
+    registry.hooks.push('persona-injector');
+    api.logger.info(`[${PLUGIN_ID}] Persona injector hook registered`);
+  } catch (err) {
+    api.logger.error(`[${PLUGIN_ID}] Failed to register Persona Injector:`, err);
   }
 
   try {
@@ -113,6 +123,14 @@ export default function register(api: OmocPluginApi) {
     api.logger.info(`[${PLUGIN_ID}] Status commands registered (omoc_health, omoc_config)`);
   } catch (err) {
     api.logger.error(`[${PLUGIN_ID}] Failed to register Status commands:`, err);
+  }
+
+  try {
+    registerPersonaCommands(api);
+    registry.commands.push('omoc');
+    api.logger.info(`[${PLUGIN_ID}] Persona command registered (/omoc)`);
+  } catch (err) {
+    api.logger.error(`[${PLUGIN_ID}] Failed to register Persona commands:`, err);
   }
 
   try {
