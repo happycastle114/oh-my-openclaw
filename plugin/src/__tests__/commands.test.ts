@@ -41,6 +41,10 @@ vi.mock('../services/ralph-loop.js', () => ({
   }),
 }));
 
+vi.mock('../version.js', () => ({
+  VERSION: '9.9.9-test',
+}));
+
 // Mock message-monitor
 vi.mock('../hooks/message-monitor.js', () => ({
   getMessageCount: vi.fn().mockReturnValue(42),
@@ -48,22 +52,15 @@ vi.mock('../hooks/message-monitor.js', () => ({
 
 // Mock config util
 vi.mock('../utils/config.js', () => ({
-  getConfig: vi.fn().mockReturnValue({
-    max_ralph_iterations: 10,
-    todo_enforcer_enabled: true,
-    todo_enforcer_cooldown_ms: 2000,
-    todo_enforcer_max_failures: 5,
-    comment_checker_enabled: true,
-    notepad_dir: 'workspace/notepads',
-    plans_dir: 'workspace/plans',
-    checkpoint_dir: 'workspace/checkpoints',
-    tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
-  }),
+  getConfig: vi.fn((api: any) => ({
+    ...api.config,
+  })),
 }));
 
 import { promises as fsPromises } from 'fs';
 import { registerWorkflowCommands } from '../commands/workflow-commands.js';
 import { registerRalphCommands } from '../commands/ralph-commands.js';
+import { registerStatusCommands } from '../commands/status-commands.js';
 import { startLoop, stopLoop, getStatus } from '../services/ralph-loop.js';
 import { getMessageCount } from '../hooks/message-monitor.js';
 
@@ -79,6 +76,7 @@ function createMockApi(configOverrides = {}): any {
       plans_dir: 'workspace/plans',
       checkpoint_dir: 'workspace/checkpoints',
       tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
+      model_routing: undefined,
       ...configOverrides,
     },
     logger: {
@@ -240,5 +238,67 @@ describe('registerRalphCommands', () => {
     expect(result.text).toContain('Messages Monitored: 42');
     expect(result.text).toContain('Todo Enforcer: ENABLED');
     expect(result.text).toContain('Comment Checker: ENABLED');
+  });
+});
+
+describe('registerStatusCommands', () => {
+  let mockApi: ReturnType<typeof createMockApi>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockApi = createMockApi();
+  });
+
+  it('registers omoc-health and omoc-config commands', () => {
+    registerStatusCommands(mockApi);
+
+    expect(mockApi.registerCommand).toHaveBeenCalledTimes(2);
+    const names = mockApi.registerCommand.mock.calls.map((c: any) => c[0].name);
+    expect(names).toContain('omoc-health');
+    expect(names).toContain('omoc-config');
+  });
+
+  it('omoc-health returns version and service status', async () => {
+    registerStatusCommands(mockApi);
+    const healthCall = mockApi.registerCommand.mock.calls.find((c: any) => c[0].name === 'omoc-health');
+    const handler = healthCall[0].handler;
+
+    const result = await handler({});
+
+    expect(getStatus).toHaveBeenCalled();
+    expect(getMessageCount).toHaveBeenCalled();
+    expect(result.text).toContain('oh-my-openclaw Health');
+    expect(result.text).toContain('Version: 9.9.9-test');
+    expect(result.text).toContain('Ralph Loop: INACTIVE');
+    expect(result.text).toContain('Messages Tracked: 42');
+  });
+
+  it('omoc-config returns current config in JSON block', () => {
+    registerStatusCommands(mockApi);
+    const configCall = mockApi.registerCommand.mock.calls.find((c: any) => c[0].name === 'omoc-config');
+    const handler = configCall[0].handler;
+
+    const result = handler({});
+
+    expect(result.text).toContain('oh-my-openclaw Configuration');
+    expect(result.text).toContain('```json');
+    expect(result.text).toContain('"todo_enforcer_enabled": true');
+  });
+
+  it('omoc-config masks sensitive values', () => {
+    const apiWithSensitiveConfig = createMockApi({
+      api_token: 'token-value',
+      service_secret: 'secret-value',
+      api_key: 'key-value',
+    });
+    registerStatusCommands(apiWithSensitiveConfig);
+    const configCall = apiWithSensitiveConfig.registerCommand.mock.calls.find((c: any) => c[0].name === 'omoc-config');
+    const handler = configCall[0].handler;
+
+    const result = handler({});
+
+    expect(result.text).toContain('"api_token": "***"');
+    expect(result.text).toContain('"service_secret": "***"');
+    expect(result.text).toContain('"api_key": "***"');
   });
 });

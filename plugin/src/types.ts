@@ -14,6 +14,7 @@ export interface PluginConfig {
   plans_dir: string;
   checkpoint_dir: string;
   tmux_socket: string;
+  model_routing?: Partial<Record<string, { model: string; alternatives?: string[] }>>;
 }
 
 // RalphLoopState interface

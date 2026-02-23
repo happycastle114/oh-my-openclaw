@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerTodoEnforcer, resetEnforcerState, getEnforcerState } from '../hooks/todo-enforcer.js';
 import { registerCommentChecker } from '../hooks/comment-checker.js';
 import { registerMessageMonitor, getMessageCount } from '../hooks/message-monitor.js';
+import { registerStartupHook } from '../hooks/startup.js';
 import type { OmocPluginApi, PluginConfig } from '../types.js';
 
 interface BootstrapFile {
@@ -263,6 +264,10 @@ describe('message-monitor hook', () => {
     const api = createMockApi();
     registerMessageMonitor(api);
 
+    expect(api.registerHook).toHaveBeenCalledTimes(2);
+    expect(api.registerHook.mock.calls[0][0]).toBe('message:sent');
+    expect(api.registerHook.mock.calls[1][0]).toBe('message:received');
+
     const handler = api.registerHook.mock.calls[0][1] as (context: {
       content?: string;
       channelId?: string;
@@ -294,5 +299,55 @@ describe('message-monitor hook', () => {
     const after = getMessageCount();
 
     expect(after).toBe(before + 1);
+  });
+
+  it('logs inbound message events without incrementing count', () => {
+    const api = createMockApi();
+    registerMessageMonitor(api);
+
+    const sentHandler = api.registerHook.mock.calls[0][1] as (context: {
+      content?: string;
+      channelId?: string;
+    }) => undefined;
+    const receivedHandler = api.registerHook.mock.calls[1][1] as (context: {
+      content?: string;
+      channelId?: string;
+    }) => undefined;
+
+    const before = getMessageCount();
+    sentHandler({ content: 'sent msg', channelId: 'channel-3' });
+    const afterSent = getMessageCount();
+    receivedHandler({ content: 'received msg', channelId: 'channel-3' });
+    const afterReceived = getMessageCount();
+
+    expect(afterSent).toBe(before + 1);
+    expect(afterReceived).toBe(afterSent);
+    expect(api.logger.info).toHaveBeenCalledWith(
+      '[omoc] Message received:',
+      expect.objectContaining({
+        preview: 'received msg',
+        channelId: 'channel-3',
+      }),
+    );
+  });
+});
+
+describe('startup hook', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('registers gateway:startup hook and logs plugin activation', () => {
+    const api = createMockApi();
+    registerStartupHook(api);
+
+    expect(api.registerHook).toHaveBeenCalledTimes(1);
+    expect(api.registerHook.mock.calls[0][0]).toBe('gateway:startup');
+
+    const handler = api.registerHook.mock.calls[0][1] as () => undefined;
+    const result = handler();
+
+    expect(result).toBeUndefined();
+    expect(api.logger.info).toHaveBeenCalledWith(expect.stringContaining('Gateway started'));
   });
 });

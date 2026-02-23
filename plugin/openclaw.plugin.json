@@ -51,17 +51,87 @@
         "type": "string",
         "default": "workspace/checkpoints",
         "description": "Directory for execution checkpoints"
+      },
+      "tmux_socket": {
+        "type": "string",
+        "default": "/tmp/openclaw-tmux-sockets/openclaw.sock",
+        "description": "Path to the tmux socket for Gemini CLI integration"
+      },
+      "model_routing": {
+        "type": "object",
+        "description": "Custom category→model mappings. Override default model selection per category.",
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "type": "string",
+              "description": "Model identifier"
+            },
+            "alternatives": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Fallback models"
+            }
+          },
+          "required": [
+            "model"
+          ]
+        }
       }
     }
   },
   "uiHints": {
-    "max_ralph_iterations": { "label": "Ralph Loop Max Iterations" },
-    "todo_enforcer_enabled": { "label": "Todo Enforcer" },
-    "todo_enforcer_cooldown_ms": { "label": "Todo Enforcer Cooldown (ms)" },
-    "todo_enforcer_max_failures": { "label": "Todo Enforcer Max Failures" },
-    "comment_checker_enabled": { "label": "Comment Checker" },
-    "notepad_dir": { "label": "Notepads Directory" },
-    "plans_dir": { "label": "Plans Directory" },
-    "checkpoint_dir": { "label": "Checkpoints Directory" }
+    "max_ralph_iterations": {
+      "label": "Ralph Loop Max Iterations",
+      "description": "Maximum iterations before auto-stopping the ralph loop",
+      "group": "Ralph Loop"
+    },
+    "todo_enforcer_enabled": {
+      "label": "Todo Enforcer",
+      "description": "Inject TODO continuation prompts on agent bootstrap",
+      "group": "Todo Enforcer"
+    },
+    "todo_enforcer_cooldown_ms": {
+      "label": "Cooldown (ms)",
+      "description": "Minimum time between TODO enforcer injections",
+      "group": "Todo Enforcer"
+    },
+    "todo_enforcer_max_failures": {
+      "label": "Max Failures",
+      "description": "Consecutive failures before auto-disabling enforcer",
+      "group": "Todo Enforcer"
+    },
+    "comment_checker_enabled": {
+      "label": "Comment Checker",
+      "description": "Detect and flag AI-generated slop comments",
+      "group": "Quality"
+    },
+    "notepad_dir": {
+      "label": "Notepads Directory",
+      "description": "Path for wisdom accumulation notepads",
+      "group": "Storage"
+    },
+    "plans_dir": {
+      "label": "Plans Directory",
+      "description": "Path for execution plan storage",
+      "group": "Storage"
+    },
+    "checkpoint_dir": {
+      "label": "Checkpoints Directory",
+      "description": "Path for execution checkpoint files",
+      "group": "Storage"
+    },
+    "tmux_socket": {
+      "label": "Tmux Socket Path",
+      "description": "Socket path for Gemini CLI tmux integration",
+      "group": "Integration"
+    },
+    "model_routing": {
+      "label": "Model Routing",
+      "description": "Custom category→model mappings for task delegation",
+      "group": "Model Routing"
+    }
   }
 }

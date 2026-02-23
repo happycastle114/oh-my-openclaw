@@ -11,6 +11,7 @@ export function getConfig(api: OmocPluginApi): PluginConfig {
     plans_dir: 'workspace/plans',
     checkpoint_dir: 'workspace/checkpoints',
     tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
+    model_routing: undefined,
   };
 
   const config = { ...defaults, ...api.config };

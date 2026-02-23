@@ -4,12 +4,14 @@ import { getConfig } from './utils/config.js';
 import { registerTodoEnforcer } from './hooks/todo-enforcer.js';
 import { registerCommentChecker } from './hooks/comment-checker.js';
 import { registerMessageMonitor } from './hooks/message-monitor.js';
+import { registerStartupHook } from './hooks/startup.js';
 import { registerRalphLoop } from './services/ralph-loop.js';
 import { registerDelegateTool } from './tools/task-delegation.js';
 import { registerLookAtTool } from './tools/look-at.js';
 import { registerCheckpointTool } from './tools/checkpoint.js';
 import { registerWorkflowCommands } from './commands/workflow-commands.js';
 import { registerRalphCommands } from './commands/ralph-commands.js';
+import { registerStatusCommands } from './commands/status-commands.js';
 
 /** Registry of successfully registered components */
 const registry = {
@@ -42,10 +44,18 @@ export default function register(api: OmocPluginApi) {
 
   try {
     registerMessageMonitor(api);
-    registry.hooks.push('message-monitor');
+    registry.hooks.push('message-monitor', 'message-received-monitor');
     api.logger.info(`[${PLUGIN_ID}] Message Monitor hook registered`);
   } catch (err) {
     api.logger.error(`[${PLUGIN_ID}] Failed to register Message Monitor:`, err);
+  }
+
+  try {
+    registerStartupHook(api);
+    registry.hooks.push('gateway-startup');
+    api.logger.info(`[${PLUGIN_ID}] Gateway startup hook registered`);
+  } catch (err) {
+    api.logger.error(`[${PLUGIN_ID}] Failed to register startup hook:`, err);
   }
 
   try {
@@ -94,6 +104,14 @@ export default function register(api: OmocPluginApi) {
     api.logger.info(`[${PLUGIN_ID}] Ralph commands registered (ralph-loop, ralph-stop, omoc-status)`);
   } catch (err) {
     api.logger.error(`[${PLUGIN_ID}] Failed to register Ralph commands:`, err);
+  }
+
+  try {
+    registerStatusCommands(api);
+    registry.commands.push('omoc-health', 'omoc-config');
+    api.logger.info(`[${PLUGIN_ID}] Status commands registered (omoc-health, omoc-config)`);
+  } catch (err) {
+    api.logger.error(`[${PLUGIN_ID}] Failed to register Status commands:`, err);
   }
 
   api.registerGatewayMethod('oh-my-openclaw.status', () => {

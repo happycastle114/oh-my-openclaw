@@ -48,6 +48,7 @@ function createMockApi(configOverrides = {}): any {
       plans_dir: 'workspace/plans',
       checkpoint_dir: '/tmp/test-checkpoints',
       tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
+      model_routing: undefined,
       ...configOverrides,
     },
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -91,6 +92,63 @@ describe('registerDelegateTool', () => {
     expect(text).toContain('claude-sonnet-4-6');
     expect(text).toContain('sessions_spawn');
     expect(text).toContain('test task');
+  });
+
+  it('uses custom model from config.model_routing', async () => {
+    const customApi = createMockApi({
+      model_routing: { quick: { model: 'custom-model-v1', alternatives: ['fallback-1'] } },
+    });
+    registerDelegateTool(customApi);
+    const toolConfig = customApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute({ task_description: 'test', category: 'quick' });
+
+    expect(result.content[0].text).toContain('custom-model-v1');
+    expect(result.content[0].text).toContain('fallback-1');
+  });
+
+  it('returns error for empty task_description', async () => {
+    registerDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute({
+      task_description: '   ',
+      category: 'quick',
+    });
+
+    expect(result.content[0].text).toContain('Task description is required and cannot be empty');
+  });
+
+  it('returns error for overly long task_description', async () => {
+    registerDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute({
+      task_description: 'a'.repeat(10001),
+      category: 'quick',
+    });
+
+    expect(result.content[0].text).toContain('Task description too long (max 10000 chars)');
+  });
+
+  it('includes fallback suggestion text when alternatives exist', async () => {
+    const customApi = createMockApi({
+      model_routing: {
+        deep: {
+          model: 'custom-deep-model',
+          alternatives: ['fallback-a', 'fallback-b'],
+        },
+      },
+    });
+    registerDelegateTool(customApi);
+    const toolConfig = customApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute({
+      task_description: 'test fallback messaging',
+      category: 'deep',
+    });
+
+    expect(result.content[0].text).toContain('If "custom-deep-model" is unavailable, try: fallback-a, fallback-b');
   });
 
   it('execute returns error for invalid category', async () => {

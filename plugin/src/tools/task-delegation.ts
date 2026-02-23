@@ -2,6 +2,7 @@ import { Type, Static } from '@sinclair/typebox';
 import { OmocPluginApi, TOOL_PREFIX } from '../types.js';
 import { isValidCategory } from '../utils/validation.js';
 import { type Category } from '../constants.js';
+import { getConfig } from '../utils/config.js';
 
 const DEFAULT_CATEGORY_MODELS: Record<Category, string> = {
   quick: 'claude-sonnet-4-6',
@@ -24,6 +25,15 @@ const DelegateParamsSchema = Type.Object({
 
 type DelegateParams = Static<typeof DelegateParamsSchema>;
 
+function getModelForCategory(category: Category, api: OmocPluginApi): { model: string; alternatives?: string[] } {
+  const config = getConfig(api);
+  const override = config.model_routing?.[category];
+  if (override?.model) {
+    return { model: override.model, alternatives: override.alternatives };
+  }
+  return { model: DEFAULT_CATEGORY_MODELS[category], alternatives: undefined };
+}
+
 export function registerDelegateTool(api: OmocPluginApi) {
   api.registerTool({
     name: `${TOOL_PREFIX}delegate`,
@@ -31,6 +41,28 @@ export function registerDelegateTool(api: OmocPluginApi) {
     parameters: DelegateParamsSchema,
     execute: async (params: DelegateParams) => {
       const validCategories = Object.keys(DEFAULT_CATEGORY_MODELS);
+
+      if (!params.task_description?.trim()) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({ error: 'Task description is required and cannot be empty' }, null, 2),
+            },
+          ],
+        };
+      }
+
+      if (params.task_description.length > 10000) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({ error: 'Task description too long (max 10000 chars)' }, null, 2),
+            },
+          ],
+        };
+      }
 
       if (!isValidCategory(params.category)) {
         return {
@@ -50,7 +82,7 @@ export function registerDelegateTool(api: OmocPluginApi) {
         };
       }
 
-      const model = DEFAULT_CATEGORY_MODELS[params.category];
+      const { model, alternatives } = getModelForCategory(params.category as Category, api);
 
       api.logger.info('[omoc] Delegating task:', { category: params.category, model });
 
@@ -61,6 +93,8 @@ export function registerDelegateTool(api: OmocPluginApi) {
         `  task: "${params.task_description}"`,
         `  mode: "run"`,
         `  model: "${model}"`,
+        alternatives?.length ? `  fallback_models: ${JSON.stringify(alternatives)}` : '',
+        alternatives?.length ? `  If "${model}" is unavailable, try: ${alternatives.join(', ')}` : '',
         params.background ? '  (background execution — results will arrive via push notification)' : '',
         '',
         'Do NOT just return this metadata. Actually call sessions_spawn NOW.',

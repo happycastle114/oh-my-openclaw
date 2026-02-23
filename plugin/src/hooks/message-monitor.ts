@@ -40,6 +40,21 @@ export function registerMessageMonitor(api: OmocPluginApi) {
       description: 'Monitors message events for audit logging'
     }
   );
+
+  api.registerHook(
+    'message:received',
+    (context: MessageContext) => {
+      const content = context?.content || '';
+      const preview = content.substring(0, 100);
+      const channelId = context?.channelId || 'unknown';
+      api.logger.info('[omoc] Message received:', { preview, channelId });
+      return undefined;
+    },
+    {
+      name: 'oh-my-openclaw.message-received-monitor',
+      description: 'Monitors inbound message events for audit logging'
+    }
+  );
 }
 
 /**
