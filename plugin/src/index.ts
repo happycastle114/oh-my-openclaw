@@ -12,13 +12,14 @@ import { registerCheckpointTool } from './tools/checkpoint.js';
 import { registerWorkflowCommands } from './commands/workflow-commands.js';
 import { registerRalphCommands } from './commands/ralph-commands.js';
 import { registerStatusCommands } from './commands/status-commands.js';
+import { registerSetupCli } from './cli/setup.js';
 
-/** Registry of successfully registered components */
 const registry = {
   hooks: [] as string[],
   services: [] as string[],
   tools: [] as string[],
   commands: [] as string[],
+  cli: [] as string[],
 };
 
 export default function register(api: OmocPluginApi) {
@@ -114,6 +115,20 @@ export default function register(api: OmocPluginApi) {
     api.logger.error(`[${PLUGIN_ID}] Failed to register Status commands:`, err);
   }
 
+  try {
+    api.registerCli((ctx) => {
+      registerSetupCli({
+        program: ctx.program as Parameters<typeof registerSetupCli>[0]['program'],
+        workspaceDir: ctx.workspaceDir,
+        logger: ctx.logger,
+      });
+    }, { commands: ['setup'] });
+    registry.cli.push('setup');
+    api.logger.info(`[${PLUGIN_ID}] CLI command registered (setup)`);
+  } catch (err) {
+    api.logger.error(`[${PLUGIN_ID}] Failed to register CLI:`, err);
+  }
+
   api.registerGatewayMethod('oh-my-openclaw.status', () => {
     return {
       ok: true,
@@ -123,6 +138,7 @@ export default function register(api: OmocPluginApi) {
       services: [...registry.services],
       tools: [...registry.tools],
       commands: [...registry.commands],
+      cli: [...registry.cli],
       config: {
         todo_enforcer_enabled: config.todo_enforcer_enabled,
         comment_checker_enabled: config.comment_checker_enabled,

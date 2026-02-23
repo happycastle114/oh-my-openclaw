@@ -25,6 +25,7 @@ function createMockApi(configOverrides = {}): OmocPluginApi {
     registerCommand: vi.fn(),
     registerService: vi.fn(),
     registerGatewayMethod: vi.fn(),
+    registerCli: vi.fn(),
   } as unknown as OmocPluginApi;
 }
 

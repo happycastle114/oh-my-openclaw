@@ -1,6 +1,6 @@
 # Features Reference
 
-Complete reference for every feature in Oh-My-OpenClaw (`@happycastle/oh-my-openclaw@0.5.0`).
+Complete reference for every feature in Oh-My-OpenClaw (`@happycastle/oh-my-openclaw@0.6.0`).
 
 This document covers agents, plugin hooks, plugin tools, commands, services, skills, workflows, the category system, and tmux integration.
 
@@ -8,7 +8,7 @@ This document covers agents, plugin hooks, plugin tools, commands, services, ski
 
 ## Agents
 
-Oh-My-OpenClaw defines 10 specialized agents organized into a 3-layer architecture: **Planning**, **Orchestration**, and **Workers**.
+Oh-My-OpenClaw defines 11 specialized agents organized into a 3-layer architecture: **Planning**, **Orchestration**, and **Workers**.
 
 ### Agent Summary Table
 
@@ -23,7 +23,8 @@ Oh-My-OpenClaw defines 10 specialized agents organized into a 3-layer architectu
 | **Oracle** | Workers | `ultrabrain` | Architect and debugger — design decisions, root cause analysis, read-only advisory | `deny`: write, edit, apply_patch, sessions_spawn |
 | **Explore** | Workers | `quick` | Search specialist — codebase exploration, file discovery, pattern matching | `deny`: write, edit, apply_patch, sessions_spawn |
 | **Librarian** | Workers | `quick` | Documentation specialist — docs search, API references, knowledge synthesis | `deny`: write, edit, apply_patch, sessions_spawn |
-| **Multimodal Looker** | Workers | `visual-engineering` | Visual analyst — screenshots, UI review, PDF quality check, diagram analysis | `allow`: read, image, group:ui, exec |
+| **Multimodal Looker** | Workers | `visual-engineering` | Visual analyst — screenshots, UI review, PDF quality check, diagram analysis | `allow`: read; `deny`: write, edit, apply_patch, sessions_spawn |
+| **Frontend** | Workers | `visual-engineering` | Frontend-focused visual engineering specialist — UI/UX implementation | `profile`: coding; `subagents.allowAgents`: explore, librarian |
 
 ### Agent Details
 
@@ -168,7 +169,41 @@ Visual analysis specialist.
 
 **Integration:** Leverages OpenClaw browser tool for screenshots and Gemini CLI via tmux for multimodal analysis.
 
-**Tool Access:** Restricted. Allowed: read, image, group:ui, exec, session_status.
+**Tool Access:** Read-only allowlist. Allowed: `read`. Denied: write, edit, apply_patch, sessions_spawn.
+
+#### Frontend (visual-engineering)
+
+Frontend-focused visual engineering specialist for UI/UX implementation.
+
+**Core Responsibilities:**
+- Pixel-perfect UI implementation without design mockups
+- Responsive design, accessibility, and visual polish
+- CSS/styling, animation, and component architecture
+- Design-first development approach
+
+**Tool Access:** Full coding profile. Can spawn explore, librarian as sub-agents.
+
+---
+
+## CLI Commands
+
+### omoc-setup
+
+| Property | Value |
+|----------|-------|
+| **Command** | `openclaw cli omoc-setup` |
+| **Description** | Inject 11 agent configs into `openclaw.json5` for sub-agent spawning |
+| **Flags** | `--force` (overwrite existing), `--dry-run` (preview only), `--config <path>` (custom config path) |
+
+**Behavior:**
+1. Reads the user's `openclaw.json5` (or `.json`) config file
+2. Parses JSON5 (handles comments, trailing commas)
+3. Creates a `.bak` backup before writing
+4. Merges 11 OmOC agent definitions into `agents.list[]`
+5. Skips existing agents by default (use `--force` to overwrite)
+6. Reports added/skipped/updated counts
+
+**Agent IDs injected:** `omoc_prometheus`, `omoc_atlas`, `omoc_sisyphus`, `omoc_hephaestus`, `omoc_oracle`, `omoc_explore`, `omoc_librarian`, `omoc_metis`, `omoc_momus`, `omoc_looker`, `omoc_frontend`
 
 ---
 

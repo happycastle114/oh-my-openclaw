@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.0] - 2026-02-23
+
+### Added
+- 11 agent configs as OpenClaw `AgentConfig` definitions in `agent-configs.ts`
+- `omoc-setup` CLI command: injects agent configs into user's `openclaw.json5` via `registerCli`
+- `omoc_frontend` agent — frontend-focused visual engineering specialist (OmOC-only, not in OmO)
+- 40 new tests for agent configs and CLI setup (120 total)
+
+### Changed
+- Multimodal Looker: switched from permissive deny-list to read-only allowlist (matching OmO)
+- Atlas: downgraded from `openai/o3` to `anthropic/claude-sonnet-4-6` (cheap orchestrator tier, matching OmO)
+- Sisyphus-Junior: upgraded from `anthropic/claude-sonnet-4-6` to `anthropic/claude-opus-4-6` (primary worker tier, matching OmO)
+- Sisyphus-Junior: tool profile changed from `coding` to `full`
+- `OmocPluginApi` type extended with `registerCli` field
+
+### Fixed
+- Agent model tier mismatches with OmO (Atlas was too expensive, Sisyphus was too cheap)
+- Looker tool access was too permissive compared to OmO's read-only allowlist
+
 ## [0.5.1] - 2026-02-23
 
 ### Fixed

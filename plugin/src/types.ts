@@ -123,4 +123,5 @@ export interface OmocPluginApi {
   registerCommand: <TCtx = { args?: string }>(config: CommandRegistration<TCtx>) => void;
   registerService: (config: ServiceRegistration) => void;
   registerGatewayMethod: (name: string, handler: () => unknown) => void;
+  registerCli: (registrar: (ctx: { program: unknown; config: unknown; workspaceDir?: string; logger: OmocPluginApi['logger'] }) => void | Promise<void>, opts?: { commands?: string[] }) => void;
 }

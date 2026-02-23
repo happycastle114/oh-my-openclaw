@@ -58,6 +58,7 @@ function createMockApi(configOverrides: Partial<PluginConfig> = {}): MockApi {
     registerCommand: vi.fn(),
     registerService: vi.fn(),
     registerGatewayMethod: vi.fn(),
+    registerCli: vi.fn(),
   };
 }
 

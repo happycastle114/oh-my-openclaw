@@ -36,7 +36,7 @@ Now open your messaging channel and type `/ultrawork`. You're done.
 
 ## What is This?
 
-OmO-style multi-agent orchestration for OpenClaw. Your AI agent gets 10 specialized personas, category-based model routing, and self-correcting execution loops — all through Discord, Telegram, or any messaging channel OpenClaw supports.
+OmO-style multi-agent orchestration for OpenClaw. Your AI agent gets 11 specialized personas, category-based model routing, and self-correcting execution loops — all through Discord, Telegram, or any messaging channel OpenClaw supports.
 
 ---
 
@@ -53,7 +53,8 @@ OmO-style multi-agent orchestration for OpenClaw. Your AI agent gets 10 speciali
 | **Gemini CLI** | Native multimodal — PDF, images, video analysis via tmux integration. |
 | **OmO Delegation** | Route coding tasks to OpenCode running in tmux. Full OmO power. |
 | **Checkpoints** | Save/load execution state. Crash recovery. Pick up where you left off. |
-| **10 Agents** | Specialized team: planners, workers, reviewers. Each with a job. |
+| **11 Agents** | Specialized team: planners, workers, reviewers. Each with a job. |
+| **Agent Setup CLI** | `omoc-setup` injects agent configs into `openclaw.json5` for sub-agent spawning. |
 | **13 Skill Docs** | Core skills + workflow/reference skills bundled in `plugin/skills/`. |
 | **2 Health Commands** | `/omoc_health` for plugin checks, `/omoc_config` for masked config inspection. |
 | **3 Workflow Commands** | `/ultrawork`, `/plan`, `/start_work` — executable pipelines. |
@@ -77,6 +78,7 @@ These aren't generic "assistant" prompts. Each agent has a personality and a man
 | **Explore** | The scout. Knows where everything is in the codebase. |
 | **Librarian** | The researcher. Docs, knowledge, context — on demand. |
 | **Multimodal Looker** | The eye. Screenshots, PDFs, UI reviews — sees what text can't. |
+| **Frontend** | The designer. Pixel-perfect UI without a mockup. |
 
 ---
 
@@ -119,6 +121,16 @@ bash ~/.openclaw/workspace/skills/oh-my-openclaw/scripts/init-deep.sh
 git clone https://github.com/happycastle114/oh-my-openclaw.git \
   ~/.openclaw/skills/oh-my-openclaw
 ```
+
+### Agent Setup (v0.6.0+)
+
+Register the 11 built-in agent personas as OpenClaw sub-agents:
+
+```bash
+openclaw cli omoc-setup
+```
+
+This injects agent configs into your `openclaw.json5`. Use `--force` to overwrite existing configs, `--dry-run` to preview changes.
 
 ### Verify
 
@@ -282,7 +294,7 @@ Same DNA. Different runtime.
 |--------|---------------------|----------------|
 | **Platform** | OpenCode plugin (terminal) | OpenClaw skill (messaging + web) |
 | **Format** | TypeScript runtime hooks | Markdown prompts + **TypeScript plugin** |
-| **Agents** | 11 (TypeScript) | 10 (Markdown) |
+| **Agents** | 11 (TypeScript) | 11 (TypeScript AgentConfig + Markdown) |
 | **Hooks** | 55+ runtime interceptors | 5 plugin hooks + workflow-based |
 | **Tools** | 17 custom tools | 3 plugin tools + OpenClaw native |
 | **Skills** | 4 built-in | 7 skill documents |
@@ -312,6 +324,7 @@ npm install && npm run build
 | Hook | `message-monitor` | Audit logging + message counter on `message:sent` |
 | Hook | `message-received-monitor` | Inbound message audit on `message:received` |
 | Hook | `gateway-startup` | Plugin activation logging on `gateway:startup` |
+| CLI | `omoc-setup` | Inject 11 agent configs into `openclaw.json5` |
 | Tool | `omoc_delegate` | Category-based task delegation with model routing |
 | Tool | `omoc_look_at` | Multimodal analysis via Gemini CLI + tmux |
 | Tool | `omoc_checkpoint` | Save/load/list execution checkpoints |
@@ -330,7 +343,7 @@ npm install && npm run build
 ```bash
 npm run build      # Compile TypeScript
 npm run typecheck  # Type-check without emit
-npm run test       # Run vitest (80+ tests)
+npm run test       # Run vitest (120 tests)
 ```
 
 ### Publish
