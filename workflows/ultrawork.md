@@ -36,21 +36,21 @@ When the user invokes `/ultrawork [task description]` or ultrawork mode is activ
    a. Mark step as in_progress in todo list
    b. Delegate coding execution to worker sessions:
       - sessions_spawn(task=..., agentId="omoc_sisyphus", model=..., label=...)
-      - 전문 에이전트가 필요하면 agentId로 지정 (omoc_oracle, omoc_explore 등)
-   c. 서브에이전트 완료 통지를 받으면 즉시:
-      - 결과를 확인한다 (멈추지 않는다!)
-      - 성공 기준과 대조 검증한다
-      - 검증 통과 → 즉시 다음 step 진행
-      - 검증 실패 → 재시도 (최대 3회)
+      - Use agentId for specialized agents when needed (omoc_oracle, omoc_explore, etc.)
+   c. On sub-agent completion notification, immediately:
+      - Check results (do NOT stop!)
+      - Verify against success criteria
+      - On pass → proceed to next step immediately
+      - On fail → retry (max 3 times)
    d. Record any learnings in wisdom notepad
    e. Mark step as completed
    f. If step fails after 3 retries:
       - Record issue and continue with next independent step
 
-⚠️ CONTINUATION RULE (강제):
-- 서브에이전트 완료 통지 = 행동 트리거. 절대 멈추지 않는다.
-- 모든 step이 완료될 때까지 자동으로 다음 step을 진행한다.
-- 사용자 확인이 필요한 경우는 plan에 명시된 경우만 해당한다.
+⚠️ CONTINUATION RULE (mandatory):
+- Sub-agent completion notification = action trigger. Never stop.
+- Automatically proceed to next step until all steps are complete.
+- User confirmation is only needed when explicitly specified in the plan.
 ```
 
 ### Phase 3: Verification

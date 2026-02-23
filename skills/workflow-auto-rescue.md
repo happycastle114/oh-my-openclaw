@@ -5,26 +5,26 @@ description: Session recovery workflow with checkpointing, failure detection, an
 
 # Auto-Rescue Workflow
 
-장시간 작업 중 실패/중단 상황에서 세션을 자동 복구한다.
+Automatically recover sessions after failure/interruption during long-running tasks.
 
 ## When to Use
 
-- 긴 구현/리팩터링 세션
-- 다중 단계 작업(5+ step)
-- 반복 실패 가능성이 높은 디버깅/빌드 복구 작업
+- Long implementation/refactoring sessions
+- Multi-step tasks (5+ steps)
+- Debugging/build recovery tasks with high failure probability
 
 ## Core Mechanism
 
-- **Checkpoint 저장**: 주요 단계마다 `write` 도구로 파일 저장 (`workspace/checkpoints/`)
-- **Checkpoint 조회**: 복구 시 `read` 도구 + `memory_search` (OpenClaw 네이티브)
-- **자동 복원**: 가장 최근 정상 상태부터 재시작
+- **Checkpoint save**: Save file via `write` tool at major steps (`workspace/checkpoints/`)
+- **Checkpoint lookup**: Use `read` tool + `memory_search` (OpenClaw native) for recovery
+- **Auto-restore**: Restart from the most recent healthy state
 
-> **Note**: OpenClaw의 `group:memory`에는 `memory_search`/`memory_get`만 존재하고
-> `memory_store`는 없다. 저장은 반드시 파일 기반(`write`)으로 수행한다.
+> **Note**: OpenClaw's `group:memory` only has `memory_search`/`memory_get`.
+> `memory_store` does not exist. Storage must be file-based (`write`).
 
 ## Checkpoint Schema
 
-`workspace/checkpoints/checkpoint-<timestamp>.json`에 다음 형태로 저장한다:
+Save to `workspace/checkpoints/checkpoint-<timestamp>.json` in this format:
 
 ```json
 {
@@ -47,56 +47,56 @@ description: Session recovery workflow with checkpointing, failure detection, an
 
 ### 1) Start Monitoring
 
-1. 세션 시작 시 checkpoint baseline 저장 (`write` → `workspace/checkpoints/`)
-2. todo 기준으로 단계 전환마다 checkpoint 갱신
-3. 실패 가능 작업 전(대규모 edit/build/test) 선저장
+1. Save checkpoint baseline at session start (`write` → `workspace/checkpoints/`)
+2. Update checkpoint at every step transition (based on todos)
+3. Pre-save before potentially failing tasks (large edit/build/test)
 
 ### 2) Failure Detection
 
-다음 중 하나면 rescue 트리거:
+Trigger rescue if any of these occur:
 
-- 동일 오류 3회 연속 발생
-- 빌드/테스트가 연속 실패하고 진행 불가
-- 세션 중단(타임아웃/강제 인터럽트/에이전트 중지)
+- Same error 3 consecutive times
+- Build/test continuously failing with no progress possible
+- Session interruption (timeout/forced interrupt/agent stop)
 
 ### 3) Recovery Procedure
 
-1. `read` 도구로 `workspace/checkpoints/` 내 최근 checkpoint 파일 읽기
-2. 가장 최신 `verification`이 정상(pass)인 지점 선택
-3. 해당 시점의 `next_action`부터 재개
-4. 동일 실패 재발 시 한 단계 이전 checkpoint로 롤백
+1. Read the most recent checkpoint file from `workspace/checkpoints/` via `read` tool
+2. Select the latest checkpoint where `verification` is passing
+3. Resume from that checkpoint's `next_action`
+4. If same failure recurs, roll back to one checkpoint earlier
 
 ### 4) Post-Recovery
 
-1. 복구 성공 상태를 새 checkpoint 파일로 저장 (`write`)
-2. 실패 원인/해결을 `workspace/notepads/issues.md`에 기록
-3. 남은 단계 계속 진행
+1. Save recovery success state as a new checkpoint file (`write`)
+2. Record failure cause/resolution in `workspace/notepads/issues.md`
+3. Continue with remaining steps
 
 ## OpenClaw Tool Mapping
 
-| 동작            | 사용할 도구     | 비고                                         |
-| --------------- | --------------- | -------------------------------------------- |
-| Checkpoint 저장 | `write`         | `workspace/checkpoints/checkpoint-<ts>.json` |
-| Checkpoint 읽기 | `read`          | 직접 파일 경로 지정                          |
-| 과거 기억 검색  | `memory_search` | OpenClaw `group:memory`                      |
-| 특정 기억 조회  | `memory_get`    | key 기반                                     |
-| 파일 목록 확인  | `exec` (ls)     | checkpoint 디렉토리 스캔                     |
+| Action | Tool | Notes |
+|--------|------|-------|
+| Checkpoint save | `write` | `workspace/checkpoints/checkpoint-<ts>.json` |
+| Checkpoint read | `read` | Direct file path |
+| Search past context | `memory_search` | OpenClaw `group:memory` |
+| Get specific memory | `memory_get` | key-based |
+| List files | `exec` (ls) | Scan checkpoint directory |
 
 ## Example
 
 ```text
-# 저장
+# Save
 write({ path: "workspace/checkpoints/checkpoint-2026-02-22T13-00.json", content: "{ ... }" })
 
-# 복구 시 읽기
+# Read on recovery
 read({ path: "workspace/checkpoints/checkpoint-2026-02-22T13-00.json" })
 
-# 세션 기억에서 관련 컨텍스트 검색
+# Search session memory for related context
 memory_search({ query: "session-checkpoint auth refactor" })
 ```
 
 ## Completion Criteria
 
-- 복구 후 작업이 실제로 재개됨
-- 최신 checkpoint 파일이 저장됨
-- 동일 실패 루프가 차단됨
+- Work actually resumes after recovery
+- Latest checkpoint file is saved
+- Same-failure loops are blocked

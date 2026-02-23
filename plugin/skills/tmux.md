@@ -1,18 +1,18 @@
 ---
 name: tmux
-description: tmux 세션 원격제어 + 멀티 세션 오케스트레이션. send-keys/capture-pane으로 인터랙티브 CLI를 제어하고 병렬 세션을 운영한다.
+description: tmux session remote control + multi-session orchestration. Control interactive CLIs via send-keys/capture-pane and run parallel sessions.
 ---
 
-# tmux — 세션 제어와 병렬 오케스트레이션
+# tmux — Session Control and Parallel Orchestration
 
-OpenClaw에서 tmux를 제어할 때의 표준 패턴.
-단일 세션 제어부터 OpenCode/Gemini 멀티 세션 병렬 운영까지 다룬다.
+Standard patterns for controlling tmux from OpenClaw.
+Covers single session control through OpenCode/Gemini multi-session parallel operation.
 
-## 소켓 규칙
+## Socket Rules
 
-- OpenClaw 기본 소켓: `/tmp/openclaw-tmux-sockets/openclaw.sock`
-- 기본 clawdbot 경로를 가정하지 말고 OpenClaw 소켓을 우선 사용
-- 폴백 규칙: `CLAWDBOT_TMUX_SOCKET_DIR`가 있으면 해당 디렉토리의 소켓 사용
+- OpenClaw default socket: `/tmp/openclaw-tmux-sockets/openclaw.sock`
+- Do not assume default clawdbot paths; use OpenClaw socket first
+- Fallback: if `CLAWDBOT_TMUX_SOCKET_DIR` is set, use socket from that directory
 
 ```bash
 SOCKET="/tmp/openclaw-tmux-sockets/openclaw.sock"
@@ -21,26 +21,26 @@ if [ -n "${CLAWDBOT_TMUX_SOCKET_DIR:-}" ] && [ -S "$CLAWDBOT_TMUX_SOCKET_DIR/ope
 fi
 ```
 
-## Quickstart (OpenClaw 소켓)
+## Quickstart (OpenClaw socket)
 
 ```bash
 SOCKET="/tmp/openclaw-tmux-sockets/openclaw.sock"
 
-# 세션 목록
+# List sessions
 tmux -S "$SOCKET" list-sessions
 
-# opencode 세션이 살아있는지 확인
+# Check if opencode session is alive
 tmux -S "$SOCKET" has-session -t opencode && echo READY || echo MISSING
 
-# 출력 확인
+# Check output
 tmux -S "$SOCKET" capture-pane -p -J -t opencode:0.0 -S -200
 ```
 
-## 타겟 지정 규칙
+## Target Specification Rules
 
-- 타겟 형식: `session:window.pane`
-- 예시: `opencode:0.0`, `gemini:0.0`, `opencode-2:1.0`
-- 세션명만 주면 모호해질 수 있으므로 가능하면 pane까지 고정
+- Target format: `session:window.pane`
+- Examples: `opencode:0.0`, `gemini:0.0`, `opencode-2:1.0`
+- Specify pane when possible to avoid ambiguity
 
 ```bash
 tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- 'pwd'
@@ -48,9 +48,9 @@ sleep 0.1
 tmux -S "$SOCKET" send-keys -t opencode:0.0 Enter
 ```
 
-## 안전한 입력 전송
+## Safe Input Sending
 
-원칙: `send-keys -l`로 문자열 전송 후 `Enter`를 별도 호출.
+Principle: Send string with `send-keys -l`, then call `Enter` separately.
 
 ```bash
 TARGET="opencode:0.0"
@@ -61,32 +61,32 @@ sleep 0.1
 tmux -S "$SOCKET" send-keys -t "$TARGET" Enter
 ```
 
-## 출력 수집 표준
+## Output Collection Standard
 
-최근 출력은 아래 명령을 기본으로 사용:
+Use this command for recent output:
 
 ```bash
 tmux -S "$SOCKET" capture-pane -p -J -t opencode:0.0 -S -200
 ```
 
-- 긴 작업은 `-S -500` 이상으로 확장
-- `-J`로 줄바꿈 연결해 파싱 안정성 확보
+- For long tasks, extend to `-S -500` or more
+- `-J` joins wrapped lines for parsing stability
 
-## 코딩 에이전트 오케스트레이션
+## Coding Agent Orchestration
 
-여러 코딩 세션을 병렬 실행하고 완료를 폴링한다.
+Run multiple coding sessions in parallel and poll for completion.
 
 ```bash
 SOCKET="/tmp/openclaw-tmux-sockets/openclaw.sock"
 
-# 병렬 지시
-tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- 'ultrawork auth 버그 수정'
+# Parallel instructions
+tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- 'ultrawork fix auth bug'
 tmux -S "$SOCKET" send-keys -t opencode:0.0 Enter
 
-tmux -S "$SOCKET" send-keys -t opencode-2:0.0 -l -- 'ultrawork 결제 모듈 테스트 보강'
+tmux -S "$SOCKET" send-keys -t opencode-2:0.0 -l -- 'ultrawork improve payment module tests'
 tmux -S "$SOCKET" send-keys -t opencode-2:0.0 Enter
 
-# 완료 폴링
+# Completion polling
 for i in $(seq 1 20); do
   echo "[poll:$i] opencode"
   tmux -S "$SOCKET" capture-pane -p -J -t opencode:0.0 -S -30
@@ -96,69 +96,69 @@ for i in $(seq 1 20); do
 done
 ```
 
-권장 운영 방식:
-- 시작은 병렬, 결과 수집은 순차
-- 폴링 간격은 10-30초
-- 완료 신호(작업 요약/테스트 결과) 확인 후 다음 단계 진행
+Recommended practices:
+- Start in parallel, collect results sequentially
+- Polling interval: 10-30 seconds
+- Proceed to next step after confirming completion signal (task summary/test results)
 
-## 멀티 세션 오케스트레이션 패턴
+## Multi-Session Orchestration Patterns
 
-### 세션 네이밍
+### Session Naming
 
-- 기본: `opencode`, `gemini`
-- 확장: `opencode-2`, `gemini-2`, `opencode-3`, `research`, `build`
-- 규칙: 역할 또는 프로젝트 단위로 명명
+- Default: `opencode`, `gemini`
+- Extended: `opencode-2`, `gemini-2`, `opencode-3`, `research`, `build`
+- Convention: name by role or project
 
-### 병렬 시나리오
+### Parallel Scenarios
 
-1) 두 프로젝트 동시 진행
-- `opencode`: 프로젝트 A
-- `opencode-2`: 프로젝트 B
+1) Two projects simultaneously
+- `opencode`: Project A
+- `opencode-2`: Project B
 
-2) 코딩 + 검증 동시 진행
-- `opencode`: 구현/수정
-- `gemini`, `gemini-2`: 결과물 시각 검증
+2) Coding + verification simultaneously
+- `opencode`: Implementation/modification
+- `gemini`, `gemini-2`: Visual verification of output
 
-3) 리서치 + 구현 + 빌드
-- `research` 또는 `gemini`: 문서/레퍼런스 분석
-- `opencode`: 구현
-- `build`: 테스트/빌드 감시
+3) Research + implementation + build
+- `research` or `gemini`: Documentation/reference analysis
+- `opencode`: Implementation
+- `build`: Test/build monitoring
 
-### 에이전트 선택표 (OpenCode)
+### Agent Selection (OpenCode)
 
-| 작업 성격 | 권장 에이전트 | 전환 |
-|-----------|----------------|------|
-| 빠른 수정/구현 | Sisyphus (기본) | 기본 상태 |
-| 복잡한 자율 구현 | Hephaestus | Tab 1회 |
-| 계획/전략 수립 | Prometheus | Tab 2회 |
+| Task Nature | Recommended Agent | Switch |
+|-------------|-------------------|--------|
+| Quick fix/implementation | Sisyphus (default) | Default state |
+| Complex autonomous implementation | Hephaestus | Tab x1 |
+| Planning/strategy | Prometheus | Tab x2 |
 
-## 운영 템플릿
+## Operations Template
 
 ```bash
 SOCKET="/tmp/openclaw-tmux-sockets/openclaw.sock"
 
-# 세션 생성
+# Create sessions
 tmux -S "$SOCKET" new -d -s opencode-2 -n main
 tmux -S "$SOCKET" new -d -s gemini-2 -n main
 
-# 작업 전송
-tmux -S "$SOCKET" send-keys -t opencode-2:0.0 -l -- 'ultrawork 리팩토링 실행'
+# Send task
+tmux -S "$SOCKET" send-keys -t opencode-2:0.0 -l -- 'ultrawork run refactoring'
 sleep 0.1
 tmux -S "$SOCKET" send-keys -t opencode-2:0.0 Enter
 
-# 결과 캡처
+# Capture results
 tmux -S "$SOCKET" capture-pane -p -J -t opencode-2:0.0 -S -200
 ```
 
-## 정리(클린업)
+## Cleanup
 
 ```bash
 SOCKET="/tmp/openclaw-tmux-sockets/openclaw.sock"
 
-# 단일 세션 종료
+# Kill single session
 tmux -S "$SOCKET" kill-session -t opencode-2
 
-# 기본 세션(opencode, gemini) 제외 전체 종료
+# Kill all except default sessions (opencode, gemini)
 for s in $(tmux -S "$SOCKET" list-sessions -F '#{session_name}' 2>/dev/null); do
   case "$s" in
     opencode|gemini) ;;
@@ -167,9 +167,9 @@ for s in $(tmux -S "$SOCKET" list-sessions -F '#{session_name}' 2>/dev/null); do
 done
 ```
 
-## 주의사항
+## Important Notes
 
-- Enter를 명령 문자열에 섞지 말고 반드시 분리
-- 경로/인용부호가 복잡한 명령은 스크립트 파일로 실행
-- pane 캡처만으로 부족하면 로그 파일 리다이렉트 병행
-- 세션 수를 늘릴수록 메모리 사용량이 급증하므로 동시성 제한 필요
+- Never mix Enter into the command string — always separate
+- For commands with complex paths/quotes, execute via script file
+- If pane capture is insufficient, use log file redirection as well
+- Memory usage increases significantly with more sessions — limit concurrency

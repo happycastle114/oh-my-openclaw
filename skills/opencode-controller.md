@@ -1,61 +1,61 @@
 ---
 name: opencode-controller
-description: tmux의 OpenCode 세션을 제어한다. 세션 관리, 모델 선택, 에이전트 전환(Plan/Build), OmO 위임 패턴을 포함.
+description: Controls the OpenCode session in tmux. Includes session management, model selection, agent switching (Plan/Build), and OmO delegation patterns.
 ---
 
-# opencode-controller — OpenCode 세션 제어
+# opencode-controller — OpenCode Session Control
 
-OpenClaw는 직접 코드를 쓰는 실행기가 아니라, OpenCode에 작업을 위임해 결과를 수집/검증하는 오케스트레이터다.
+OpenClaw is not a code executor — it delegates work to OpenCode and collects/verifies results as an orchestrator.
 
-## 핵심 원칙
+## Core Principles
 
-- OpenClaw가 직접 코드를 작성하지 않는다
-- 코딩 작업은 tmux `opencode` 세션으로 위임한다
-- OpenClaw는 작업 분해, 지시, 모니터링, 결과 검증을 담당한다
+- OpenClaw does not write code directly
+- Coding tasks are delegated to the tmux `opencode` session
+- OpenClaw handles task decomposition, instruction, monitoring, and result verification
 
-## Pre-flight 체크
+## Pre-flight Check
 
-### 1) Provider/모델 선택
+### 1) Provider/Model Selection
 
-- 작업 난이도에 따라 OpenCode 모델 선택(quick/deep/ultrabrain)
-- 고난도 작업은 고성능 모델 우선
+- Select OpenCode model based on task difficulty (quick/deep/ultrabrain)
+- High-difficulty tasks should prefer high-performance models
 
-### 2) 인증 상태
+### 2) Authentication State
 
-- OpenCode CLI 제공자 인증이 완료되어 있어야 함
-- 인증 만료 시 세션 내에서 재로그인 후 재시도
+- OpenCode CLI provider authentication must be completed
+- If auth expires, re-login within the session and retry
 
-### 3) tmux 세션 확인
+### 3) tmux Session Check
 
 ```bash
 SOCKET="/tmp/openclaw-tmux-sockets/openclaw.sock"
 tmux -S "$SOCKET" has-session -t opencode
 ```
 
-## 세션 관리
+## Session Management
 
 ```bash
 SOCKET="/tmp/openclaw-tmux-sockets/openclaw.sock"
 
-# 세션 생성
+# Create session
 tmux -S "$SOCKET" new -d -s opencode -n main
 
-# 세션 상태
+# Session status
 tmux -S "$SOCKET" list-sessions
 
-# 세션 출력 확인
+# Check session output
 tmux -S "$SOCKET" capture-pane -p -J -t opencode:0.0 -S -200
 ```
 
-## 에이전트 제어
+## Agent Control
 
-OpenCode 에이전트 전환은 Tab 기반으로 수행한다.
+OpenCode agent switching is Tab-based.
 
-| 에이전트 | 용도 | 전환 |
-|----------|------|------|
-| Sisyphus | 기본 구현/수정 | 기본 상태 |
-| Hephaestus | 깊은 구현/리팩토링 | Tab 1회 |
-| Prometheus | 계획 수립/전략화 | Tab 2회 |
+| Agent | Purpose | Switch |
+|-------|---------|--------|
+| Sisyphus | Default implementation/fixes | Default state |
+| Hephaestus | Deep implementation/refactoring | Tab x1 |
+| Prometheus | Planning/strategy | Tab x2 |
 
 ```bash
 tmux -S "$SOCKET" send-keys -t opencode:0.0 Tab
@@ -63,109 +63,109 @@ sleep 1
 tmux -S "$SOCKET" capture-pane -p -J -t opencode:0.0 -S -20
 ```
 
-## 모델 선택 가이드
+## Model Selection Guide
 
-- 빠른 수정: 속도 우선 모델
-- 복잡한 리팩토링/설계: 심층 추론 모델
-- 계획 전용 단계: 최고 추론 모델 우선
+- Quick fixes: speed-priority model
+- Complex refactoring/design: deep reasoning model
+- Planning-only phase: highest reasoning model preferred
 
-실행 시점에 프로젝트 표준 라우팅(quick/deep/ultrabrain)을 따른다.
+Follow the project standard routing (quick/deep/ultrabrain) at execution time.
 
-## Plan -> Build 워크플로우
+## Plan → Build Workflow
 
-1) Prometheus로 계획 수립
-2) 계획 승인/정리
-3) Sisyphus 또는 Hephaestus로 구현 전환
-4) 테스트/빌드/검증 실행
-5) 결과를 OpenClaw가 수집해 최종 보고
+1) Create plan with Prometheus
+2) Approve/refine the plan
+3) Switch to Sisyphus or Hephaestus for implementation
+4) Run tests/build/verification
+5) OpenClaw collects results and delivers final report
 
 ```bash
-# Plan 단계
+# Plan phase
 tmux -S "$SOCKET" send-keys -t opencode:0.0 Tab
 tmux -S "$SOCKET" send-keys -t opencode:0.0 Tab
 sleep 0.2
-tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- '계획 수립: 인증 모듈 리팩토링 범위/리스크/검증전략 작성'
+tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- 'Plan: auth module refactoring scope/risk/verification strategy'
 tmux -S "$SOCKET" send-keys -t opencode:0.0 Enter
 
-# Build 단계 전환(예: Sisyphus로 복귀 후 구현)
+# Build phase (switch back to Sisyphus for implementation)
 tmux -S "$SOCKET" send-keys -t opencode:0.0 Escape
-tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- 'ultrawork 위 계획 기준으로 구현 시작, 테스트까지 완료'
+tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- 'ultrawork implement based on the plan above, complete with tests'
 tmux -S "$SOCKET" send-keys -t opencode:0.0 Enter
 ```
 
-## OmO 위임 패턴
+## OmO Delegation Pattern
 
-### 1) tmux 세션 검증
+### 1) tmux Session Verification
 
 ```bash
 SOCKET="/tmp/openclaw-tmux-sockets/openclaw.sock"
 tmux -S "$SOCKET" has-session -t opencode
 ```
 
-### 2) 에이전트 선택표
+### 2) Agent Selection
 
-| 목적 | 에이전트 | 전환 |
-|------|----------|------|
-| 기본 실행 | Sisyphus | 기본 |
-| 깊은 구현 | Hephaestus | Tab 1회 |
-| 계획 수립 | Prometheus | Tab 2회 |
+| Purpose | Agent | Switch |
+|---------|-------|--------|
+| Default execution | Sisyphus | Default |
+| Deep implementation | Hephaestus | Tab x1 |
+| Planning | Prometheus | Tab x2 |
 
-### 3) 작업 전송 (`send-keys -l` + Enter 분리)
+### 3) Task Sending (`send-keys -l` + separate Enter)
 
 ```bash
-TASK='ultrawork 결제 실패 버그 수정. 재현, 원인 분석, 테스트 추가, 회귀 방지 포함.'
+TASK='ultrawork fix payment failure bug. Include reproduction, root cause analysis, test addition, regression prevention.'
 tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- "$TASK"
 sleep 0.1
 tmux -S "$SOCKET" send-keys -t opencode:0.0 Enter
 ```
 
-### 4) 작업 템플릿
+### 4) Task Templates
 
-기능 구현:
+Feature implementation:
 ```text
-ultrawork [기능] 구현.
-요구사항:
-- [요구 1]
-- [요구 2]
-기존 [참조 파일] 패턴을 따르고 테스트까지 수행.
+ultrawork implement [feature].
+Requirements:
+- [requirement 1]
+- [requirement 2]
+Follow existing [reference file] patterns and run tests.
 ```
 
-버그 수정:
+Bug fix:
 ```text
-ultrawork [버그 설명] 수정.
-재현 경로: [steps]
-에러: [message]
-기대 동작: [expected]
+ultrawork fix [bug description].
+Reproduction: [steps]
+Error: [message]
+Expected: [expected behavior]
 ```
 
-리팩토링:
+Refactoring:
 ```text
-ultrawork [모듈] 리팩토링.
-목표:
-- [목표 1]
-- [목표 2]
-제약:
-- Public API 변경 금지
-- 기존 테스트 통과
+ultrawork refactor [module].
+Goals:
+- [goal 1]
+- [goal 2]
+Constraints:
+- No public API changes
+- Existing tests must pass
 ```
 
-리서치 + 구현:
+Research + implementation:
 ```text
-[/path/to/research.md]를 먼저 읽고,
-ultrawork 연구 결과 기준으로 [기능] 구현.
+Read [/path/to/research.md] first,
+ultrawork implement [feature] based on research findings.
 ```
 
-### 5) 진행 모니터링 (`capture-pane`)
+### 5) Progress Monitoring (`capture-pane`)
 
 ```bash
 tmux -S "$SOCKET" capture-pane -p -J -t opencode:0.0 -S -200
 ```
 
-권장:
-- 10-30초 주기로 진행 로그 확인
-- 막힘 징후(동일 출력 반복, 프롬프트 대기) 즉시 개입
+Recommendations:
+- Check progress logs at 10-30 second intervals
+- Intervene immediately on stall signs (repeated output, prompt waiting)
 
-### 6) 결과 수집 (`git status`/`git diff`)
+### 6) Result Collection (`git status`/`git diff`)
 
 ```bash
 git status
@@ -173,25 +173,25 @@ git diff --stat
 git diff
 ```
 
-OpenClaw는 변경 파일/테스트 결과/리스크를 요약해 사용자에게 전달한다.
+OpenClaw summarizes changed files/test results/risks and delivers to the user.
 
-### 7) 에러 복구
+### 7) Error Recovery
 
 ```bash
-# 현재 동작 중단
+# Stop current operation
 tmux -S "$SOCKET" send-keys -t opencode:0.0 Escape
 
-# 수정 지시 재전송
-tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- '직전 단계에서 테스트 실패 원인만 먼저 해결해.'
+# Resend corrected instruction
+tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- 'Resolve only the test failure from the previous step first.'
 tmux -S "$SOCKET" send-keys -t opencode:0.0 Enter
 
-# 세션 재시작
+# Session restart
 tmux -S "$SOCKET" kill-session -t opencode
 tmux -S "$SOCKET" new -d -s opencode -n main
 ```
 
-## 운영 체크리스트
+## Operations Checklist
 
-- 세션 alive 확인 -> 에이전트 선택 -> 작업 전송 -> 모니터링 -> 결과 수집
-- 항상 `send-keys -l` + 별도 Enter
-- 결과 보고 전에 `git status`/`git diff`로 변경 검증
+- Session alive check → agent selection → task send → monitoring → result collection
+- Always use `send-keys -l` + separate Enter
+- Verify changes with `git status`/`git diff` before reporting results
