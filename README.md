@@ -10,7 +10,7 @@
 
 Agent orchestration for [OpenClaw](https://openclaw.ai) — the patterns that made [OmO](https://github.com/code-yeongyu/oh-my-opencode) unstoppable, now running everywhere you chat.
 
-[English](#installation) | [한국어](#한국어-설치-가이드)
+[English](#installation) | [Korean](#korean-installation-guide)
 
 </div>
 
@@ -230,7 +230,7 @@ Edit the `"model"` field. Done. `"alternatives"` shows what else works.
 | `steering-words` | ultrawork, search, analyze | Keyword detection, mode routing |
 | `delegation-prompt` | delegate, sub-agent | 7-element delegation prompt guide |
 | `multimodal-analysis` | multimodal, image analysis | Analysis pattern templates |
-| `web-search` | web search, 웹 검색, exa, context7 | OmO websearch MCP 통합 (Exa + Context7 + grep.app) |
+| `web-search` | web search, exa, context7 | OmO websearch MCP integration (Exa + Context7 + grep.app) |
 
 ### Workflow Commands
 
@@ -349,47 +349,46 @@ Requires `NPM_TOKEN` secret in GitHub repo settings.
 
 ---
 
-## 한국어 설치 가이드
+## Korean Installation Guide
 
-### 설치
+### Installation
 
 ```bash
 openclaw plugins install @happycastle/oh-my-openclaw
 ```
 
-플러그인 설치 한 줄이면 끝. 스킬, 훅, 도구 전부 자동 등록.
+One command to install the plugin. Skills, hooks, and tools are all registered automatically.
 
-### 모델 변경
+### Changing Models
 
-`config/categories.json`에서 각 카테고리의 `model` 필드를 수정:
-
+Edit the `model` field for each category in `config/categories.json`:
 ```json
 {
-  "quick": { "model": "여기를 원하는 모델로 변경" },
-  "deep": { "model": "여기를 원하는 모델로 변경" }
+  "quick": { "model": "change-to-your-preferred-model" },
+  "deep": { "model": "change-to-your-preferred-model" }
 }
 ```
 
-### 에이전트 설정
+### Agent Setup
 
-플러그인 설치 후, 11개 에이전트 페르소나를 OpenClaw에 등록:
+After installing the plugin, register the 11 agent personas in OpenClaw:
 
 ```bash
 openclaw omoc-setup
 ```
 
-인터랙티브 위저드가 뜨면 프로바이더를 선택하면 끝. `--force`로 기존 설정 덮어쓰기 가능.
+Interactive wizard will appear — just select your provider and you're done. Use `--force` to overwrite existing configs.
 
-### 사용법
+### Usage
 
-OpenClaw에 연결된 채널(Discord, Telegram 등)에서:
+In any channel connected to OpenClaw (Discord, Telegram, etc.):
 
-- `/omoc` — OmOC 모드 활성화 (페르소나 주입 시작)
-- `/omoc list` — 11개 페르소나 목록 보기
-- `/omoc prometheus` — 특정 페르소나로 전환
-- `/ultrawork 기능 설명` — 자동 계획 + 실행 + 검증
-- `/plan 기능 설명` — 계획만 생성
-- `/start_work` — 기존 계획 기반 실행
+- `/omoc` — Activate OmOC mode (starts persona injection)
+- `/omoc list` — View the 11 available personas
+- `/omoc prometheus` — Switch to a specific persona
+- `/ultrawork feature description` — Auto planning + execution + verification
+- `/plan feature description` — Generate plan only
+- `/start_work` — Execute based on an existing plan
 
 ---
 

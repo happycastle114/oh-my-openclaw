@@ -280,10 +280,10 @@ Skills auto-activate when the user's message contains matching keywords. Defined
 | `git-master` | `commit`, `rebase`, `squash`, `who wrote`, `when was`, `git history`, `blame` |
 | `frontend-ui-ux` | `UI`, `UX`, `frontend`, `design`, `styling`, `CSS`, `layout` |
 | `comment-checker` | `comment check`, `AI slop`, `code quality`, `clean comments` |
-| `gemini-look-at` | `look at`, `PDF`, `screenshot`, `diagram`, `visual`, `이미지 분석`, `PDF 확인` |
-| `steering-words` | `ultrawork`, `search`, `analyze`, `분석해`, `찾아봐` |
-| `delegation-prompt` | `delegate`, `위임`, `서브에이전트`, `sub-agent` |
-| `multimodal-analysis` | `multimodal`, `멀티모달`, `image analysis` |
+| `gemini-look-at` | `look at`, `PDF`, `screenshot`, `diagram`, `visual`, `image analysis`, `PDF check` |
+| `steering-words` | `ultrawork`, `search`, `analyze`, `analyze this`, `look into` |
+| `delegation-prompt` | `delegate`, `delegation`, `sub-agent`, `sub-agent` |
+| `multimodal-analysis` | `multimodal`, `multimodal`, `image analysis` |
 
 ---
 

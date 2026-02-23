@@ -51,8 +51,8 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
    c. **Delegate the task** via `sessions_spawn`:
    ```
    sessions_spawn(
-     task="7요소 프롬프트 (TASK/OUTCOME/SKILLS/TOOLS/MUST DO/MUST NOT/CONTEXT)",
-     agentId="omoc_sisyphus",  # 또는 적합한 전문 에이전트
+     task="7-element prompt (TASK/OUTCOME/SKILLS/TOOLS/MUST DO/MUST NOT/CONTEXT)",
+     agentId="omoc_sisyphus",  # or appropriate specialized agent
      model="...",
      label="task-N-name"
    )
@@ -63,10 +63,10 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
    - For implementation-heavy tasks, route to OmO via tmux orchestration stack
    - Require execution evidence (changed files, test/build outputs) before marking done
 
-   d. **서브에이전트 완료 통지 → 즉시 행동** (강제)
-   - 완료 통지를 받으면 결과를 즉시 확인한다
-   - Acceptance criteria와 대조 검증한다
-   - 멈추지 않는다 — 다음 task로 즉시 진행한다
+   d. **Sub-agent completion notification → immediate action** (Mandatory)
+   - When completion notification arrives, immediately verify results
+   - Validate against acceptance criteria
+   - Do not stop — immediately proceed to next task
 
    e. **Mark task as completed** in todo list
 
@@ -74,9 +74,9 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
 
 4. **Handle parallel tasks**
    - Tasks with no mutual dependencies can run in parallel
-   - Use multiple `sessions_spawn` simultaneously (각각 다른 `label`로 식별)
-   - 각 완료 통지마다 해당 결과를 즉시 수집/검증
-   - 모든 병렬 task 완료 후 의존 task 즉시 시작
+   - Use multiple `sessions_spawn` simultaneously (each identified by different `label`)
+   - Collect/verify results immediately for each completion notification
+   - Start dependent tasks immediately after all parallel tasks complete
 
 ### Phase 3: Error Handling
 

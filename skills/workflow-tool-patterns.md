@@ -1,85 +1,85 @@
 ---
 name: workflow-tool-patterns
-description: OmO src/tools 패턴을 OpenClaw에서 재사용 가능한 실행 패턴으로 매핑하는 워크플로우
+description: Workflow that maps OmO src/tools patterns to reusable execution patterns in OpenClaw
 ---
 
 # Tool Patterns Workflow (OmO → OpenClaw)
 
-OmO의 `src/tools/` 구조를 기준으로, OpenClaw에서 실사용 가능한 도구 패턴을 표준화한다.
+Based on OmO's `src/tools/` structure, standardize tool patterns that are practically usable in OpenClaw.
 
-## 목적
+## Purpose
 
-- 도구 선택 실수를 줄이고
-- 반복 가능한 실행 루틴을 만들며
-- 계획/실행/검증 단계를 일관되게 유지한다.
+- Reduce tool selection mistakes
+- Create repeatable execution routines
+- Maintain consistent planning/execution/verification phases
 
-## 패턴 매핑
+## Pattern Mapping
 
-> **중요**: 아래 테이블의 "OpenClaw 도구"는 모두 OpenClaw 공식 도구 인벤토리에 실제 존재하는 도구들이다.
+> **Important**: All "OpenClaw tools" in the table below are actual tools that exist in the official OpenClaw tool inventory.
 
-| OmO Tool Pattern          | 의도                 | OpenClaw 도구 & 사용 패턴                                          |
+| OmO Tool Pattern          | Intent                 | OpenClaw Tool & Usage Pattern                                      |
 | ------------------------- | -------------------- | ------------------------------------------------------------------ |
-| `task/*` (todo-sync)      | 작업 상태 추적       | 파일 기반 할 일 관리: `write`로 `workspace/todos.md` 갱신          |
-| `lsp/*` (goto/references) | 코드 탐색/검증       | `exec` 도구로 린터/타입체커 실행 → 결과로 검증                     |
-| `interactive-bash`        | 장시간/상호작용 셸   | `exec`(`pty: true`) 또는 tmux 연동                                 |
-| `bash`                    | 원샷 명령            | `exec`(동기), `exec`(`background: true`) → `process`(`poll`)       |
-| `slashcommand`            | 명령 워크플로우 구동 | OpenClaw 스킬 `/ultrawork`, `/plan`, `/start_work` (슬래시 커맨드) |
-| `session-manager`         | 세션 탐색/재개       | `sessions_list`, `sessions_history`, `session_status`              |
-| `skill-mcp`               | 스킬 기반 도구 호출  | OpenClaw 스킬 시스템 (`read` → SKILL.md 참조)                      |
-| `look-at`                 | 멀티모달 분석        | `image` 도구 + Gemini CLI tmux 연동                                |
-| `background-task`         | 병렬 작업            | `exec`(`background: true`) → `process`(`poll`/`log`/`kill`)        |
-| `file-read/write/edit`    | 파일 조작            | `read`, `write`, `edit`, `apply_patch` (`group:fs`)                |
-| `web-search`              | 웹 검색              | `web_search`, `web_fetch` (`group:web`)                            |
-| `memory`                  | 지식 축적            | `memory_search`, `memory_get` (`group:memory`)                     |
-| `delegation`              | 서브에이전트 위임    | `sessions_spawn`(`task`, `agentId`, `model`)                       |
+| `task/*` (todo-sync)      | Track task status       | File-based todo management: update `workspace/todos.md` with `write`          |
+| `lsp/*` (goto/references) | Code exploration/verification       | Run linter/type checker with `exec` tool → verify with results                     |
+| `interactive-bash`        | Long-running/interactive shell   | `exec`(`pty: true`) or tmux integration                                 |
+| `bash`                    | One-shot command            | `exec`(sync), `exec`(`background: true`) → `process`(`poll`)       |
+| `slashcommand`            | Command workflow execution | OpenClaw skills `/ultrawork`, `/plan`, `/start_work` (slash commands) |
+| `session-manager`         | Session exploration/resumption       | `sessions_list`, `sessions_history`, `session_status`              |
+| `skill-mcp`               | Skill-based tool invocation  | OpenClaw skill system (`read` → refer to SKILL.md)                      |
+| `look-at`                 | Multimodal analysis        | `image` tool + Gemini CLI tmux integration                                |
+| `background-task`         | Parallel work            | `exec`(`background: true`) → `process`(`poll`/`log`/`kill`)        |
+| `file-read/write/edit`    | File manipulation            | `read`, `write`, `edit`, `apply_patch` (`group:fs`)                |
+| `web-search`              | Web search              | `web_search`, `web_fetch` (`group:web`)                            |
+| `memory`                  | Knowledge accumulation            | `memory_search`, `memory_get` (`group:memory`)                     |
+| `delegation`              | Sub-agent delegation    | `sessions_spawn`(`task`, `agentId`, `model`)                       |
 
-## OpenClaw Tool Groups 정리
+## OpenClaw Tool Groups Summary
 
-| Group            | 포함 도구                                        | 활용                         |
+| Group            | Included Tools                                        | Usage                         |
 | ---------------- | ------------------------------------------------ | ---------------------------- |
-| `group:fs`       | read, write, edit, apply_patch                   | 파일 조작 전반               |
-| `group:runtime`  | exec, bash, process                              | 명령 실행 + 백그라운드 관리  |
-| `group:sessions` | sessions_list/history/send/spawn, session_status | 멀티 에이전트                |
-| `group:memory`   | memory_search, memory_get                        | 지식 검색 (저장은 파일 기반) |
-| `group:web`      | web_search, web_fetch                            | 웹 검색/페치                 |
-| `group:ui`       | browser, canvas                                  | 브라우저/UI                  |
+| `group:fs`       | read, write, edit, apply_patch                   | General file manipulation               |
+| `group:runtime`  | exec, bash, process                              | Command execution + background management  |
+| `group:sessions` | sessions_list/history/send/spawn, session_status | Multi-agent                |
+| `group:memory`   | memory_search, memory_get                        | Knowledge search (storage is file-based) |
+| `group:web`      | web_search, web_fetch                            | Web search/fetch                 |
+| `group:ui`       | browser, canvas                                  | Browser/UI                  |
 
-## 실행 절차
+## Execution Procedure
 
-### 1) 계획 단계
+### 1) Planning Phase
 
-1. 복잡 작업이면 `write`로 `workspace/todos.md` 생성
-2. 탐색은 `exec` + grep/find 우선
-3. 외부 의존성은 `web_search`/`web_fetch` 또는 librarian 에이전트 병행
+1. For complex tasks, create `workspace/todos.md` with `write`
+2. Prioritize exploration with `exec` + grep/find
+3. For external dependencies, use `web_search`/`web_fetch` or pair with librarian agent
 
-### 2) 구현 단계
+### 2) Implementation Phase
 
-1. 변경 전 `read` + `exec`(grep)로 영향도 파악
-2. 작은 단위로 `edit`/`apply_patch` 수정
-3. 필요 시 `sessions_spawn`로 전문 에이전트 위임
+1. Before changes, assess impact with `read` + `exec`(grep)
+2. Make modifications in small units with `edit`/`apply_patch`
+3. When needed, delegate to specialist agents with `sessions_spawn`
 
-### 3) 검증 단계
+### 3) Verification Phase
 
-1. `exec`로 린터/타입체커 실행
-2. `exec`로 관련 테스트/빌드 실행
-3. 실패 시 원인-기반 `edit` 후 재검증
+1. Run linter/type checker with `exec`
+2. Run related tests/build with `exec`
+3. On failure, perform root-cause `edit` then re-verify
 
-### 4) 병렬 작업 관리
+### 4) Parallel Work Management
 
-1. 독립 탐색/리서치는 `exec`(`background: true`)로 병렬 실행
-2. `process`(`poll`/`log`)로 결과 수집
-3. 최종 응답 전 `process`(`kill`)로 정리
+1. Run independent exploration/research in parallel with `exec`(`background: true`)
+2. Collect results with `process`(`poll`/`log`)
+3. Clean up with `process`(`kill`) before final response
 
-## 금지/주의 사항
+## Prohibitions/Cautions
 
-- 구현 미요청 상태에서 코드 변경 금지
-- 검증 없는 완료 보고 금지
-- 장시간 TUI 작업은 `exec`(`pty: true`) 사용
-- 수동 추정으로 API/패턴 확정하지 않기 (검색/근거 필수)
+- Do not change code without implementation request
+- Do not report completion without verification
+- Use `exec`(`pty: true`) for long-running TUI work
+- Do not confirm API/patterns by manual estimation (research/evidence required)
 
-## 체크리스트
+## Checklist
 
-- [ ] Todo 상태가 `workspace/todos.md`에 실시간 반영되었는가
-- [ ] 사용한 도구가 OpenClaw 공식 도구 인벤토리에 존재하는가
-- [ ] 변경 후 `exec`로 test/build 근거가 있는가
-- [ ] 백그라운드 작업이 `process`(`kill`)로 정리되었는가
+- [ ] Todo status is reflected in real-time in `workspace/todos.md`
+- [ ] Used tools exist in OpenClaw official tool inventory
+- [ ] Evidence of test/build verification with `exec` after changes
+- [ ] Background tasks cleaned up with `process`(`kill`)

@@ -1,5 +1,5 @@
 {
-  "_comment": "oh-my-openclaw 설정 파일. 카테고리별 모델, 도구 제한, 스킬 트리거를 여기서 변경할 수 있다.",
+  "_comment": "oh-my-openclaw configuration file. Change models, tool restrictions, and skill triggers per category here.",
   "categories": {
     "quick": {
       "model": "claude-sonnet-4-6",
@@ -27,7 +27,7 @@
     },
     "multimodal": {
       "model": "gemini-2.5-flash",
-      "description": "PDF/이미지/비디오 분석. Gemini CLI tmux 세션으로 실행.",
+      "description": "PDF/image/video analysis. Run via Gemini CLI tmux session.",
       "agents": ["multimodal-looker"],
       "tool": "gemini-cli",
       "alternatives": ["gemini-2.5-pro", "gemini-3.1-pro"]
@@ -58,12 +58,12 @@
     "plans_dir": "workspace/plans"
   },
   "tmux": {
-    "_comment": "tmux 세션 설정. 여러 세션을 동시에 운영하여 병렬 작업 지원. 세션 이름에 -2, -3 접미사로 추가 세션 생성.",
+    "_comment": "tmux session configuration. Support parallel work via multiple concurrent sessions. Add additional sessions with -2, -3 suffixes to session names.",
     "socket": "/tmp/openclaw-tmux-sockets/openclaw.sock",
     "max_concurrent_sessions": 6,
     "session_templates": {
       "opencode": {
-        "description": "OmO (OpenCode) 코딩 에이전트 — 여러 개 동시 실행 가능 (opencode, opencode-2, ...)",
+        "description": "OmO (OpenCode) coding agent — multiple concurrent execution possible (opencode, opencode-2, ...)",
         "default_agent": "sisyphus",
         "agents": {
           "sisyphus": { "switch": "default", "description": "Quick implementation" },
@@ -74,25 +74,25 @@
         "ram_per_session": "2-4GB"
       },
       "gemini": {
-        "description": "Gemini CLI 멀티모달 분석 — 여러 개 동시 실행 가능 (gemini, gemini-2, ...)",
+        "description": "Gemini CLI multimodal analysis — multiple concurrent execution possible (gemini, gemini-2, ...)",
         "default_model": "gemini-2.5-flash",
         "models": {
-          "gemini-2.5-flash": { "flag": "-m gemini-2.5-flash", "speed": "fast", "description": "빠른 확인" },
-          "gemini-2.5-pro": { "flag": "-m gemini-2.5-pro", "speed": "medium", "description": "상세 분석" },
-          "gemini-3.1-pro": { "flag": "-m gemini-3.1-pro", "speed": "slow", "description": "최고 품질" }
+          "gemini-2.5-flash": { "flag": "-m gemini-2.5-flash", "speed": "fast", "description": "Quick verification" },
+          "gemini-2.5-pro": { "flag": "-m gemini-2.5-pro", "speed": "medium", "description": "Detailed analysis" },
+          "gemini-3.1-pro": { "flag": "-m gemini-3.1-pro", "speed": "slow", "description": "Highest quality" }
         },
         "ram_per_session": "~200MB"
       },
       "build": {
-        "description": "빌드/테스트 모니터링 전용 세션",
+        "description": "Build/test monitoring session only",
         "startup": "cd $PROJECT_DIR && npm run dev"
       },
       "research": {
-        "description": "리서치 전용 세션 (Gemini CLI 또는 커스텀 도구)"
+        "description": "Research-only session (Gemini CLI or custom tools)"
       }
     },
     "naming_convention": {
-      "_comment": "세션 이름 규칙: {template}-{index} (예: opencode-2, gemini-3)",
+      "_comment": "Session naming convention: {template}-{index} (e.g.: opencode-2, gemini-3)",
       "examples": ["opencode", "opencode-2", "opencode-auth", "gemini", "gemini-2", "build", "research"]
     }
   },
@@ -123,23 +123,23 @@
       "path": "skills/comment-checker.md"
     },
     "gemini-look-at": {
-      "trigger": ["look at", "PDF", "screenshot", "diagram", "visual", "이미지 분석", "PDF 확인"],
+      "trigger": ["look at", "PDF", "screenshot", "diagram", "visual", "image analysis"],
       "path": "skills/gemini-look-at.md"
     },
     "steering-words": {
-      "trigger": ["ultrawork", "search", "analyze", "분석해", "찾아봐"],
+      "trigger": ["ultrawork", "search", "analyze"],
       "path": "skills/steering-words.md"
     },
     "delegation-prompt": {
-      "trigger": ["delegate", "위임", "서브에이전트", "sub-agent"],
+      "trigger": ["delegate", "sub-agent"],
       "path": "skills/delegation-prompt.md"
     },
     "multimodal-analysis": {
-      "trigger": ["multimodal", "멀티모달", "image analysis"],
+      "trigger": ["multimodal", "image analysis"],
       "path": "skills/multimodal-analysis.md"
     },
     "web-search": {
-      "trigger": ["web search", "웹 검색", "검색해", "search the web", "찾아줘", "look up", "exa", "context7", "grep.app"],
+      "trigger": ["web search", "search the web", "look up", "exa", "context7", "grep.app"],
       "path": "skills/web-search.md"
     }
   }
