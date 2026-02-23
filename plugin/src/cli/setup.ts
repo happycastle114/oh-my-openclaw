@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import JSON5 from 'json5';
 import { OMOC_AGENT_CONFIGS, type OmocAgentConfig } from '../agents/agent-configs.js';
 
 type AgentsSection = {
@@ -56,16 +57,11 @@ export function findConfigPath(workspaceDir?: string): string | undefined {
 }
 
 /**
- * Lenient JSON5 parser: strips // and /* comments, removes trailing commas,
- * then delegates to JSON.parse.
+ * Parse OpenClaw config using JSON5 (matches OpenClaw's own parser).
+ * Handles comments, trailing commas, unquoted keys, multi-line strings, etc.
  */
 export function parseConfig(raw: string): ConfigShape {
-  const stripped = raw
-    .replace(/\/\/.*$/gm, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/,\s*([\]}])/g, '$1');
-
-  return JSON.parse(stripped) as ConfigShape;
+  return JSON5.parse(raw) as ConfigShape;
 }
 
 export function serializeConfig(config: ConfigShape): string {

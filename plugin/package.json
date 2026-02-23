@@ -49,7 +49,8 @@
   "license": "MIT",
   "author": "happycastle",
   "dependencies": {
-    "@sinclair/typebox": "^0.34.0"
+    "@sinclair/typebox": "^0.34.0",
+    "json5": "^2.2.3"
   },
   "devDependencies": {
     "@types/node": "^25.3.0",
