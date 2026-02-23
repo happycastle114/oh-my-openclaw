@@ -187,7 +187,7 @@ export function registerSetupCli(ctx: {
   logger: Logger;
 }): void {
   ctx.program
-    .command('setup')
+    .command('omoc-setup')
     .description('Inject OmOC agent definitions into your OpenClaw config')
     .option('--force', 'Overwrite existing OmOC agent configs', false)
     .option('--dry-run', 'Preview changes without writing', false)

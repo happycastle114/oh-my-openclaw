@@ -53,11 +53,11 @@ gh repo clone happycastle114/oh-my-openclaw ~/.openclaw/skills/oh-my-openclaw
 
 ### Agent Tool Restrictions
 
-Copy the sample config to enable agent-level tool restrictions:
+Inject agent configs into your OpenClaw config for sub-agent spawning:
 
 ```bash
-cp config/openclaw.sample.json ~/.openclaw/openclaw.json
-# Edit as needed for your setup
+openclaw omoc-setup
+# Use --force to overwrite existing, --dry-run to preview
 ```
 
 ### Verify Installation
@@ -242,7 +242,6 @@ oh-my-openclaw/
   README.md             # Project documentation
   config/
     categories.json     # Category-to-model mapping + tool restrictions + skill triggers
-    openclaw.sample.json # OpenClaw native agent config (tools.profile/allow/deny)
   agents/
     prometheus.md       # Strategic planner agent profile
     metis.md            # Pre-planning consultant (intent classification + anti-slop directives)

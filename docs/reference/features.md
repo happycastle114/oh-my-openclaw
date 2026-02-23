@@ -191,7 +191,7 @@ Frontend-focused visual engineering specialist for UI/UX implementation.
 
 | Property | Value |
 |----------|-------|
-| **Command** | `openclaw cli omoc-setup` |
+| **Command** | `openclaw omoc-setup` |
 | **Description** | Inject 11 agent configs into `openclaw.json5` for sub-agent spawning |
 | **Flags** | `--force` (overwrite existing), `--dry-run` (preview only), `--config <path>` (custom config path) |
 
@@ -480,7 +480,7 @@ The plugin registers 8 slash commands across three modules.
 | **Description** | Execute an approved plan |
 | **Arguments** | Plan path (optional, defaults to most recent) |
 
-**Behavior:** Reads the `workflows/start_work.md` workflow definition and returns it with the plan reference. Loads an existing approved plan from `workspace/plans/` and delegates to Atlas for execution.
+**Behavior:** Reads the `workflows/start-work.md` workflow definition and returns it with the plan reference. Loads an existing approved plan from `workspace/plans/` and delegates to Atlas for execution.
 
 ### Ralph Commands
 
@@ -674,7 +674,7 @@ Oh-My-OpenClaw defines 7 workflow documents that describe standardized multi-ste
 |----------|---------|------|-------------|
 | **ultrawork** | `/ultrawork` | `workflows/ultrawork.md` | Full planning -> execution -> verification loop |
 | **plan** | `/plan` | `workflows/plan.md` | Strategic planning (Prometheus + Momus) |
-| **start_work** | `/start_work` | `workflows/start_work.md` | Execute an approved plan via Atlas |
+| **start_work** | `/start_work` | `workflows/start-work.md` | Execute an approved plan via Atlas |
 | **delegate-to-omo** | — | `workflows/delegate-to-omo.md` | Route task to OpenCode (OmO) running in tmux |
 | **tmux-orchestration** | — | `workflows/tmux-orchestration.md` | Multi-tool tmux coordination (OpenCode + Gemini CLI) |
 | **tool-patterns** | — | `workflows/tool-patterns.md` | OmO tool -> OpenClaw tool mapping reference |
@@ -920,5 +920,5 @@ OpenClaw orchestrates by sending commands via `send-keys` and collecting output 
 | Agent Profiles | `agents/*.md` | Individual agent definitions (10 files) |
 | Skill Documents | `plugin/skills/*.md` | Skill definitions with triggers (13 files) |
 | Workflow Documents | `workflows/*.md` | Workflow step-by-step guides (7 files) |
-| Sample Agent Config | `config/openclaw.sample.json` | Runtime tool restriction examples |
+| Agent Setup CLI | `openclaw omoc-setup` | Inject agent configs into `openclaw.json5` |
 | SKILL.md | `SKILL.md` | Main skill definition file (OpenClaw entry point) |

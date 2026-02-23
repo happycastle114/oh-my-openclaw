@@ -101,7 +101,7 @@
     "directive": "[SYSTEM DIRECTIVE: OH-MY-OPENCLAW - TODO CONTINUATION]\nYou MUST continue working on incomplete todos.\n- Do NOT stop until all tasks are marked complete\n- Do NOT ask for permission to continue\n- Mark each task complete immediately when finished\n- If blocked, document the blocker and move to next task"
   },
   "tool_restrictions": {
-    "_comment": "Prompt-level guidance. For runtime enforcement, use config/openclaw.sample.json (agents.list[].tools.profile/allow/deny).",
+    "_comment": "Prompt-level guidance. For runtime enforcement, run: openclaw omoc-setup",
     "oracle": { "deny": ["write", "edit", "apply_patch", "sessions_spawn"] },
     "librarian": { "deny": ["write", "edit", "apply_patch", "sessions_spawn"] },
     "explore": { "deny": ["write", "edit", "apply_patch", "sessions_spawn"] },

@@ -127,7 +127,7 @@ git clone https://github.com/happycastle114/oh-my-openclaw.git \
 Register the 11 built-in agent personas as OpenClaw sub-agents:
 
 ```bash
-openclaw cli omoc-setup
+openclaw omoc-setup
 ```
 
 This injects agent configs into your `openclaw.json5`. Use `--force` to overwrite existing configs, `--dry-run` to preview changes.

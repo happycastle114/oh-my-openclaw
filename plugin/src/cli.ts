@@ -202,7 +202,7 @@ function install(installDir: string): void {
   console.log('Available commands:');
   console.log(`  ${BLUE}/ultrawork [task]${RESET}  — Full automation (plan → execute → verify)`);
   console.log(`  ${BLUE}/plan [task]${RESET}       — Create a plan only`);
-  console.log(`  ${BLUE}/start-work${RESET}        — Execute existing plan`);
+  console.log(`  ${BLUE}/start_work${RESET}       — Execute existing plan`);
   console.log(`\nSend a message to your OpenClaw agent to get started!`);
   console.log(`\n${DIM}Tip: Ask your agent "Read the oh-my-openclaw skill and tell me what it does"${RESET}\n`);
 }

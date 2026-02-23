@@ -122,9 +122,9 @@ export default function register(api: OmocPluginApi) {
         workspaceDir: ctx.workspaceDir,
         logger: ctx.logger,
       });
-    }, { commands: ['setup'] });
-    registry.cli.push('setup');
-    api.logger.info(`[${PLUGIN_ID}] CLI command registered (setup)`);
+    }, { commands: ['omoc-setup'] });
+    registry.cli.push('omoc-setup');
+    api.logger.info(`[${PLUGIN_ID}] CLI command registered (omoc-setup)`);
   } catch (err) {
     api.logger.error(`[${PLUGIN_ID}] Failed to register CLI:`, err);
   }
