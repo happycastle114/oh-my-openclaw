@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.2] - 2026-02-23
+
+### Performance
+- **mtime-based caching for persona prompt reader** — eliminates redundant disk I/O on every `agent:bootstrap` hook invocation. OpenClaw fires bootstrap on every message (up to 160x during retries); previously each invocation did a full `readFileSync`. Now uses `statSync` + mtime comparison, only re-reading when file content actually changes.
+
 ## [0.8.1] - 2026-02-23
 
 ### Added
