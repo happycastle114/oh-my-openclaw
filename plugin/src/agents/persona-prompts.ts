@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync, statSync } from 'fs';
 import { promises as fs } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -8,6 +8,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 // From dist/agents/ → plugin root is ../../ (same pattern as workflow-commands.ts)
 const PLUGIN_ROOT = join(__dirname, '..', '..');
+
+/** mtime-based file content cache (matches OpenClaw's readFileWithCache pattern) */
+interface PersonaCacheEntry {
+  content: string;
+  mtimeMs: number;
+}
+const personaCache = new Map<string, PersonaCacheEntry>();
+
+/** Clear all cached persona file contents. Useful for testing. */
+export function clearPersonaCache(): void {
+  personaCache.clear();
+}
 
 const AGENT_MD_MAP: Record<string, string> = {
   omoc_atlas: 'atlas',
@@ -51,8 +63,18 @@ export function readPersonaPromptSync(agentId: string): string {
 
   const agentPath = join(PLUGIN_ROOT, '..', 'agents', `${mdName}.md`);
   try {
-    return readFileSync(agentPath, 'utf-8');
+    const stat = statSync(agentPath);
+    const cached = personaCache.get(agentPath);
+
+    if (cached && cached.mtimeMs === stat.mtimeMs) {
+      return cached.content;
+    }
+
+    const content = readFileSync(agentPath, 'utf-8');
+    personaCache.set(agentPath, { content, mtimeMs: stat.mtimeMs });
+    return content;
   } catch {
+    personaCache.delete(agentPath);
     return `[OmOC] Could not read persona file: agents/${mdName}.md (looked in ${agentPath})`;
   }
 }
