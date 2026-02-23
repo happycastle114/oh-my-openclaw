@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.1] - 2026-02-23
+
+### Fixed
+- CLI invocation: `command('setup')` → `command('omoc-setup')` so `openclaw omoc-setup` works correctly
+- Deleted obsolete `config/openclaw.sample.json` (replaced by `omoc-setup` CLI)
+- Updated all docs referencing deleted sample config (9 occurrences across 5 files)
+- Fixed `/start-work` → `/start_work` in `cli.ts` and `setup.sh`
+- Fixed workflow path reference in `docs/reference/features.md`
+- Synced root `skills/` with `plugin/skills/` (gemini-look-at, web-search were diverged)
+
 ## [0.6.0] - 2026-02-23
 
 ### Added
