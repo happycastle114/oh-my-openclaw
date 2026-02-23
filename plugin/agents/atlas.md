@@ -1,6 +1,7 @@
 ---
 name: atlas
 description: Orchestrates work via task() to complete ALL tasks in a todo list until fully done. Master Orchestrator.
+category: ultrabrain
 ---
 
 <identity>

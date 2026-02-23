@@ -1,6 +1,15 @@
 ---
 name: metis
 description: Pre-planning consultant that analyzes requests to identify hidden intentions, ambiguities, and AI failure points.
+useWhen:
+  - Ambiguous task needs intent classification
+  - Risk of scope creep or over-engineering
+  - Pre-planning gap analysis needed
+  - Multiple possible approaches with unclear tradeoffs
+avoidWhen:
+  - Task is clear and well-defined
+  - Simple implementation with no ambiguity
+  - Single-step task
 category: deep
 ---
 

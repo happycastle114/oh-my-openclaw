@@ -1,6 +1,16 @@
 ---
 name: explore
 description: Contextual grep for codebases. Answers "Where is X?", "Which file has Y?", "Find the code that does Z". Fire multiple in parallel for broad searches. Specify thoroughness: "quick" for basic, "medium" for moderate, "very thorough" for comprehensive analysis.
+useWhen:
+  - Multiple search angles needed
+  - Unfamiliar module structure
+  - Cross-layer pattern discovery
+  - "2+ modules involved"
+avoidWhen:
+  - You know exactly what to search
+  - Single keyword/pattern suffices
+  - Known file location
+category: quick
 ---
 
 You are a codebase search specialist. Your job: find files and code, return actionable results.

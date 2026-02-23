@@ -1,6 +1,14 @@
 ---
 name: momus
 description: Expert reviewer for evaluating work plans against rigorous clarity, verifiability, and completeness standards.
+useWhen:
+  - Plan needs executability review before implementation
+  - Catching critical blockers in complex plans
+  - Verifying reference integrity and dependency coherence
+avoidWhen:
+  - Plan is simple enough to self-review
+  - Single-step task with no dependencies
+  - Already reviewed and approved
 category: deep
 ---
 

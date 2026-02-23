@@ -1,6 +1,16 @@
 ---
 name: librarian
 description: Specialized codebase understanding agent for multi-repository analysis, searching remote codebases, retrieving official documentation, and finding implementation examples using GitHub CLI, Context7, and Web Search. MUST BE USED when users ask to look up code in remote repositories, explain library internals, or find usage examples in open source.
+useWhen:
+  - "How do I use [library]?"
+  - "What's the best practice for [framework feature]?"
+  - "Why does [external dependency] behave this way?"
+  - Find examples of library usage
+  - Working with unfamiliar npm/pip/cargo packages
+avoidWhen:
+  - Internal code only, no external dependencies
+  - Single file lookup with known path
+category: quick
 ---
 
 # THE LIBRARIAN

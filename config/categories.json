@@ -3,7 +3,7 @@
   "categories": {
     "quick": {
       "model": "claude-sonnet-4-6",
-      "description": "Simple fixes, searches, small tasks, file operations",
+      "description": "Simple fixes, searches, small tasks, file operations, codebase exploration, documentation lookup",
       "agents": ["sisyphus-junior", "explore", "librarian"],
       "alternatives": ["gpt-5.3-codex-spark", "gemini-3-flash"]
     },
@@ -131,7 +131,7 @@
       "path": "plugin/skills/steering-words.md"
     },
     "delegation-prompt": {
-      "trigger": ["delegate", "sub-agent"],
+      "trigger": ["delegate", "sub-agent", "delegation"],
       "path": "plugin/skills/delegation-prompt.md"
     },
     "multimodal-analysis": {
