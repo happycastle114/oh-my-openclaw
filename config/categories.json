@@ -112,35 +112,35 @@
   "skills": {
     "git-master": {
       "trigger": ["commit", "rebase", "squash", "who wrote", "when was", "git history", "blame"],
-      "path": "skills/git-master.md"
+      "path": "plugin/skills/git-master.md"
     },
     "frontend-ui-ux": {
       "trigger": ["UI", "UX", "frontend", "design", "styling", "CSS", "layout"],
-      "path": "skills/frontend-ui-ux.md"
+      "path": "plugin/skills/frontend-ui-ux.md"
     },
     "comment-checker": {
       "trigger": ["comment check", "AI slop", "code quality", "clean comments"],
-      "path": "skills/comment-checker.md"
+      "path": "plugin/skills/comment-checker.md"
     },
     "gemini-look-at": {
       "trigger": ["look at", "PDF", "screenshot", "diagram", "visual", "image analysis"],
-      "path": "skills/gemini-look-at.md"
+      "path": "plugin/skills/gemini-look-at.md"
     },
     "steering-words": {
       "trigger": ["ultrawork", "search", "analyze"],
-      "path": "skills/steering-words.md"
+      "path": "plugin/skills/steering-words.md"
     },
     "delegation-prompt": {
       "trigger": ["delegate", "sub-agent"],
-      "path": "skills/delegation-prompt.md"
+      "path": "plugin/skills/delegation-prompt.md"
     },
     "multimodal-analysis": {
       "trigger": ["multimodal", "image analysis"],
-      "path": "skills/multimodal-analysis.md"
+      "path": "plugin/skills/multimodal-analysis.md"
     },
     "web-search": {
       "trigger": ["web search", "search the web", "look up", "exa", "context7", "grep.app"],
-      "path": "skills/web-search.md"
+      "path": "plugin/skills/web-search.md"
     }
   }
 }

@@ -262,7 +262,7 @@ Skills auto-activate when the user's message contains matching keywords. Defined
   "skills": {
     "git-master": {
       "trigger": ["commit", "rebase", "squash", "who wrote", "when was", "git history", "blame"],
-      "path": "skills/git-master.md"
+      "path": "plugin/skills/git-master.md"
     }
   }
 }

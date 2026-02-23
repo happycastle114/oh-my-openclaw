@@ -52,7 +52,7 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
    ```
    sessions_spawn(
      task="7-element prompt (TASK/OUTCOME/SKILLS/TOOLS/MUST DO/MUST NOT/CONTEXT)",
-     agentId="omoc_sisyphus",  # or appropriate specialized agent
+     agentId="omoc_sisyphus",  # or a suitable specialized agent
      model="...",
      label="task-N-name"
    )
@@ -63,10 +63,10 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
    - For implementation-heavy tasks, route to OmO via tmux orchestration stack
    - Require execution evidence (changed files, test/build outputs) before marking done
 
-   d. **Sub-agent completion notification → immediate action** (Mandatory)
-   - When completion notification arrives, immediately verify results
-   - Validate against acceptance criteria
-   - Do not stop — immediately proceed to next task
+   d. **Sub-agent completion notification → act immediately** (Mandatory)
+   - When completion notification is received, check results immediately
+   - Verify against acceptance criteria
+   - Do NOT stop — proceed to next task immediately
 
    e. **Mark task as completed** in todo list
 
@@ -74,9 +74,9 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
 
 4. **Handle parallel tasks**
    - Tasks with no mutual dependencies can run in parallel
-   - Use multiple `sessions_spawn` simultaneously (each identified by different `label`)
-   - Collect/verify results immediately for each completion notification
-   - Start dependent tasks immediately after all parallel tasks complete
+   - Use multiple `sessions_spawn` simultaneously (identify each with a different `label`)
+   - Collect and verify results immediately upon each completion notification
+   - After all parallel tasks complete, start dependent tasks immediately
 
 ### Phase 3: Error Handling
 

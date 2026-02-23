@@ -37,76 +37,8 @@ openclaw plugins install @happycastle/oh-my-openclaw
 
 That's it. The plugin registers skills, hooks, and tools automatically. Restart the gateway and you're done.
 
-If you prefer manual setup or want to contribute:
-
-```bash
-git clone https://github.com/happycastle114/oh-my-openclaw.git ~/.oh-my-openclaw
-ln -s ~/.oh-my-openclaw ~/.openclaw/workspace/skills/oh-my-openclaw
-bash ~/.oh-my-openclaw/scripts/init-deep.sh
-```
-
 ---
 
-## Installation Methods
-
-Choose the method that best fits your workflow.
-
-### Option 1: Clone + Symlink (Recommended)
-
-Best for contributors or users who want to stay up to date with the latest changes.
-
-```bash
-# Clone to a stable location
-git clone https://github.com/happycastle114/oh-my-openclaw.git ~/.oh-my-openclaw
-
-# Symlink into OpenClaw's workspace skill directory
-ln -s ~/.oh-my-openclaw ~/.openclaw/workspace/skills/oh-my-openclaw
-
-# Initialize
-bash ~/.oh-my-openclaw/scripts/init-deep.sh
-```
-
-**Updating:**
-```bash
-cd ~/.oh-my-openclaw && git pull
-```
-
----
-
-### Option 2: Direct Clone
-
-Best for users who want a self-contained installation without symlinks.
-
-```bash
-# Clone directly into OpenClaw's workspace skills directory
-git clone https://github.com/happycastle114/oh-my-openclaw.git ~/.openclaw/workspace/skills/oh-my-openclaw
-
-# Run initialization
-bash ~/.openclaw/workspace/skills/oh-my-openclaw/scripts/init-deep.sh
-```
-
-> **Note:** With this method, updating requires running `git pull` inside `~/.openclaw/workspace/skills/oh-my-openclaw`.
-
----
-
-### Option 3: Global Skill
-
-Best for users who want Oh-My-OpenClaw available system-wide across multiple projects.
-
-```bash
-# Clone to a global location
-git clone https://github.com/happycastle114/oh-my-openclaw.git /usr/local/share/oh-my-openclaw
-
-# Symlink into OpenClaw's workspace skills directory
-ln -s /usr/local/share/oh-my-openclaw ~/.openclaw/workspace/skills/oh-my-openclaw
-
-# Initialize
-bash /usr/local/share/oh-my-openclaw/scripts/init-deep.sh
-```
-
-For multi-user setups, each user should create their own symlink.
-
----
 
 ## Plugin Installation
 Oh-My-OpenClaw ships as an npm plugin (`@happycastle/oh-my-openclaw`) with full `openclaw.plugin.json` manifest support.
@@ -198,9 +130,8 @@ With OpenClaw running, send a test message through your configured messaging cha
 The agent should respond with a confirmation message. If it does not respond within 30 seconds, check the OpenClaw logs and ensure your messaging channel is correctly configured.
 
 ### 2. Run the Test Suite
-
 ```bash
-cd ~/.oh-my-openclaw/plugin
+cd path/to/oh-my-openclaw/plugin
 npm run test
 ```
 
@@ -234,7 +165,6 @@ Look for `oh-my-openclaw` listed under loaded plugins. If it is missing, verify 
 | `npm run build` fails | Missing Node.js or wrong version | Install Node 18+ via `nvm` or your package manager |
 | tmux socket not found | `/tmp` was cleared or directory missing | Run `mkdir -p /tmp/openclaw-tmux-sockets` |
 | Tests fail | Stale build artifacts | Run `npm run build` then `npm run test` again |
-| Skills not found | Symlink broken or path not set | Re-run the symlink step or check `OPENCLAW_SKILL_PATH` |
 
 ---
 

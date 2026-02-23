@@ -26,7 +26,7 @@ The following features were ported from OmO to OmOC with minimal conceptual chan
 | Background agents (task tool) | omoc_delegate tool | Adapted |
 | look_at tool (multimodal) | omoc_look_at tool (Gemini CLI + tmux) | Adapted |
 | Skill system | Markdown skills (13 files) | Adapted |
-| /init-deep | scripts/init-deep.sh | Adapted |
+| /init-deep | scripts/init-deep.sh (removed) | Adapted → Removed |
 | Metis gap analyzer | Metis agent (markdown) | Direct port |
 | Momus plan reviewer | Momus agent (markdown) | Direct port |
 
@@ -48,9 +48,9 @@ OmO's `look_at` tool is a native TypeScript implementation that passes image or 
 
 OmO's skill system is implemented as TypeScript modules loaded at runtime, with typed interfaces, skill-embedded MCPs, and dynamic context injection. OmOC's skills are plain markdown files in `skills/`. They carry the same instructional content — persona, workflow, rules — but have no runtime type safety, no embedded MCP invocation, and no dynamic loading. The skill content is faithful; the delivery mechanism is a documentation convention rather than a plugin system.
 
-### scripts/init-deep.sh (from /init-deep command)
+### scripts/init-deep.sh (from /init-deep command) - REMOVED
 
-OmO's `/init-deep` is a built-in command that traverses the project tree and writes hierarchical `AGENTS.md` files with LSP-informed context. OmOC's `scripts/init-deep.sh` is a shell script that performs the same traversal and file generation but without LSP data. The output structure is compatible; the depth of analysis is reduced.
+OmO's `/init-deep` is a built-in command that traverses the project tree and writes hierarchical `AGENTS.md` files with LSP-informed context. OmOC previously shipped `scripts/init-deep.sh` as a shell script that performed the same traversal and file generation but without LSP data. This script has been removed as part of the directory restructure. Plugin-only installation is now the standard approach.
 
 ---
 

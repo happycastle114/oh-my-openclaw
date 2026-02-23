@@ -604,13 +604,13 @@ Oh-My-OpenClaw defines 13 skill documents, each with keyword-based auto-activati
 
 | Skill | Trigger Keywords | File | Description |
 |-------|-----------------|------|-------------|
-| **git-master** | commit, rebase, squash, who wrote, when was, git history, blame | `skills/git-master.md` | Atomic commits, rebase surgery, history search |
-| **frontend-ui-ux** | UI, UX, frontend, design, styling, CSS, layout | `skills/frontend-ui-ux.md` | Designer-turned-developer UI/UX crafting |
-| **comment-checker** | comment check, AI slop, code quality, clean comments | `skills/comment-checker.md` | Anti-AI-slop code quality guard |
-| **gemini-look-at** | look at, PDF, screenshot, diagram, visual | `skills/gemini-look-at.md` | Gemini CLI multimodal file analysis |
-| **steering-words** | ultrawork, search, analyze | `skills/steering-words.md` | Keyword detection and mode routing |
-| **delegation-prompt** | delegate, sub-agent | `skills/delegation-prompt.md` | 7-element delegation prompt construction guide |
-| **multimodal-analysis** | multimodal, image analysis | `skills/multimodal-analysis.md` | Multimodal analysis pattern templates |
+| **git-master** | commit, rebase, squash, who wrote, when was, git history, blame | `plugin/skills/git-master.md` | Atomic commits, rebase surgery, history search |
+| **frontend-ui-ux** | UI, UX, frontend, design, styling, CSS, layout | `plugin/skills/frontend-ui-ux.md` | Designer-turned-developer UI/UX crafting |
+| **comment-checker** | comment check, AI slop, code quality, clean comments | `plugin/skills/comment-checker.md` | Anti-AI-slop code quality guard |
+| **gemini-look-at** | look at, PDF, screenshot, diagram, visual | `plugin/skills/gemini-look-at.md` | Gemini CLI multimodal file analysis |
+| **steering-words** | ultrawork, search, analyze | `plugin/skills/steering-words.md` | Keyword detection and mode routing |
+| **delegation-prompt** | delegate, sub-agent | `plugin/skills/delegation-prompt.md` | 7-element delegation prompt construction guide |
+| **multimodal-analysis** | multimodal, image analysis | `plugin/skills/multimodal-analysis.md` | Multimodal analysis pattern templates |
 | **opencode-controller** | opencode, tmux, plan/build | `plugin/skills/opencode-controller.md` | OpenCode tmux session control and delegation patterns |
 | **tmux** | tmux, send-keys, capture-pane | `plugin/skills/tmux.md` | tmux session control and parallel orchestration patterns |
 | **tmux-agents** | claude, codex, gemini, ollama | `plugin/skills/tmux-agents.md` | Agent spawn and monitoring patterns in tmux |

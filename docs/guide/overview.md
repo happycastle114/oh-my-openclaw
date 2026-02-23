@@ -132,36 +132,15 @@ OhMyClaw adapts the patterns — it does not blindly copy them.
 ---
 
 ## Quick Start
+Get running in two steps.
 
-Get running in four steps.
-
-**1. Clone the repository.**
-
-```bash
-git clone https://github.com/happycastle/oh-my-openclaw.git
-cd oh-my-openclaw
-```
-
-**2. Install dependencies.**
+**1. Install the plugin.**
 
 ```bash
-npm install
+openclaw plugins install @happycastle/oh-my-openclaw
 ```
 
-**3. Symlink into your OpenClaw installation.**
-
-```bash
-# Point OpenClaw to the plugin
-ln -s $(pwd) ~/.openclaw/plugins/oh-my-openclaw
-```
-
-**4. Initialize the agent knowledge base.**
-
-```bash
-bash scripts/init-deep.sh
-```
-
-**5. Start working.**
+**2. Start working.**
 
 Open your OpenClaw client (Discord, Telegram, or Web) and run:
 
@@ -169,7 +148,7 @@ Open your OpenClaw client (Discord, Telegram, or Web) and run:
 /ultrawork Your task description here
 ```
 
-The orchestration pipeline starts immediately. Prometheus plans. Atlas dispatches. Workers execute. 🚀
+The orchestration pipeline starts immediately. Prometheus plans. Atlas dispatches. Workers execute.
 
 ---
 

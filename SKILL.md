@@ -21,35 +21,11 @@ Oh-My-OpenClaw ports the proven patterns from oh-my-opencode into OpenClaw-nativ
 
 ## Installation
 
-### Option 1: Workspace Skill (Recommended)
-
 ```bash
-# Symlink into your OpenClaw workspace skills directory
-# Workspace skills are per-agent and have highest precedence
-ln -s "$(pwd)" <workspace>/skills/oh-my-openclaw
+openclaw plugins install @happycastle/oh-my-openclaw
 ```
 
-### Option 2: Shared Skill (All Agents)
-
-```bash
-# Available to all agents on this machine
-# Second precedence after workspace skills
-ln -s "$(pwd)" ~/.openclaw/skills/oh-my-openclaw
-```
-
-### Option 3: Extra Dirs (via config)
-
-Add to `~/.openclaw/openclaw.json`:
-
-```json
-{ "skills": { "load": { "extraDirs": ["/path/to/oh-my-openclaw"] } } }
-```
-
-### Option 4: Clone from GitHub
-
-```bash
-gh repo clone happycastle114/oh-my-openclaw ~/.openclaw/skills/oh-my-openclaw
-```
+Skills, hooks, and tools are registered automatically. Run `openclaw omoc-setup` to inject agent configs.
 
 ### Agent Tool Restrictions
 
@@ -214,13 +190,7 @@ Skills inject specialized knowledge and workflows into agents. Load them via `lo
 | **The Looker**     | visual-engineering | gemini-look-at  | Gemini CLI for native multimodal analysis of PDF/image/diagram |
 | **The Researcher** | quick              | web-search      | Web search + code search + documentation search via Exa/Context7/grep.app |
 
-## Quick Setup
 
-Run the setup script to install as an OpenClaw skill + initialize notepad structure:
-
-```bash
-bash /home/happycastle/Projects/oh-my-openclaw/scripts/setup.sh
-```
 
 ## File Structure
 
@@ -228,32 +198,40 @@ bash /home/happycastle/Projects/oh-my-openclaw/scripts/setup.sh
 oh-my-openclaw/
   SKILL.md              # This file - main skill instructions
   README.md             # Project documentation
+  LICENSE               # MIT license
+  CHANGELOG.md          # Version history
   config/
     categories.json     # Category-to-model mapping + tool restrictions + skill triggers
-  agents/
-    prometheus.md       # Strategic planner agent profile
-    metis.md            # Pre-planning consultant (intent classification + anti-slop directives)
-    momus.md            # Practical plan reviewer (critical blocker checks)
-    atlas.md            # Task orchestrator agent profile
-    sisyphus-junior.md  # Primary worker agent profile
-    hephaestus.md       # Autonomous deep worker for complex execution
-    oracle.md           # Architect/debugger agent profile
-    librarian.md        # Documentation specialist agent profile
-    explore.md          # Search specialist agent profile
-    multimodal-looker.md # Visual analysis agent profile
-  skills/
-    git-master.md       # Git expert skill (commits, rebase, history)
-    frontend-ui-ux.md   # Design-first UI development skill
-    comment-checker.md  # Anti-AI-slop code quality skill
-    gemini-look-at.md   # Gemini CLI multimodal analysis (PDF/image/video)
-    web-search.md       # Web search integration (Exa/Context7/grep.app MCP)
-  workflows/
-    ultrawork.md        # Full automation workflow
-    plan.md             # Planning-only workflow
-    start-work.md       # Execute existing plan workflow
-  scripts/
-    setup.sh            # One-command install + notepad initialization
-    init-deep.sh        # Generate hierarchical AGENTS.md files
+  docs/                 # Documentation files
+  plugin/
+    agents/
+      prometheus.md       # Strategic planner agent profile
+      metis.md            # Pre-planning consultant (intent classification + anti-slop directives)
+      momus.md            # Practical plan reviewer (critical blocker checks)
+      atlas.md            # Task orchestrator agent profile
+      sisyphus-junior.md  # Primary worker agent profile
+      hephaestus.md       # Autonomous deep worker for complex execution
+      oracle.md           # Architect/debugger agent profile
+      librarian.md        # Documentation specialist agent profile
+      explore.md          # Search specialist agent profile
+      multimodal-looker.md # Visual analysis agent profile
+    skills/
+      git-master.md       # Git expert skill (commits, rebase, history)
+      frontend-ui-ux.md   # Design-first UI development skill
+      comment-checker.md  # Anti-AI-slop code quality skill
+      gemini-look-at.md   # Gemini CLI multimodal analysis (PDF/image/video)
+      web-search.md       # Web search integration (Exa/Context7/grep.app MCP)
+      opencode-controller.md  # OpenCode/OmO delegation patterns
+      tmux.md             # tmux session orchestration patterns
+      tmux-agents.md      # Agent spawning/monitoring in tmux
+      workflow-tool-patterns.md # OmO→OpenClaw tool mapping
+      workflow-auto-rescue.md   # Checkpoint-based recovery
+    workflows/
+      ultrawork.md        # Full automation workflow
+      plan.md             # Planning-only workflow
+      start-work.md       # Execute existing plan workflow
+    src/                # TypeScript plugin source
+    dist/               # Compiled plugin
 ```
 
 ## Usage Examples

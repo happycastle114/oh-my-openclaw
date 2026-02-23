@@ -36,6 +36,7 @@
   "files": [
     "dist",
     "bin",
+    "agents",
     "skills",
     "workflows",
     "openclaw.plugin.json"

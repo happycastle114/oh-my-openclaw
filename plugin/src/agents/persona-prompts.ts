@@ -61,7 +61,7 @@ export function readPersonaPromptSync(agentId: string): string {
     return `[OmOC] Unknown persona: ${agentId}`;
   }
 
-  const agentPath = join(PLUGIN_ROOT, '..', 'agents', `${mdName}.md`);
+  const agentPath = join(PLUGIN_ROOT, 'agents', `${mdName}.md`);
   try {
     const stat = statSync(agentPath);
     const cached = personaCache.get(agentPath);
@@ -85,7 +85,7 @@ export async function readPersonaPrompt(agentId: string): Promise<string> {
     return `[OmOC] Unknown persona: ${agentId}`;
   }
 
-  const agentPath = join(PLUGIN_ROOT, '..', 'agents', `${mdName}.md`);
+  const agentPath = join(PLUGIN_ROOT, 'agents', `${mdName}.md`);
   try {
     return await fs.readFile(agentPath, 'utf-8');
   } catch {
