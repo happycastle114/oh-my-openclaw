@@ -49,7 +49,25 @@ export const PROVIDER_LABELS: Record<string, string> = {
   anthropic: 'Anthropic (Claude)',
   openai: 'OpenAI (GPT)',
   google: 'Google (Gemini)',
+  custom: 'Custom (enter model IDs manually)',
 };
+
+export const MODEL_TIERS: ModelTier[] = ['planning', 'worker', 'orchestrator', 'lightweight', 'visual'];
+
+export function buildCustomPreset(tierModels: Record<ModelTier, string>): ProviderPreset {
+  const preset: Partial<ProviderPreset> = {};
+  for (const tier of MODEL_TIERS) {
+    preset[tier] = { primary: tierModels[tier], fallbacks: [] };
+  }
+  return preset as ProviderPreset;
+}
+
+export function registerCustomPreset(name: string, preset: ProviderPreset): void {
+  PROVIDER_PRESETS[name] = preset;
+  if (!PROVIDER_LABELS[name]) {
+    PROVIDER_LABELS[name] = name;
+  }
+}
 
 export function getProviderNames(): string[] {
   return Object.keys(PROVIDER_PRESETS);

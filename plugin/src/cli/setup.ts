@@ -7,8 +7,11 @@ import {
   PROVIDER_PRESETS,
   PROVIDER_LABELS,
   AGENT_TIER_MAP,
+  MODEL_TIERS,
   applyProviderPreset,
   getProviderNames,
+  buildCustomPreset,
+  registerCustomPreset,
   type ModelTier,
 } from './model-presets.js';
 
@@ -143,6 +146,56 @@ const TIER_LABELS: Record<ModelTier, string> = {
   visual: 'Visual/Frontend',
 };
 
+function printPreview(logger: Logger, provider: string): void {
+  const preset = PROVIDER_PRESETS[provider]!;
+  for (const [tier, label] of Object.entries(TIER_LABELS)) {
+    const config = preset[tier as ModelTier];
+    const agents = Object.entries(AGENT_TIER_MAP)
+      .filter(([, t]) => t === tier)
+      .map(([id]) => id.replace('omoc_', ''))
+      .join(', ');
+    logger.info(`  ${label} (${agents}):`);
+    logger.info(`    → ${config.primary}`);
+    if (config.fallbacks.length > 0) {
+      logger.info(`      fallback: ${config.fallbacks.join(', ')}`);
+    }
+  }
+}
+
+async function runCustomProviderFlow(
+  rl: readline.Interface,
+  logger: Logger,
+): Promise<string> {
+  logger.info('');
+  logger.info('  Enter model IDs for each tier.');
+  logger.info('  Format: provider/model (e.g., cliproxy/claude-opus-4-6, z.ai/gpt-5.3-codex)');
+  logger.info('');
+
+  const tierModels = {} as Record<ModelTier, string>;
+
+  for (const tier of MODEL_TIERS) {
+    const label = TIER_LABELS[tier];
+    const agents = Object.entries(AGENT_TIER_MAP)
+      .filter(([, t]) => t === tier)
+      .map(([id]) => id.replace('omoc_', ''))
+      .join(', ');
+
+    let model = '';
+    while (!model) {
+      model = await askQuestion(rl, `  ${label} (${agents}): `);
+      if (!model) {
+        logger.info('    Model ID required.');
+      }
+    }
+    tierModels[tier] = model;
+  }
+
+  const customPreset = buildCustomPreset(tierModels);
+  const customName = '_custom_' + Date.now();
+  registerCustomPreset(customName, customPreset);
+  return customName;
+}
+
 export async function runInteractiveSetup(logger: Logger): Promise<{ provider: string }> {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -155,46 +208,41 @@ export async function runInteractiveSetup(logger: Logger): Promise<{ provider: s
     logger.info('─'.repeat(40));
     logger.info('');
 
-    const providers = getProviderNames();
-    logger.info('Step 1/2: Select your primary AI provider');
+    const presetProviders = getProviderNames();
+    const choices = [...presetProviders, 'custom'];
+    const choiceCount = choices.length;
+
+    logger.info('Step 1/2: Select your AI provider');
     logger.info('');
-    providers.forEach((p, i) => {
+    choices.forEach((p, i) => {
       logger.info(`  ${i + 1}. ${PROVIDER_LABELS[p] ?? p}`);
     });
     logger.info('');
 
     let provider = '';
     while (!provider) {
-      const answer = await askQuestion(rl, '  Select (1-3): ');
+      const answer = await askQuestion(rl, `  Select (1-${choiceCount}): `);
       const idx = parseInt(answer, 10) - 1;
-      if (idx >= 0 && idx < providers.length) {
-        provider = providers[idx]!;
-      } else if (providers.includes(answer.toLowerCase())) {
+      if (idx >= 0 && idx < choiceCount) {
+        provider = choices[idx]!;
+      } else if (choices.includes(answer.toLowerCase())) {
         provider = answer.toLowerCase();
       } else {
-        logger.info('  Invalid choice. Enter 1, 2, or 3.');
+        logger.info(`  Invalid choice. Enter 1-${choiceCount}.`);
       }
     }
 
+    if (provider === 'custom') {
+      provider = await runCustomProviderFlow(rl, logger);
+    }
+
     logger.info('');
-    logger.info(`  ✓ Selected: ${PROVIDER_LABELS[provider]}`);
+    logger.info(`  ✓ Selected: ${PROVIDER_LABELS[provider] ?? 'Custom'}`);
     logger.info('');
 
     logger.info('Step 2/2: Model configuration preview');
     logger.info('');
-    const preset = PROVIDER_PRESETS[provider]!;
-    for (const [tier, label] of Object.entries(TIER_LABELS)) {
-      const config = preset[tier as ModelTier];
-      const agents = Object.entries(AGENT_TIER_MAP)
-        .filter(([, t]) => t === tier)
-        .map(([id]) => id.replace('omoc_', ''))
-        .join(', ');
-      logger.info(`  ${label} (${agents}):`);
-      logger.info(`    → ${config.primary}`);
-      if (config.fallbacks.length > 0) {
-        logger.info(`      fallback: ${config.fallbacks.join(', ')}`);
-      }
-    }
+    printPreview(logger, provider);
     logger.info('');
 
     const confirm = await askQuestion(rl, '  Apply this configuration? (Y/n): ');
