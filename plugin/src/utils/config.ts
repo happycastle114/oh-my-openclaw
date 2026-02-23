@@ -22,6 +22,16 @@ export function getConfig(api: OmocPluginApi): PluginConfig {
   if (config.max_ralph_iterations > ABSOLUTE_MAX_RALPH_ITERATIONS) {
     config.max_ralph_iterations = ABSOLUTE_MAX_RALPH_ITERATIONS;
   }
+  if (config.max_ralph_iterations < 0) {
+    config.max_ralph_iterations = 0;
+  }
+
+  if (config.todo_enforcer_cooldown_ms < 0) {
+    config.todo_enforcer_cooldown_ms = 0;
+  }
+  if (config.todo_enforcer_max_failures < 0) {
+    config.todo_enforcer_max_failures = 0;
+  }
 
   return config;
 }
@@ -36,14 +46,14 @@ export function validateConfig(config: Partial<PluginConfig>): { valid: boolean;
   }
 
   if (config.todo_enforcer_cooldown_ms !== undefined) {
-    if (config.todo_enforcer_cooldown_ms <= 0) {
-      errors.push('todo_enforcer_cooldown_ms must be greater than 0');
+    if (config.todo_enforcer_cooldown_ms < 0) {
+      errors.push('todo_enforcer_cooldown_ms must be >= 0 (negative values clamped to 0)');
     }
   }
 
   if (config.todo_enforcer_max_failures !== undefined) {
-    if (config.todo_enforcer_max_failures < 1) {
-      errors.push('todo_enforcer_max_failures must be at least 1');
+    if (config.todo_enforcer_max_failures < 0) {
+      errors.push('todo_enforcer_max_failures must be >= 0 (negative values clamped to 0)');
     }
   }
 

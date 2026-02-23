@@ -1,19 +1,8 @@
 import { TOOL_PREFIX, ABSOLUTE_MAX_RALPH_ITERATIONS } from '../types.js';
+import { CATEGORIES, type Category } from '../constants.js';
 
-const VALID_CATEGORIES = [
-  'quick',
-  'deep',
-  'ultrabrain',
-  'visual-engineering',
-  'multimodal',
-  'artistry',
-  'unspecified-low',
-  'unspecified-high',
-  'writing',
-];
-
-export function isValidCategory(cat: string): boolean {
-  return VALID_CATEGORIES.includes(cat);
+export function isValidCategory(cat: string): cat is Category {
+  return (CATEGORIES as readonly string[]).includes(cat);
 }
 
 export function sanitizeToolName(name: string): string {

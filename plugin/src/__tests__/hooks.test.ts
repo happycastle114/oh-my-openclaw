@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { registerTodoEnforcer } from '../hooks/todo-enforcer.js';
+import { registerTodoEnforcer, resetEnforcerState, getEnforcerState } from '../hooks/todo-enforcer.js';
 import { registerCommentChecker } from '../hooks/comment-checker.js';
 import { registerMessageMonitor, getMessageCount } from '../hooks/message-monitor.js';
 import type { OmocPluginApi, PluginConfig } from '../types.js';
@@ -62,6 +62,7 @@ function createMockApi(configOverrides: Partial<PluginConfig> = {}): MockApi {
 describe('todo-enforcer hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetEnforcerState();
   });
 
   it('injects directive when todo_enforcer_enabled=true', () => {
@@ -115,6 +116,47 @@ describe('todo-enforcer hook', () => {
     expect(event.context.bootstrapFiles).toHaveLength(2);
     expect(event.context.bootstrapFiles?.[0]).toEqual({ path: 'existing', content: 'keep' });
     expect(event.context.bootstrapFiles?.[1].path).toBe('omoc://todo-enforcer');
+  });
+
+  it('skips injection during cooldown period', () => {
+    const api = createMockApi({ todo_enforcer_enabled: true, todo_enforcer_cooldown_ms: 60000 });
+    resetEnforcerState();
+    registerTodoEnforcer(api);
+
+    const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
+
+    const event1: AgentBootstrapEvent = { context: { bootstrapFiles: [] } };
+    handler(event1);
+    expect(event1.context.bootstrapFiles).toHaveLength(1);
+
+    const event2: AgentBootstrapEvent = { context: { bootstrapFiles: [] } };
+    handler(event2);
+    expect(event2.context.bootstrapFiles).toHaveLength(0);
+    expect(api.logger.info).toHaveBeenCalledWith('[omoc] Todo enforcer skipped (cooldown)');
+  });
+
+  it('allows injection when cooldown is 0', () => {
+    const api = createMockApi({ todo_enforcer_enabled: true, todo_enforcer_cooldown_ms: 0 });
+    resetEnforcerState();
+    registerTodoEnforcer(api);
+
+    const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
+
+    const event1: AgentBootstrapEvent = { context: { bootstrapFiles: [] } };
+    handler(event1);
+    expect(event1.context.bootstrapFiles).toHaveLength(1);
+
+    const event2: AgentBootstrapEvent = { context: { bootstrapFiles: [] } };
+    handler(event2);
+    expect(event2.context.bootstrapFiles).toHaveLength(1);
+  });
+
+  it('resets state correctly', () => {
+    resetEnforcerState();
+    const state = getEnforcerState();
+    expect(state.lastInjectionTime).toBe(0);
+    expect(state.consecutiveFailures).toBe(0);
+    expect(state.disabledByFailures).toBe(false);
   });
 });
 

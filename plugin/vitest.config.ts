@@ -5,5 +5,11 @@ export default defineConfig({
     root: '.',
     include: ['src/__tests__/**/*.test.ts'],
     globals: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/__tests__/**'],
+    },
   },
 });

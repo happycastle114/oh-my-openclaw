@@ -54,8 +54,9 @@ OmO-style multi-agent orchestration for OpenClaw. Your AI agent gets 10 speciali
 | **OmO Delegation** | Route coding tasks to OpenCode running in tmux. Full OmO power. |
 | **Checkpoints** | Save/load execution state. Crash recovery. Pick up where you left off. |
 | **10 Agents** | Specialized team: planners, workers, reviewers. Each with a job. |
-| **7 Skills** | git-master, frontend-ui-ux, comment-checker, multimodal, and more. |
-| **7 Workflows** | ultrawork, plan, start-work, delegate-to-omo, auto-rescue, and more. |
+| **8 Skills** | git-master, frontend-ui-ux, comment-checker, multimodal, and more. |
+| **3 Workflow Commands** | `/ultrawork`, `/plan`, `/start-work` — executable pipelines. |
+| **4 Reference Skills** | delegate-to-omo, tmux-orchestration, tool-patterns, auto-rescue — guidance docs. |
 
 ---
 
@@ -249,17 +250,24 @@ Edit the `"model"` field. Done. `"alternatives"` shows what else works.
 | `multimodal-analysis` | multimodal, image analysis | Analysis pattern templates |
 | `web-search` | web search, 웹 검색, exa, context7 | OmO websearch MCP 통합 (Exa + Context7 + grep.app) |
 
-### Workflows
+### Workflow Commands
 
 | Workflow | Command | What Happens |
 |----------|---------|-------------|
 | `ultrawork` | `/ultrawork` | Full planning → execution → verification |
 | `plan` | `/plan` | Planning only (Prometheus + Momus) |
 | `start-work` | `/start-work` | Execute an existing plan |
-| `delegate-to-omo` | `/delegate-to-omo` | Route to OpenCode in tmux |
-| `tmux-orchestration` | — | Coordinate OpenCode + Gemini CLI |
-| `tool-patterns` | — | OmO tool → OpenClaw mapping |
-| `auto-rescue` | — | Checkpoint + failure recovery |
+
+### Reference Skills
+
+These are guidance documents, not executable commands. They inform agent behavior.
+
+| Skill | Purpose |
+|-------|---------|
+| `delegate-to-omo` | How to route coding tasks to OpenCode in tmux |
+| `tmux-orchestration` | Patterns for coordinating OpenCode + Gemini CLI sessions |
+| `tool-patterns` | OmO tool → OpenClaw tool mapping reference |
+| `auto-rescue` | Checkpoint + failure recovery patterns |
 
 ---
 

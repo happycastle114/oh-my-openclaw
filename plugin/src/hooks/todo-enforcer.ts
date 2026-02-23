@@ -19,6 +19,20 @@ interface AgentBootstrapEvent {
   };
 }
 
+let lastInjectionTime = 0;
+let consecutiveFailures = 0;
+let disabledByFailures = false;
+
+export function resetEnforcerState(): void {
+  lastInjectionTime = 0;
+  consecutiveFailures = 0;
+  disabledByFailures = false;
+}
+
+export function getEnforcerState() {
+  return { lastInjectionTime, consecutiveFailures, disabledByFailures };
+}
+
 export function registerTodoEnforcer(api: OmocPluginApi): void {
   api.registerHook(
     'agent:bootstrap',
@@ -29,16 +43,37 @@ export function registerTodoEnforcer(api: OmocPluginApi): void {
         return;
       }
 
+      if (disabledByFailures) {
+        api.logger.warn('[omoc] Todo enforcer disabled due to consecutive failures');
+        return;
+      }
+
+      const now = Date.now();
+      if (config.todo_enforcer_cooldown_ms > 0 && (now - lastInjectionTime) < config.todo_enforcer_cooldown_ms) {
+        api.logger.info('[omoc] Todo enforcer skipped (cooldown)');
+        return;
+      }
+
       if (!event.context.bootstrapFiles) {
         event.context.bootstrapFiles = [];
       }
 
-      event.context.bootstrapFiles.push({
-        path: 'omoc://todo-enforcer',
-        content: DIRECTIVE_TEXT,
-      });
+      try {
+        event.context.bootstrapFiles.push({
+          path: 'omoc://todo-enforcer',
+          content: DIRECTIVE_TEXT,
+        });
 
-      api.logger.info('[omoc] Todo enforcer directive injected');
+        lastInjectionTime = now;
+        consecutiveFailures = 0;
+        api.logger.info('[omoc] Todo enforcer directive injected');
+      } catch {
+        consecutiveFailures++;
+        if (config.todo_enforcer_max_failures > 0 && consecutiveFailures >= config.todo_enforcer_max_failures) {
+          disabledByFailures = true;
+          api.logger.error(`[omoc] Todo enforcer disabled after ${consecutiveFailures} consecutive failures`);
+        }
+      }
     },
     {
       name: 'oh-my-openclaw.todo-enforcer',

@@ -1,8 +1,9 @@
 import { Type, Static } from '@sinclair/typebox';
 import { OmocPluginApi, TOOL_PREFIX } from '../types.js';
 import { isValidCategory } from '../utils/validation.js';
+import { type Category } from '../constants.js';
 
-const CATEGORY_MODELS: Record<string, string> = {
+const DEFAULT_CATEGORY_MODELS: Record<Category, string> = {
   quick: 'claude-sonnet-4-6',
   deep: 'claude-opus-4-6-thinking',
   ultrabrain: 'gpt-5.3-codex',
@@ -29,7 +30,7 @@ export function registerDelegateTool(api: OmocPluginApi) {
     description: 'Delegate a task to a sub-agent with category-based model routing',
     parameters: DelegateParamsSchema,
     execute: async (params: DelegateParams) => {
-      const validCategories = Object.keys(CATEGORY_MODELS);
+      const validCategories = Object.keys(DEFAULT_CATEGORY_MODELS);
 
       if (!isValidCategory(params.category)) {
         return {
@@ -49,7 +50,7 @@ export function registerDelegateTool(api: OmocPluginApi) {
         };
       }
 
-      const model = CATEGORY_MODELS[params.category];
+      const model = DEFAULT_CATEGORY_MODELS[params.category];
 
       api.logger.info('[omoc] Delegating task:', { category: params.category, model });
 
