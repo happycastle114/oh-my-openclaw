@@ -64,9 +64,9 @@ mcporter call context7.resolve-library-id \
   libraryName="react"
 
 # 문서 검색
-mcporter call context7.get-library-docs \
-  context7CompatibleLibraryID="/facebook/react" \
-  topic="hooks"
+mcporter call context7.query-docs \
+  libraryId="/facebook/react" \
+  query="hooks"
 ```
 **용도:**
 - 라이브러리 API 레퍼런스 확인
@@ -148,7 +148,7 @@ MCP 서버들은 `~/.openclaw/workspace/config/mcporter.json`에 설정되어 �
 |------------------|--------------------------------------------------|
 | `websearch` (Exa)| `mcporter call exa.web_search_exa` + `web_fetch` |
 | `websearch` (Tavily)| `mcporter call web-search-prime.webSearchPrime`|
-| `context7`       | `mcporter call context7.resolve-library-id` / `.get-library-docs` |
+| `context7`       | `mcporter call context7.resolve-library-id` / `.query-docs` |
 | `grep_app`       | `mcporter call grep_app.search`                  |
 | *(없음)*         | `web_fetch` (OpenClaw 네이티브)                   |
 | *(없음)*         | `web-reader` (MCP, 깔끔한 페이지 추출)            |

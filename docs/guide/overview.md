@@ -120,7 +120,7 @@ OhMyClaw is a port of OmO patterns, not a copy. The platform changes everything.
 | Dimension | OmO (OpenCode) | OhMyClaw (OpenClaw) |
 |-----------|---------------|---------------------|
 | **Platform** | CLI / terminal | Discord, Telegram, Web, multi-device |
-| **Format** | Markdown agents + skills | TypeScript plugin (3 hooks, 3 tools, 6 commands, 1 service) |
+| **Format** | Markdown agents + skills | TypeScript plugin (5 hooks, 3 tools, 8 commands, 1 service) |
 | **Channels** | Single session | Multi-channel, multi-client |
 | **Multimodal** | Text + file analysis | Text + images + browser control + PDFs |
 | **Memory** | Session-scoped | Cross-session via Librarian agent |
@@ -175,16 +175,16 @@ The orchestration pipeline starts immediately. Prometheus plans. Atlas dispatche
 
 ## Plugin Structure
 
-OhMyClaw ships as a single TypeScript plugin: `@happycastle/oh-my-openclaw@0.1.0`
+OhMyClaw ships as a single TypeScript plugin: `@happycastle/oh-my-openclaw@0.5.0`
 
 The plugin registers:
 
-- **3 hooks** — lifecycle integration with OpenClaw events
+- **5 hooks** — lifecycle integration with OpenClaw events (`agent:bootstrap`, `tool_result_persist`, `message:sent`, `message:received`, `gateway:startup`)
 - **3 tools** — utilities available to all agents
-- **6 commands** — slash commands including `/ultrawork`, `/init-deep`, and more
+- **8 commands** — workflow, ralph-loop, status, health, and config commands
 - **1 service** — background orchestration service
 
-10 markdown agent definitions and 7 skill files ship alongside the plugin. 7 workflow templates cover the most common task patterns.
+10 markdown agent definitions and 13 skill docs ship alongside the plugin. 7 workflow templates cover the most common task patterns.
 
 ---
 

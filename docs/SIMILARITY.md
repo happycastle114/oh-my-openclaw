@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Oh-My-OpenClaw (OmOC v0.1.0) is a deliberate, structural port of Oh-My-OpenCode (OmO v3.8.3) to the OpenClaw runtime. The core agent roster, category system, orchestration loop, and philosophy are lifted nearly verbatim — Sisyphus becomes Atlas, Hephaestus stays Hephaestus, and the same four task categories drive routing decisions. The primary divergence is implementation medium: OmO ships agents as compiled TypeScript with 55+ hooks and 17 tools; OmOC ships them as markdown skill files with 3 hooks and 3 tools, relying on OpenClaw's native plugin API and Gemini CLI for capabilities OmO handles internally. OmOC also gains platform features OmO cannot have — Discord/Telegram channels, tmux multi-session orchestration, browser control, and a Graphiti knowledge graph — but it trades away LSP integration, AST-Grep, IntentGate, session tooling, and the full hook ecosystem. The result is a faithful conceptual clone with a meaningfully different capability surface.
+Oh-My-OpenClaw (OmOC v0.5.0) is a deliberate, structural port of Oh-My-OpenCode (OmO v3.8.3) to the OpenClaw runtime. The core agent roster, category system, orchestration loop, and philosophy are lifted nearly verbatim — Sisyphus becomes Atlas, Hephaestus stays Hephaestus, and the same four task categories drive routing decisions. The primary divergence is implementation medium: OmO ships agents as compiled TypeScript with 55+ hooks and 17 tools; OmOC ships them as markdown skill files with 5 hooks and 3 tools, relying on OpenClaw's native plugin API and Gemini CLI for capabilities OmO handles internally. OmOC also gains platform features OmO cannot have — Discord/Telegram channels, tmux multi-session orchestration, browser control, and a Graphiti knowledge graph — but it trades away LSP integration, AST-Grep, IntentGate, session tooling, and the full hook ecosystem. The result is a faithful conceptual clone with a meaningfully different capability surface.
 
 ---
 
@@ -25,7 +25,7 @@ The following features were ported from OmO to OmOC with minimal conceptual chan
 | Comment Checker hook | comment-checker hook (11 patterns) | Direct port |
 | Background agents (task tool) | omoc_delegate tool | Adapted |
 | look_at tool (multimodal) | omoc_look_at tool (Gemini CLI + tmux) | Adapted |
-| Skill system | Markdown skills (7 files) | Adapted |
+| Skill system | Markdown skills (13 files) | Adapted |
 | /init-deep | scripts/init-deep.sh | Adapted |
 | Metis gap analyzer | Metis agent (markdown) | Direct port |
 | Momus plan reviewer | Momus agent (markdown) | Direct port |
@@ -56,7 +56,7 @@ OmO's `/init-deep` is a built-in command that traverses the project tree and wri
 
 ## OmO Features NOT in OmOC
 
-These capabilities exist in OmO v3.8.3 and have no equivalent in OmOC v0.1.0.
+These capabilities exist in OmO v3.8.3 and have no equivalent in OmOC v0.5.0.
 
 - **Hash-anchored edit tool** — OmO's edit tool uses LINE#ID format with CID letter pairs for precise, collision-resistant line targeting. OmOC has no equivalent; edits go through OpenClaw's native file tools.
 - **LSP tools** — `lsp_goto_definition`, `lsp_find_references`, `lsp_symbols`, `lsp_diagnostics`, `lsp_prepare_rename`, `lsp_rename`. OmOC has no language server integration.
@@ -64,7 +64,7 @@ These capabilities exist in OmO v3.8.3 and have no equivalent in OmOC v0.1.0.
 - **IntentGate** — OmO's pre-routing intent classifier that intercepts ambiguous requests before agent selection. OmOC routes directly via categories.json without an intent layer.
 - **Session tools** — `session_list`, `session_read`, `session_search`, `session_info` for querying historical conversation data. OmOC has no session persistence tooling.
 - **Claude Code compatibility layer** — OmO is built specifically for the Claude Code CLI runtime. OmOC targets OpenClaw and has no Claude Code integration.
-- **44+ hooks** — OmO ships over 44 lifecycle hooks covering pre-tool, post-tool, pre-agent, post-agent, and error events. OmOC has 3 hooks (todo-enforcer, comment-checker, one additional).
+- **44+ hooks** — OmO ships over 44 lifecycle hooks covering pre-tool, post-tool, pre-agent, post-agent, and error events. OmOC has 5 hooks.
 - **Built-in MCPs** — OmO bundles MCP servers (filesystem, git, GitHub, web search, browser, etc.) as first-class plugin dependencies. OmOC relies on OpenClaw's plugin API for external tool access.
 - **Skill-embedded MCPs** — OmO skills can declare and invoke their own MCP servers inline. OmOC markdown skills have no MCP invocation capability.
 - **Task system with dependencies** — OmO's task tool supports DAG-style dependency declarations between background tasks. OmOC's omoc_delegate is single-task, no dependency graph.
@@ -78,7 +78,7 @@ These capabilities exist in OmO v3.8.3 and have no equivalent in OmOC v0.1.0.
 
 ## OmOC Features NOT in OmO
 
-These capabilities exist in OmOC v0.1.0 and have no equivalent in OmO v3.8.3.
+These capabilities exist in OmOC v0.5.0 and have no equivalent in OmO v3.8.3.
 
 - **Gemini CLI tmux integration** — OmOC can spawn Gemini CLI in a tmux pane and capture its output, enabling multimodal analysis via a separate model without leaving the OpenClaw runtime.
 - **OpenClaw messaging channels** — OmOC agents can send and receive messages through Discord, Telegram, and web interfaces natively. OmO is terminal-only.
@@ -105,10 +105,10 @@ TypeScript plugin (agents + hooks + tools)
 
 OmO is a monolithic TypeScript plugin that extends Claude Code. All agents, hooks, and tools are compiled into a single plugin bundle. The runtime is the Claude Code CLI, which provides MCP hosting, LSP bridging, and session management. The interface is a local terminal. There is no network layer between the user and the agent.
 
-### OmOC v0.1.0
+### OmOC v0.5.0
 
 ```
-Markdown skills (agent instructions, 7 files)
+Markdown skills (agent instructions, 13 files)
   + TypeScript plugin (omoc_delegate, omoc_look_at, omoc_checkpoint)
         ↓
   OpenClaw (runtime, plugin host, channel router)
@@ -125,7 +125,7 @@ OmOC splits agent intelligence (markdown skills) from tool capability (TypeScrip
 | Dimension | OmO | OmOC |
 |---|---|---|
 | Agent implementation | TypeScript classes | Markdown skill files |
-| Hook count | 55+ | 3 |
+| Hook count | 55+ | 5 |
 | Tool count | 17 | 3 |
 | Runtime | Claude Code CLI | OpenClaw |
 | Interface | Terminal | Discord / Telegram / Web |

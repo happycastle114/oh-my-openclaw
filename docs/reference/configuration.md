@@ -315,7 +315,7 @@ The `plugin/openclaw.plugin.json` manifest declares the plugin identity and the 
 {
   "id": "oh-my-openclaw",
   "name": "Oh-My-OpenClaw",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "tools": ["omoc_delegate", "omoc_look_at", "omoc_checkpoint"],
   "configSchema": {
     "type": "object",
@@ -356,6 +356,8 @@ The `plugin/openclaw.plugin.json` manifest declares the plugin identity and the 
 | `todo-enforcer` | `agent:bootstrap` | Injects the TODO continuation directive at session start |
 | `comment-checker` | `tool_result_persist` | Scans code for AI slop comments using 11 regex patterns |
 | `message-monitor` | `message:sent` | Audit logging and message counter |
+| `message-received-monitor` | `message:received` | Audit logging for inbound messages |
+| `gateway-startup` | `gateway:startup` | Plugin activation/startup logging |
 
 ---
 

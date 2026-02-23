@@ -1,4 +1,5 @@
 ---
+name: workflow-auto-rescue
 description: Session recovery workflow with checkpointing, failure detection, and automatic restore using file-based checkpoints + memory_search.
 ---
 

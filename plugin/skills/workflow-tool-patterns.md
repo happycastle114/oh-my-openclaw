@@ -1,4 +1,5 @@
 ---
+name: workflow-tool-patterns
 description: OmO src/tools 패턴을 OpenClaw에서 재사용 가능한 실행 패턴으로 매핑하는 워크플로우
 ---
 

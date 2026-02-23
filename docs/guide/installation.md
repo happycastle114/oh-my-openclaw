@@ -212,10 +212,10 @@ npm run test
 
 ```
 Test Suites: X passed
-Tests:       37 passed, 37 total
+Tests:       80+ passed
 ```
 
-All 37 tests must pass for a healthy installation. If any tests fail, review the error output and ensure:
+All tests must pass for a healthy installation (current suite: 80+ tests). If any tests fail, review the error output and ensure:
 - All dependencies are installed (`npm install`)
 - The plugin was built successfully (`npm run build`)
 - Your Node.js version meets the minimum requirement (Node 18+)

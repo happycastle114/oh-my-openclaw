@@ -54,7 +54,8 @@ OmO-style multi-agent orchestration for OpenClaw. Your AI agent gets 10 speciali
 | **OmO Delegation** | Route coding tasks to OpenCode running in tmux. Full OmO power. |
 | **Checkpoints** | Save/load execution state. Crash recovery. Pick up where you left off. |
 | **10 Agents** | Specialized team: planners, workers, reviewers. Each with a job. |
-| **8 Skills** | git-master, frontend-ui-ux, comment-checker, multimodal, and more. |
+| **13 Skill Docs** | Core skills + workflow/reference skills bundled in `plugin/skills/`. |
+| **2 Health Commands** | `/omoc-health` for plugin checks, `/omoc-config` for masked config inspection. |
 | **3 Workflow Commands** | `/ultrawork`, `/plan`, `/start-work` — executable pipelines. |
 | **4 Reference Skills** | delegate-to-omo, tmux-orchestration, tool-patterns, auto-rescue — guidance docs. |
 
@@ -280,7 +281,7 @@ Same DNA. Different runtime.
 | **Platform** | OpenCode plugin (terminal) | OpenClaw skill (messaging + web) |
 | **Format** | TypeScript runtime hooks | Markdown prompts + **TypeScript plugin** |
 | **Agents** | 11 (TypeScript) | 10 (Markdown) |
-| **Hooks** | 55+ runtime interceptors | 3 plugin hooks + workflow-based |
+| **Hooks** | 55+ runtime interceptors | 5 plugin hooks + workflow-based |
 | **Tools** | 17 custom tools | 3 plugin tools + OpenClaw native |
 | **Skills** | 4 built-in | 7 skill documents |
 | **Channels** | Terminal only | Discord, Telegram, Web, etc. |
@@ -307,6 +308,8 @@ npm install && npm run build
 | Hook | `todo-enforcer` | Injects TODO continuation on `agent:bootstrap` |
 | Hook | `comment-checker` | 11 regex patterns kill AI slop on `tool_result_persist` |
 | Hook | `message-monitor` | Audit logging + message counter on `message:sent` |
+| Hook | `message-received-monitor` | Inbound message audit on `message:received` |
+| Hook | `gateway-startup` | Plugin activation logging on `gateway:startup` |
 | Tool | `omoc_delegate` | Category-based task delegation with model routing |
 | Tool | `omoc_look_at` | Multimodal analysis via Gemini CLI + tmux |
 | Tool | `omoc_checkpoint` | Save/load/list execution checkpoints |
@@ -316,6 +319,8 @@ npm install && npm run build
 | Command | `/ralph-loop` | Start self-correcting execution loop |
 | Command | `/ralph-stop` | Stop ralph loop |
 | Command | `/omoc-status` | Plugin status summary |
+| Command | `/omoc-health` | Plugin health check (auto-reply) |
+| Command | `/omoc-config` | Show config with masked sensitive values |
 | Service | `ralph-loop` | Background loop — hard cap at 100 iterations |
 
 ### Scripts
@@ -323,7 +328,7 @@ npm install && npm run build
 ```bash
 npm run build      # Compile TypeScript
 npm run typecheck  # Type-check without emit
-npm run test       # Run vitest (37 tests)
+npm run test       # Run vitest (80+ tests)
 ```
 
 ### Publish

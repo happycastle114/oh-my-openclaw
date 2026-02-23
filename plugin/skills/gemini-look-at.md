@@ -76,7 +76,7 @@ tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 -l -- \
   && sleep 0.1 && tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 Enter
 ```
 
-## ���석 패턴별 프롬프트
+## 분석 패턴별 프롬프트
 
 ### PDF 레이아웃/디자인 리뷰
 ```
@@ -123,7 +123,7 @@ tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 -l -- \
 
 ## 모델 선택 가이드
 
-| ���도 | 추천 모델 | 이유 |
+| 용도 | 추천 모델 | 이유 |
 |------|-----------|------|
 | 빠른 확인 | `gemini-2.5-flash` | 빠름, 충분한 멀티모달 능력 |
 | 상세 분석 | `gemini-2.5-pro` | 더 깊은 분석, 긴 콘텐츠 |

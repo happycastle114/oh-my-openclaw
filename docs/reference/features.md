@@ -1,6 +1,6 @@
 # Features Reference
 
-Complete reference for every feature in Oh-My-OpenClaw (`@happycastle/oh-my-openclaw@0.1.0`).
+Complete reference for every feature in Oh-My-OpenClaw (`@happycastle/oh-my-openclaw@0.5.0`).
 
 This document covers agents, plugin hooks, plugin tools, commands, services, skills, workflows, the category system, and tmux integration.
 
@@ -174,7 +174,7 @@ Visual analysis specialist.
 
 ## Plugin Hooks
 
-The plugin registers 3 hooks that intercept specific events in the agent lifecycle.
+The plugin registers 5 hooks that intercept specific events in the agent lifecycle.
 
 ### 1. todo-enforcer
 
@@ -257,9 +257,35 @@ Consider removing these obvious/narrating comments to keep code clean.
 
 **Behavior:**
 - Logs every outgoing message with preview (first 100 chars), channel ID, timestamp, and running count
-- Maintains a module-level `messageCount` counter
+- Maintains a per-channel `Map` counter keyed by channel ID
 - Returns `undefined` (never modifies messages)
 - Counter value is exposed via `getMessageCount()` and used by `/omoc-status`
+
+### 4. message-received-monitor
+
+| Property | Value |
+|----------|-------|
+| **Hook Event** | `message:received` |
+| **Internal Name** | `oh-my-openclaw.message-received-monitor` |
+| **Purpose** | Inbound message audit logging |
+| **Configurable** | No |
+
+**Behavior:**
+- Logs inbound channel ID, sender info, and timestamp for incoming messages
+- Returns `undefined` (never modifies inbound payload)
+
+### 5. gateway-startup
+
+| Property | Value |
+|----------|-------|
+| **Hook Event** | `gateway:startup` |
+| **Internal Name** | `oh-my-openclaw.gateway-startup` |
+| **Purpose** | Plugin activation logging |
+| **Configurable** | No |
+
+**Behavior:**
+- Emits a startup log when the plugin is activated by the gateway
+- Returns `undefined` (observability-only hook)
 
 ---
 
@@ -387,7 +413,7 @@ The plugin registers 3 custom tools, all prefixed with `omoc_`.
 
 ## Commands
 
-The plugin registers 6 slash commands across two modules.
+The plugin registers 8 slash commands across three modules.
 
 ### Workflow Commands
 
@@ -463,6 +489,28 @@ The plugin registers 6 slash commands across two modules.
 - Comment Checker state (enabled/disabled)
 - Total messages monitored count
 
+### Status Commands
+
+#### /omoc-health
+
+| Property | Value |
+|----------|-------|
+| **Name** | `omoc-health` |
+| **Description** | Plugin health check (auto-reply) |
+| **Arguments** | None |
+
+**Behavior:** Returns a concise health summary covering plugin availability and key runtime checks.
+
+#### /omoc-config
+
+| Property | Value |
+|----------|-------|
+| **Name** | `omoc-config` |
+| **Description** | Show effective plugin config with sensitive values masked |
+| **Arguments** | None |
+
+**Behavior:** Returns effective runtime configuration and masks sensitive fields before output.
+
 ---
 
 ## Services
@@ -515,7 +563,7 @@ The plugin registers 6 slash commands across two modules.
 
 ## Skills
 
-Oh-My-OpenClaw defines 7 skill documents, each with keyword-based auto-activation triggers.
+Oh-My-OpenClaw defines 13 skill documents, each with keyword-based auto-activation triggers.
 
 ### Skills Summary Table
 
@@ -528,6 +576,12 @@ Oh-My-OpenClaw defines 7 skill documents, each with keyword-based auto-activatio
 | **steering-words** | ultrawork, search, analyze | `skills/steering-words.md` | Keyword detection and mode routing |
 | **delegation-prompt** | delegate, sub-agent | `skills/delegation-prompt.md` | 7-element delegation prompt construction guide |
 | **multimodal-analysis** | multimodal, image analysis | `skills/multimodal-analysis.md` | Multimodal analysis pattern templates |
+| **opencode-controller** | opencode, tmux, plan/build | `plugin/skills/opencode-controller.md` | OpenCode tmux session control and delegation patterns |
+| **tmux** | tmux, send-keys, capture-pane | `plugin/skills/tmux.md` | tmux session control and parallel orchestration patterns |
+| **tmux-agents** | claude, codex, gemini, ollama | `plugin/skills/tmux-agents.md` | Agent spawn and monitoring patterns in tmux |
+| **web-search** | web search, exa, context7, grep.app | `plugin/skills/web-search.md` | Unified web/docs/code search strategy |
+| **workflow-auto-rescue** | checkpoint, recover, rollback | `plugin/skills/workflow-auto-rescue.md` | Failure recovery workflow with checkpoints |
+| **workflow-tool-patterns** | tool patterns, mapping | `plugin/skills/workflow-tool-patterns.md` | OmO tool pattern mapping for OpenClaw |
 
 ### Skill Details
 
@@ -829,7 +883,7 @@ OpenClaw orchestrates by sending commands via `send-keys` and collecting output 
 | Plugin Manifest | `plugin/openclaw.plugin.json` | Plugin metadata and config schema |
 | Categories Config | `config/categories.json` | Model routing, skills, tmux, tool restrictions |
 | Agent Profiles | `agents/*.md` | Individual agent definitions (10 files) |
-| Skill Documents | `skills/*.md` | Skill definitions with triggers (7 files) |
+| Skill Documents | `plugin/skills/*.md` | Skill definitions with triggers (13 files) |
 | Workflow Documents | `workflows/*.md` | Workflow step-by-step guides (7 files) |
 | Sample Agent Config | `config/openclaw.sample.json` | Runtime tool restriction examples |
 | SKILL.md | `SKILL.md` | Main skill definition file (OpenClaw entry point) |
