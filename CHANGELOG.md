@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.1] - 2026-02-23
+
+### Added
+- Custom provider option in `omoc-setup` wizard (option 4)
+- Supports any provider/model format (e.g., `cliproxy/claude-opus-4-6`, `z.ai/gpt-5.3-codex`)
+- Per-tier model input for custom providers: planning, worker, orchestrator, lightweight, visual
+
 ## [0.8.0] - 2026-02-23
 
 ### Added
