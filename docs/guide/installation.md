@@ -59,11 +59,8 @@ Best for contributors or users who want to stay up to date with the latest chang
 # Clone to a stable location
 git clone https://github.com/happycastle114/oh-my-openclaw.git ~/.oh-my-openclaw
 
-# Symlink skills into OpenClaw's skill directory
-ln -s ~/.oh-my-openclaw/skills ~/.openclaw/skills
-
-# Symlink the plugin config (optional, for plugin features)
-ln -s ~/.oh-my-openclaw/plugin ~/.openclaw/plugin/oh-my-openclaw
+# Symlink into OpenClaw's workspace skill directory
+ln -s ~/.oh-my-openclaw ~/.openclaw/workspace/skills/oh-my-openclaw
 
 # Initialize
 bash ~/.oh-my-openclaw/scripts/init-deep.sh
@@ -81,14 +78,14 @@ cd ~/.oh-my-openclaw && git pull
 Best for users who want a self-contained installation without symlinks.
 
 ```bash
-# Clone directly into OpenClaw's skills directory
-git clone https://github.com/happycastle114/oh-my-openclaw.git ~/.openclaw/skills/oh-my-openclaw
+# Clone directly into OpenClaw's workspace skills directory
+git clone https://github.com/happycastle114/oh-my-openclaw.git ~/.openclaw/workspace/skills/oh-my-openclaw
 
 # Run initialization
-bash ~/.openclaw/skills/oh-my-openclaw/scripts/init-deep.sh
+bash ~/.openclaw/workspace/skills/oh-my-openclaw/scripts/init-deep.sh
 ```
 
-> **Note:** With this method, updating requires running `git pull` inside `~/.openclaw/skills/oh-my-openclaw`.
+> **Note:** With this method, updating requires running `git pull` inside `~/.openclaw/workspace/skills/oh-my-openclaw`.
 
 ---
 
@@ -100,15 +97,14 @@ Best for users who want Oh-My-OpenClaw available system-wide across multiple pro
 # Clone to a global location
 git clone https://github.com/happycastle114/oh-my-openclaw.git /usr/local/share/oh-my-openclaw
 
-# Add to OpenClaw's global skill path
-echo 'export OPENCLAW_SKILL_PATH="/usr/local/share/oh-my-openclaw/skills:$OPENCLAW_SKILL_PATH"' >> ~/.bashrc
-source ~/.bashrc
+# Symlink into OpenClaw's workspace skills directory
+ln -s /usr/local/share/oh-my-openclaw ~/.openclaw/workspace/skills/oh-my-openclaw
 
 # Initialize
 bash /usr/local/share/oh-my-openclaw/scripts/init-deep.sh
 ```
 
-For Zsh users, replace `~/.bashrc` with `~/.zshrc`.
+For multi-user setups, each user should create their own symlink.
 
 ---
 
@@ -212,10 +208,10 @@ npm run test
 
 ```
 Test Suites: X passed
-Tests:       80+ passed
+Tests:       167 passed
 ```
 
-All tests must pass for a healthy installation (current suite: 80+ tests). If any tests fail, review the error output and ensure:
+All tests must pass for a healthy installation (current suite: 167 tests). If any tests fail, review the error output and ensure:
 - All dependencies are installed (`npm install`)
 - The plugin was built successfully (`npm run build`)
 - Your Node.js version meets the minimum requirement (Node 18+)

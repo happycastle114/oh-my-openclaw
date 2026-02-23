@@ -344,7 +344,7 @@ npm install && npm run build
 ```bash
 npm run build      # Compile TypeScript
 npm run typecheck  # Type-check without emit
-npm run test       # Run vitest (120 tests)
+npm run test       # Run vitest (167 tests)
 ```
 
 ### Publish

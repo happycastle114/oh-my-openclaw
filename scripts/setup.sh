@@ -8,9 +8,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILL_NAME="oh-my-openclaw"
 
 # Detect OpenClaw skills directory
-# Precedence: workspace/skills > ~/.openclaw/skills > $OPENCLAW_WORKSPACE/skills
+# Precedence: workspace/skills > ~/.openclaw/workspace/skills > $OPENCLAW_WORKSPACE/skills
 if [ -n "$OPENCLAW_WORKSPACE" ] && [ -d "$OPENCLAW_WORKSPACE" ]; then
     SKILLS_DIR="$OPENCLAW_WORKSPACE/skills"
+elif [ -d "$HOME/.openclaw/workspace" ]; then
+    SKILLS_DIR="$HOME/.openclaw/workspace/skills"
 elif [ -d "$HOME/.openclaw" ]; then
     SKILLS_DIR="$HOME/.openclaw/skills"
 else
