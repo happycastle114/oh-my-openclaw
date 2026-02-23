@@ -14,7 +14,7 @@ export function getConfig(api: OmocPluginApi): PluginConfig {
     model_routing: undefined,
   };
 
-  const config = { ...defaults, ...api.config };
+  const config = { ...defaults, ...(api.pluginConfig ?? api.config) };
   const validation = validateConfig(config);
 
   if (!validation.valid) {

@@ -4,10 +4,11 @@ import { getMessageCount } from '../hooks/message-monitor.js';
 import { getConfig } from '../utils/config.js';
 
 export function registerRalphCommands(api: OmocPluginApi) {
-  // /ralph-loop command
+  // /ralph_loop command
   api.registerCommand({
-    name: 'ralph-loop',
+    name: 'ralph_loop',
     description: 'Start the Ralph Loop self-completion mechanism',
+    acceptsArgs: true,
     handler: async (ctx: { args?: string }) => {
       const args = (ctx.args || '').trim().split(/\s+/).filter(Boolean);
       const config = getConfig(api);
@@ -27,9 +28,9 @@ export function registerRalphCommands(api: OmocPluginApi) {
     },
   });
 
-  // /ralph-stop command
+  // /ralph_stop command
   api.registerCommand({
-    name: 'ralph-stop',
+    name: 'ralph_stop',
     description: 'Stop the active Ralph Loop',
     handler: async () => {
       const result = await stopLoop();
@@ -39,9 +40,9 @@ export function registerRalphCommands(api: OmocPluginApi) {
     },
   });
 
-  // /omoc-status command
+  // /omoc_status command
   api.registerCommand({
-    name: 'omoc-status',
+    name: 'omoc_status',
     description: 'Show Oh-My-OpenClaw plugin status',
     handler: async () => {
       const config = getConfig(api);

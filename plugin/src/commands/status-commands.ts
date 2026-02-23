@@ -6,7 +6,7 @@ import { getMessageCount } from '../hooks/message-monitor.js';
 
 export function registerStatusCommands(api: OmocPluginApi) {
   api.registerCommand({
-    name: 'omoc-health',
+    name: 'omoc_health',
     description: 'Plugin health check (auto-reply, no AI invocation)',
     handler: async () => {
       const config = getConfig(api);
@@ -27,7 +27,7 @@ export function registerStatusCommands(api: OmocPluginApi) {
   });
 
   api.registerCommand({
-    name: 'omoc-config',
+    name: 'omoc_config',
     description: 'Show current plugin configuration (auto-reply)',
     handler: () => {
       const config = getConfig(api);

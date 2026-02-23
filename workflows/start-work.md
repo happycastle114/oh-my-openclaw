@@ -17,7 +17,7 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
 
 1. **Load the plan**
    - Read the most recent plan from `workspace/plans/`
-   - Or specify a plan: `/start-work <plan-file>`
+   - Or specify a plan: `/start_work <plan-file>`
    - Verify plan status is "approved"
    - Update plan status to "in-progress"
 
@@ -106,5 +106,5 @@ After each task completion, output:
 ## Integration
 
 - Plans come from `/plan` workflow
-- `/ultrawork` combines `/plan` + `/start-work` automatically
+- `/ultrawork` combines `/plan` + `/start_work` automatically
 - Wisdom notepads persist across sessions for future reference

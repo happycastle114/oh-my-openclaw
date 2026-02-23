@@ -97,6 +97,7 @@ export interface ToolRegistration<TParams = unknown> {
 export interface CommandRegistration<TCtx = { args?: string }> {
   name: string;
   description: string;
+  acceptsArgs?: boolean;
   handler: (ctx: TCtx) => { text: string } | Promise<{ text: string }>;
 }
 
@@ -110,6 +111,7 @@ export interface ServiceRegistration {
 
 // OmocPluginApi interface
 export interface OmocPluginApi {
+  pluginConfig?: PluginConfig;
   config: PluginConfig;
   logger: {
     info: (...args: unknown[]) => void;

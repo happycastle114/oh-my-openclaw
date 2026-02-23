@@ -11,7 +11,7 @@ Strategic planning workflow that analyzes requirements and creates a structured 
 - Starting a new feature or project
 - Complex multi-step tasks
 - When requirements are ambiguous and need clarification
-- Before any `/ultrawork` or `/start-work` invocation
+- Before any `/ultrawork` or `/start_work` invocation
 
 ## Workflow Steps
 
@@ -103,7 +103,7 @@ Strategic planning workflow that analyzes requirements and creates a structured 
 
 ## Integration with Other Workflows
 
-- After plan approval, use `/start-work` to begin execution
+- After plan approval, use `/start_work` to begin execution
 - Or use `/ultrawork` for fully automated execution without stops
 - Plan files persist in `workspace/plans/` for future reference
 

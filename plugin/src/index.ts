@@ -92,24 +92,24 @@ export default function register(api: OmocPluginApi) {
 
   try {
     registerWorkflowCommands(api);
-    registry.commands.push('ultrawork', 'plan', 'start-work');
-    api.logger.info(`[${PLUGIN_ID}] Workflow commands registered (ultrawork, plan, start-work)`);
+    registry.commands.push('ultrawork', 'plan', 'start_work');
+    api.logger.info(`[${PLUGIN_ID}] Workflow commands registered (ultrawork, plan, start_work)`);
   } catch (err) {
     api.logger.error(`[${PLUGIN_ID}] Failed to register Workflow commands:`, err);
   }
 
   try {
     registerRalphCommands(api);
-    registry.commands.push('ralph-loop', 'ralph-stop', 'omoc-status');
-    api.logger.info(`[${PLUGIN_ID}] Ralph commands registered (ralph-loop, ralph-stop, omoc-status)`);
+    registry.commands.push('ralph_loop', 'ralph_stop', 'omoc_status');
+    api.logger.info(`[${PLUGIN_ID}] Ralph commands registered (ralph_loop, ralph_stop, omoc_status)`);
   } catch (err) {
     api.logger.error(`[${PLUGIN_ID}] Failed to register Ralph commands:`, err);
   }
 
   try {
     registerStatusCommands(api);
-    registry.commands.push('omoc-health', 'omoc-config');
-    api.logger.info(`[${PLUGIN_ID}] Status commands registered (omoc-health, omoc-config)`);
+    registry.commands.push('omoc_health', 'omoc_config');
+    api.logger.info(`[${PLUGIN_ID}] Status commands registered (omoc_health, omoc_config)`);
   } catch (err) {
     api.logger.error(`[${PLUGIN_ID}] Failed to register Status commands:`, err);
   }

@@ -55,8 +55,8 @@ OmO-style multi-agent orchestration for OpenClaw. Your AI agent gets 10 speciali
 | **Checkpoints** | Save/load execution state. Crash recovery. Pick up where you left off. |
 | **10 Agents** | Specialized team: planners, workers, reviewers. Each with a job. |
 | **13 Skill Docs** | Core skills + workflow/reference skills bundled in `plugin/skills/`. |
-| **2 Health Commands** | `/omoc-health` for plugin checks, `/omoc-config` for masked config inspection. |
-| **3 Workflow Commands** | `/ultrawork`, `/plan`, `/start-work` — executable pipelines. |
+| **2 Health Commands** | `/omoc_health` for plugin checks, `/omoc_config` for masked config inspection. |
+| **3 Workflow Commands** | `/ultrawork`, `/plan`, `/start_work` — executable pipelines. |
 | **4 Reference Skills** | delegate-to-omo, tmux-orchestration, tool-patterns, auto-rescue — guidance docs. |
 
 ---
@@ -257,7 +257,9 @@ Edit the `"model"` field. Done. `"alternatives"` shows what else works.
 |----------|---------|-------------|
 | `ultrawork` | `/ultrawork` | Full planning → execution → verification |
 | `plan` | `/plan` | Planning only (Prometheus + Momus) |
-| `start-work` | `/start-work` | Execute an existing plan |
+| `start_work` | `/start_work` | Execute an existing plan |
+
+> **Note:** Discord slash commands are registered by OpenClaw core, which currently only registers built-in commands. Plugin commands work as text-based `/commands` in Discord but won't appear in the slash command autocomplete menu. This is an OpenClaw core limitation, not an OmOC issue.
 
 ### Reference Skills
 
@@ -315,12 +317,12 @@ npm install && npm run build
 | Tool | `omoc_checkpoint` | Save/load/list execution checkpoints |
 | Command | `/ultrawork` | Full planning → execution → verification |
 | Command | `/plan` | Planning workflow |
-| Command | `/start-work` | Execute existing plan |
-| Command | `/ralph-loop` | Start self-correcting execution loop |
-| Command | `/ralph-stop` | Stop ralph loop |
-| Command | `/omoc-status` | Plugin status summary |
-| Command | `/omoc-health` | Plugin health check (auto-reply) |
-| Command | `/omoc-config` | Show config with masked sensitive values |
+| Command | `/start_work` | Execute existing plan |
+| Command | `/ralph_loop` | Start self-correcting execution loop |
+| Command | `/ralph_stop` | Stop ralph loop |
+| Command | `/omoc_status` | Plugin status summary |
+| Command | `/omoc_health` | Plugin health check (auto-reply) |
+| Command | `/omoc_config` | Show config with masked sensitive values |
 | Service | `ralph-loop` | Background loop — hard cap at 100 iterations |
 
 ### Scripts
@@ -394,7 +396,7 @@ OpenClaw에 연결된 채널(Discord, Telegram 등)에서:
 
 - `/ultrawork 기능 설명` — 자동 계획 + 실행 + 검증
 - `/plan 기능 설명` — 계획만 생성
-- `/start-work` — 기존 계획 기반 실행
+- `/start_work` — 기존 계획 기반 실행
 
 ---
 

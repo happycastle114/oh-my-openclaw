@@ -18,7 +18,8 @@ async function readWorkflow(workflowName: string): Promise<string> {
 export function registerWorkflowCommands(api: OmocPluginApi) {
   api.registerCommand({
     name: 'ultrawork',
-    description: 'Full planning \u2192 execution \u2192 verification workflow',
+    description: 'Full planning → execution → verification workflow',
+    acceptsArgs: true,
     handler: async (ctx: { args?: string }) => {
       const taskDescription = ctx.args || 'No task specified';
       const workflow = await readWorkflow('ultrawork');
@@ -31,6 +32,7 @@ export function registerWorkflowCommands(api: OmocPluginApi) {
   api.registerCommand({
     name: 'plan',
     description: 'Create a structured execution plan',
+    acceptsArgs: true,
     handler: async (ctx: { args?: string }) => {
       const topic = ctx.args || 'No topic specified';
       const workflow = await readWorkflow('plan');
@@ -41,8 +43,9 @@ export function registerWorkflowCommands(api: OmocPluginApi) {
   });
 
   api.registerCommand({
-    name: 'start-work',
+    name: 'start_work',
     description: 'Execute an approved plan',
+    acceptsArgs: true,
     handler: async (ctx: { args?: string }) => {
       const planPath = ctx.args || 'most recent plan';
       const workflow = await readWorkflow('start-work');

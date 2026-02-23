@@ -101,7 +101,7 @@ describe('registerWorkflowCommands', () => {
     mockApi = createMockApi();
   });
 
-  it('registers 3 commands (ultrawork, plan, start-work)', () => {
+  it('registers 3 commands (ultrawork, plan, start_work)', () => {
     registerWorkflowCommands(mockApi);
 
     expect(mockApi.registerCommand).toHaveBeenCalledTimes(3);
@@ -109,7 +109,7 @@ describe('registerWorkflowCommands', () => {
     const names = mockApi.registerCommand.mock.calls.map((c: any) => c[0].name);
     expect(names).toContain('ultrawork');
     expect(names).toContain('plan');
-    expect(names).toContain('start-work');
+    expect(names).toContain('start_work');
   });
 
   it('ultrawork handler returns workflow text with task description', async () => {
@@ -140,11 +140,11 @@ describe('registerWorkflowCommands', () => {
     expect(result.text).toContain('Mock Workflow Content');
   });
 
-  it('start-work handler returns execution workflow', async () => {
+  it('start_work handler returns execution workflow', async () => {
     registerWorkflowCommands(mockApi);
 
     const startWorkCall = mockApi.registerCommand.mock.calls.find(
-      (c: any) => c[0].name === 'start-work'
+      (c: any) => c[0].name === 'start_work'
     );
     const handler = startWorkCall[0].handler;
     const result = await handler({ args: 'plan-v2.md' });
@@ -183,22 +183,22 @@ describe('registerRalphCommands', () => {
     mockApi = createMockApi();
   });
 
-  it('registers 3 commands (ralph-loop, ralph-stop, omoc-status)', () => {
+  it('registers 3 commands (ralph_loop, ralph_stop, omoc_status)', () => {
     registerRalphCommands(mockApi);
 
     expect(mockApi.registerCommand).toHaveBeenCalledTimes(3);
 
     const names = mockApi.registerCommand.mock.calls.map((c: any) => c[0].name);
-    expect(names).toContain('ralph-loop');
-    expect(names).toContain('ralph-stop');
-    expect(names).toContain('omoc-status');
+    expect(names).toContain('ralph_loop');
+    expect(names).toContain('ralph_stop');
+    expect(names).toContain('omoc_status');
   });
 
-  it('ralph-loop parses args and calls startLoop', async () => {
+  it('ralph_loop parses args and calls startLoop', async () => {
     registerRalphCommands(mockApi);
 
     const ralphLoopCall = mockApi.registerCommand.mock.calls.find(
-      (c: any) => c[0].name === 'ralph-loop'
+      (c: any) => c[0].name === 'ralph_loop'
     );
     const handler = ralphLoopCall[0].handler;
     const result = await handler({ args: '5 task.md' });
@@ -208,11 +208,11 @@ describe('registerRalphCommands', () => {
     expect(result.text).toContain('Max iterations: 10');
   });
 
-  it('ralph-stop calls stopLoop', async () => {
+  it('ralph_stop calls stopLoop', async () => {
     registerRalphCommands(mockApi);
 
     const ralphStopCall = mockApi.registerCommand.mock.calls.find(
-      (c: any) => c[0].name === 'ralph-stop'
+      (c: any) => c[0].name === 'ralph_stop'
     );
     const handler = ralphStopCall[0].handler;
     const result = await handler({});
@@ -222,11 +222,11 @@ describe('registerRalphCommands', () => {
     expect(result.text).toContain('Final iteration: 5/10');
   });
 
-  it('omoc-status returns formatted summary with ralph state', async () => {
+  it('omoc_status returns formatted summary with ralph state', async () => {
     registerRalphCommands(mockApi);
 
     const statusCall = mockApi.registerCommand.mock.calls.find(
-      (c: any) => c[0].name === 'omoc-status'
+      (c: any) => c[0].name === 'omoc_status'
     );
     const handler = statusCall[0].handler;
     const result = await handler({});
@@ -249,18 +249,18 @@ describe('registerStatusCommands', () => {
     mockApi = createMockApi();
   });
 
-  it('registers omoc-health and omoc-config commands', () => {
+  it('registers omoc_health and omoc_config commands', () => {
     registerStatusCommands(mockApi);
 
     expect(mockApi.registerCommand).toHaveBeenCalledTimes(2);
     const names = mockApi.registerCommand.mock.calls.map((c: any) => c[0].name);
-    expect(names).toContain('omoc-health');
-    expect(names).toContain('omoc-config');
+    expect(names).toContain('omoc_health');
+    expect(names).toContain('omoc_config');
   });
 
-  it('omoc-health returns version and service status', async () => {
+  it('omoc_health returns version and service status', async () => {
     registerStatusCommands(mockApi);
-    const healthCall = mockApi.registerCommand.mock.calls.find((c: any) => c[0].name === 'omoc-health');
+    const healthCall = mockApi.registerCommand.mock.calls.find((c: any) => c[0].name === 'omoc_health');
     const handler = healthCall[0].handler;
 
     const result = await handler({});
@@ -273,9 +273,9 @@ describe('registerStatusCommands', () => {
     expect(result.text).toContain('Messages Tracked: 42');
   });
 
-  it('omoc-config returns current config in JSON block', () => {
+  it('omoc_config returns current config in JSON block', () => {
     registerStatusCommands(mockApi);
-    const configCall = mockApi.registerCommand.mock.calls.find((c: any) => c[0].name === 'omoc-config');
+    const configCall = mockApi.registerCommand.mock.calls.find((c: any) => c[0].name === 'omoc_config');
     const handler = configCall[0].handler;
 
     const result = handler({});
@@ -285,14 +285,14 @@ describe('registerStatusCommands', () => {
     expect(result.text).toContain('"todo_enforcer_enabled": true');
   });
 
-  it('omoc-config masks sensitive values', () => {
+  it('omoc_config masks sensitive values', () => {
     const apiWithSensitiveConfig = createMockApi({
       api_token: 'token-value',
       service_secret: 'secret-value',
       api_key: 'key-value',
     });
     registerStatusCommands(apiWithSensitiveConfig);
-    const configCall = apiWithSensitiveConfig.registerCommand.mock.calls.find((c: any) => c[0].name === 'omoc-config');
+    const configCall = apiWithSensitiveConfig.registerCommand.mock.calls.find((c: any) => c[0].name === 'omoc_config');
     const handler = configCall[0].handler;
 
     const result = handler({});

@@ -367,4 +367,4 @@ The `plugin/openclaw.plugin.json` manifest declares the plugin identity and the 
 - [`plugin/openclaw.plugin.json`](../../plugin/openclaw.plugin.json) — Plugin manifest source
 - [`SKILL.md`](../../SKILL.md) — Main skill definition loaded by OpenClaw
 - [Agents Reference](../guide/) — Per-agent role descriptions and usage
-- [Workflows Reference](../guide/) — `/ultrawork`, `/plan`, `/start-work`, and other commands
+- [Workflows Reference](../guide/) — `/ultrawork`, `/plan`, `/start_work`, and other commands

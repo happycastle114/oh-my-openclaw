@@ -437,23 +437,23 @@ The plugin registers 8 slash commands across three modules.
 
 **Behavior:** Reads the `workflows/plan.md` workflow definition and returns it with the topic. Runs Prometheus planning + Momus review without execution.
 
-#### /start-work
+#### /start_work
 
 | Property | Value |
 |----------|-------|
-| **Name** | `start-work` |
+| **Name** | `start_work` |
 | **Description** | Execute an approved plan |
 | **Arguments** | Plan path (optional, defaults to most recent) |
 
-**Behavior:** Reads the `workflows/start-work.md` workflow definition and returns it with the plan reference. Loads an existing approved plan from `workspace/plans/` and delegates to Atlas for execution.
+**Behavior:** Reads the `workflows/start_work.md` workflow definition and returns it with the plan reference. Loads an existing approved plan from `workspace/plans/` and delegates to Atlas for execution.
 
 ### Ralph Commands
 
-#### /ralph-loop
+#### /ralph_loop
 
 | Property | Value |
 |----------|-------|
-| **Name** | `ralph-loop` |
+| **Name** | `ralph_loop` |
 | **Description** | Start the Ralph Loop self-completion mechanism |
 | **Arguments** | `[max_iterations] [task_file]` (both optional) |
 
@@ -465,21 +465,21 @@ The plugin registers 8 slash commands across three modules.
 - Returns start confirmation with max iterations, task file, and start time
 - Fails if a loop is already running
 
-#### /ralph-stop
+#### /ralph_stop
 
 | Property | Value |
 |----------|-------|
-| **Name** | `ralph-stop` |
+| **Name** | `ralph_stop` |
 | **Description** | Stop the active Ralph Loop |
 | **Arguments** | None |
 
 **Behavior:** Calls `stopLoop()`, sets the loop to inactive, persists state, and returns the final iteration count.
 
-#### /omoc-status
+#### /omoc_status
 
 | Property | Value |
 |----------|-------|
-| **Name** | `omoc-status` |
+| **Name** | `omoc_status` |
 | **Description** | Show Oh-My-OpenClaw plugin status |
 | **Arguments** | None |
 
@@ -491,21 +491,21 @@ The plugin registers 8 slash commands across three modules.
 
 ### Status Commands
 
-#### /omoc-health
+#### /omoc_health
 
 | Property | Value |
 |----------|-------|
-| **Name** | `omoc-health` |
+| **Name** | `omoc_health` |
 | **Description** | Plugin health check (auto-reply) |
 | **Arguments** | None |
 
 **Behavior:** Returns a concise health summary covering plugin availability and key runtime checks.
 
-#### /omoc-config
+#### /omoc_config
 
 | Property | Value |
 |----------|-------|
-| **Name** | `omoc-config` |
+| **Name** | `omoc_config` |
 | **Description** | Show effective plugin config with sensitive values masked |
 | **Arguments** | None |
 
@@ -639,7 +639,7 @@ Oh-My-OpenClaw defines 7 workflow documents that describe standardized multi-ste
 |----------|---------|------|-------------|
 | **ultrawork** | `/ultrawork` | `workflows/ultrawork.md` | Full planning -> execution -> verification loop |
 | **plan** | `/plan` | `workflows/plan.md` | Strategic planning (Prometheus + Momus) |
-| **start-work** | `/start-work` | `workflows/start-work.md` | Execute an approved plan via Atlas |
+| **start_work** | `/start_work` | `workflows/start_work.md` | Execute an approved plan via Atlas |
 | **delegate-to-omo** | — | `workflows/delegate-to-omo.md` | Route task to OpenCode (OmO) running in tmux |
 | **tmux-orchestration** | — | `workflows/tmux-orchestration.md` | Multi-tool tmux coordination (OpenCode + Gemini CLI) |
 | **tool-patterns** | — | `workflows/tool-patterns.md` | OmO tool -> OpenClaw tool mapping reference |

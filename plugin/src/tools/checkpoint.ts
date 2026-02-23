@@ -5,12 +5,14 @@ import { OmocPluginApi, CheckpointData } from '../types.js';
 import { readState, writeState, ensureDir } from '../utils/state.js';
 import { getConfig } from '../utils/config.js';
 
+// Use Type.Unsafe with enum instead of Type.Union([Type.Literal(...)]) to avoid
+// generating JSON Schema "const" keyword, which Gemini API does not support.
 const CheckpointParamsSchema = Type.Object({
-  action: Type.Union([
-    Type.Literal('save'),
-    Type.Literal('load'),
-    Type.Literal('list'),
-  ], { description: 'Checkpoint operation' }),
+  action: Type.Unsafe<'save' | 'load' | 'list'>({
+    type: 'string',
+    enum: ['save', 'load', 'list'],
+    description: 'Checkpoint operation',
+  }),
   task: Type.Optional(Type.String({ description: 'Current task name (for save)' })),
   step: Type.Optional(Type.String({ description: 'Current step name (for save)' })),
   changed_files: Type.Optional(

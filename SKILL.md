@@ -70,7 +70,7 @@ The skill should appear in OpenClaw's available skills list. Test by asking:
 
 This skill activates when:
 
-- User invokes `/ultrawork`, `/plan`, or `/start-work` commands
+- User invokes `/ultrawork`, `/plan`, or `/start_work` commands
 - User requests complex multi-step task planning
 - User asks for agent orchestration or delegation
 
@@ -132,7 +132,7 @@ Categories map user intent to optimal model selection:
 3. Momus reviews the plan
 4. Returns refined plan for user approval
 
-### `/start-work` - Execute Existing Plan
+### `/start_work` - Execute Existing Plan
 
 1. Reads plan from `workspace/plans/`
 2. Atlas distributes tasks to appropriate workers

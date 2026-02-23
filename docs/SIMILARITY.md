@@ -19,8 +19,8 @@ The following features were ported from OmO to OmOC with minimal conceptual chan
 | Explore/Librarian | Explore/Librarian agents | Direct port |
 | Category system (quick/deep/ultrabrain/visual) | Same 4 categories + multimodal + artistry | Direct port |
 | ultrawork command | /ultrawork command | Direct port |
-| /start-work command | /start-work command | Direct port |
-| Ralph Loop | ralph-loop service + commands | Direct port |
+| /start_work command | /start_work command | Direct port |
+| Ralph Loop | ralph_loop service + commands | Direct port |
 | Todo Enforcer hook | todo-enforcer hook | Direct port |
 | Comment Checker hook | comment-checker hook (11 patterns) | Direct port |
 | Background agents (task tool) | omoc_delegate tool | Adapted |
@@ -146,7 +146,7 @@ Both OmO and OmOC share the same core philosophy as documented in `manifesto.md`
 2. **Orchestration over improvisation** — A dedicated orchestrator (Sisyphus/Atlas) routes work to the right specialist rather than letting a general model attempt everything.
 3. **Discipline enforced by tooling** — Hooks and enforcers (todo-enforcer, comment-checker) make good practices automatic, not aspirational.
 4. **Depth over breadth** — A small number of well-defined agents doing their jobs correctly beats a large number of loosely defined agents doing everything poorly.
-5. **The loop is the product** — The Ralph Loop / ralph-loop service embodies the philosophy that continuous, self-correcting iteration is the fundamental unit of productive AI work.
+5. **The loop is the product** — The Ralph Loop / ralph_loop service embodies the philosophy that continuous, self-correcting iteration is the fundamental unit of productive AI work.
 
 OmOC does not deviate from this philosophy. It applies the same principles to a different runtime and a different interface. The manifesto transfers without modification; only the implementation changes.
 

@@ -14,7 +14,7 @@ Not every task needs full orchestration. Choose the right entry point.
 |-----------|-----------|--------------|
 | Simple task (bug fix, small edit, search) | Just prompt naturally | Sisyphus-Junior handles it directly |
 | Complex task, want it hands-off | `/ultrawork <description>` | Full pipeline: plan, review, execute, verify |
-| Complex task, want control over the plan | `/plan <description>` then `/start-work` | You review the plan before execution begins |
+| Complex task, want control over the plan | `/plan <description>` then `/start_work` | You review the plan before execution begins |
 
 **Decision flow:**
 
@@ -23,7 +23,7 @@ Is the task simple enough for one agent in one pass?
   YES -> Just prompt it. Done.
   NO  -> Do you want to review the plan before execution?
     NO  -> /ultrawork (automated end-to-end)
-    YES -> /plan first, review output, then /start-work
+    YES -> /plan first, review output, then /start_work
 ```
 
 When in doubt, use `/ultrawork`. It does the right thing by default.
@@ -345,14 +345,14 @@ Creates a plan without executing it. Use when you want to review and potentially
 
 Output: a plan file in `workspace/plans/` that you can read, edit, or approve.
 
-### `/start-work` - Execute Existing Plan
+### `/start_work` - Execute Existing Plan
 
 Starts execution of a previously created plan. Pair with `/plan` for maximum control.
 
 ```
 /plan Refactor the notification system
 # Review the plan, make adjustments...
-/start-work
+/start_work
 ```
 
 Atlas picks up the most recent plan and begins phase-by-phase execution.
@@ -365,15 +365,15 @@ The Ralph Loop is a background service that monitors todo completion and re-trig
 - Monitors todo state after each agent turn
 - Re-injects the TODO continuation directive if work remains
 - **Hard cap: 100 iterations** -- prevents infinite loops
-- Can be started with `/ralph-loop` and stopped with `/ralph-stop`
+- Can be started with `/ralph_loop` and stopped with `/ralph_stop`
 - Configurable max iterations via `config/categories.json` (`defaults.max_ralph_iterations`)
 
 The Ralph Loop is what makes OhMyClaw relentless. Without it, agents stop when they run out of immediate context. With it, incomplete work is automatically resumed.
 
 ```
-/ralph-loop
-# Agent works until all todos complete, up to 100 iterations
-/ralph-stop   # Manual stop if needed
+/ralph_loop
+
+/ralph_stop   # Manual stop if needed
 ```
 
 ---
@@ -430,7 +430,7 @@ For a complete configuration reference, see [Configuration](./configuration.md).
 
 **Fix:**
 1. Verify `todo_enforcer.enabled` is `true` in `config/categories.json`
-2. Start the Ralph Loop: `/ralph-loop`
+2. Start the Ralph Loop: `/ralph_loop`
 3. Check that the agent has todos -- if it has no todo items, the loop has nothing to resume
 
 ### Plan keeps getting rejected by Momus

@@ -4,12 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.1] - 2026-02-23
+
+### Fixed
+- Gemini API `const` schema error: replaced `Type.Literal` with `Type.Unsafe` + `enum` in checkpoint tool
+- Telegram "Command not found": renamed hyphenated commands to underscores for Telegram compatibility (`start-work` → `start_work`, etc.)
+- Commands with arguments silently failing: added `acceptsArgs: true` to commands that accept arguments
+- Plugin config ignored: `getConfig()` now reads from `api.pluginConfig` (plugin-specific) instead of `api.config` (global)
+
+### Changed
+- All command names now use underscores instead of hyphens for cross-platform compatibility
+- `CommandRegistration` type now includes optional `acceptsArgs` field
+- `OmocPluginApi` type now includes optional `pluginConfig` field
+
 ## [0.5.0] - 2026-02-23
 
 ### Added
 - Dynamic model routing via configurable `model_routing` in plugin config
-- `/omoc-health` auto-reply command for plugin health checks
-- `/omoc-config` auto-reply command with sensitive value masking
+- `/omoc_health` auto-reply command for plugin health checks
+- `/omoc_config` auto-reply command with sensitive value masking
 - `message:received` hook for inbound message audit logging
 - `gateway:startup` hook for plugin activation logging
 - Configurable `tmux_socket` path in plugin config
@@ -49,7 +62,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Initial TypeScript plugin release
 - 3 hooks: todo-enforcer, comment-checker, message-monitor
 - 3 tools: omoc_delegate, omoc_look_at, omoc_checkpoint
-- 6 commands: ultrawork, plan, start-work, ralph-loop, ralph-stop, omoc-status
+- 6 commands: ultrawork, plan, start_work, ralph_loop, ralph_stop, omoc_status
 - Ralph Loop service with configurable iterations
 - 10 agent personas with category-based routing
 - 13 skill documents

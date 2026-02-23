@@ -23,7 +23,7 @@ OmO의 `src/tools/` 구조를 기준으로, OpenClaw에서 실사용 가능한 �
 | `lsp/*` (goto/references) | 코드 탐색/검증       | `exec` 도구로 린터/타입체커 실행 → 결과로 검증                     |
 | `interactive-bash`        | 장시간/상호작용 셸   | `exec`(`pty: true`) 또는 tmux 연동                                 |
 | `bash`                    | 원샷 명령            | `exec`(동기), `exec`(`background: true`) → `process`(`poll`)       |
-| `slashcommand`            | 명령 워크플로우 구동 | OpenClaw 스킬 `/ultrawork`, `/plan`, `/start-work` (슬래시 커맨드) |
+| `slashcommand`            | 명령 워크플로우 구동 | OpenClaw 스킬 `/ultrawork`, `/plan`, `/start_work` (슬래시 커맨드) |
 | `session-manager`         | 세션 탐색/재개       | `sessions_list`, `sessions_history`, `session_status`              |
 | `skill-mcp`               | 스킬 기반 도구 호출  | OpenClaw 스킬 시스템 (`read` → SKILL.md 참조)                      |
 | `look-at`                 | 멀티모달 분석        | `image` 도구 + Gemini CLI tmux 연동                                |
