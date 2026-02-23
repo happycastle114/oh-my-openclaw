@@ -2,9 +2,9 @@
 
 # Oh-My-OpenClaw (OmOC)
 
-![GitHub release](https://img.shields.io/github/v/release/happycastle114/oh-my-openclaw)
-![npm](https://img.shields.io/npm/v/@happycastle/oh-my-openclaw)
-![license](https://img.shields.io/github/license/happycastle114/oh-my-openclaw)
+[![GitHub Stars](https://img.shields.io/github/stars/happycastle114/oh-my-openclaw?color=ffcb47&labelColor=black&style=flat-square)](https://github.com/happycastle114/oh-my-openclaw/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/happycastle114/oh-my-openclaw?color=ff80eb&labelColor=black&style=flat-square)](https://github.com/happycastle114/oh-my-openclaw/issues)
+[![License](https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square)](https://github.com/happycastle114/oh-my-openclaw/blob/master/LICENSE)
 
 **Install. Type `/ultrawork`. Done.**
 
@@ -398,6 +398,18 @@ OpenClaw에 연결된 채널(Discord, Telegram 등)에서:
 
 ---
 
+## Star History
+
+<a href="https://star-history.com/#happycastle114/oh-my-openclaw&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=happycastle114/oh-my-openclaw&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=happycastle114/oh-my-openclaw&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=happycastle114/oh-my-openclaw&type=Date" />
+ </picture>
+</a>
+
+---
+
 ## License
 
-Private — [@happycastle114](https://github.com/happycastle114)
+MIT — [@happycastle114](https://github.com/happycastle114)
