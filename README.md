@@ -58,7 +58,7 @@ OmO-style multi-agent orchestration for OpenClaw. Your AI agent gets 11 speciali
 | **13 Skill Docs** | Core skills + workflow/reference skills bundled in `plugin/skills/`. |
 | **2 Health Commands** | `/omoc_health` for plugin checks, `/omoc_config` for masked config inspection. |
 | **3 Workflow Commands** | `/ultrawork`, `/plan`, `/start_work` — executable pipelines. |
-| **4 Reference Skills** | delegate-to-omo, tmux-orchestration, tool-patterns, auto-rescue — guidance docs. |
+| **5 Operational Skills** | opencode-controller, tmux, tmux-agents, workflow-auto-rescue, workflow-tool-patterns — tmux/OmO delegation + recovery. |
 
 ---
 
@@ -273,16 +273,17 @@ Edit the `"model"` field. Done. `"alternatives"` shows what else works.
 
 > **Note:** Discord slash commands are registered by OpenClaw core, which currently only registers built-in commands. Plugin commands work as text-based `/commands` in Discord but won't appear in the slash command autocomplete menu. This is an OpenClaw core limitation, not an OmOC issue.
 
-### Reference Skills
+### Operational Skills
 
-These are guidance documents, not executable commands. They inform agent behavior.
+These inform agent behavior for tmux delegation and recovery.
 
 | Skill | Purpose |
 |-------|---------|
-| `delegate-to-omo` | How to route coding tasks to OpenCode in tmux |
-| `tmux-orchestration` | Patterns for coordinating OpenCode + Gemini CLI sessions |
-| `tool-patterns` | OmO tool → OpenClaw tool mapping reference |
-| `auto-rescue` | Checkpoint + failure recovery patterns |
+| `opencode-controller` | Delegate coding tasks to OpenCode/OmO via tmux sessions |
+| `tmux` | Multi-session tmux orchestration (parallel coding + verification) |
+| `tmux-agents` | Spawn/monitor coding agents (Claude, Codex, Gemini, Ollama) in tmux |
+| `workflow-tool-patterns` | OmO tool → OpenClaw tool mapping reference |
+| `workflow-auto-rescue` | Checkpoint-based failure recovery |
 
 ---
 

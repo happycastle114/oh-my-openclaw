@@ -675,10 +675,9 @@ Oh-My-OpenClaw defines 7 workflow documents that describe standardized multi-ste
 | **ultrawork** | `/ultrawork` | `workflows/ultrawork.md` | Full planning -> execution -> verification loop |
 | **plan** | `/plan` | `workflows/plan.md` | Strategic planning (Prometheus + Momus) |
 | **start_work** | `/start_work` | `workflows/start-work.md` | Execute an approved plan via Atlas |
-| **delegate-to-omo** | — | `workflows/delegate-to-omo.md` | Route task to OpenCode (OmO) running in tmux |
-| **tmux-orchestration** | — | `workflows/tmux-orchestration.md` | Multi-tool tmux coordination (OpenCode + Gemini CLI) |
-| **tool-patterns** | — | `workflows/tool-patterns.md` | OmO tool -> OpenClaw tool mapping reference |
-| **auto-rescue** | — | `workflows/auto-rescue.md` | Checkpoint + failure recovery |
+
+
+> **Note:** tmux/OmO delegation, tool mapping, and auto-rescue are now handled by dedicated skills (`opencode-controller`, `tmux`, `tmux-agents`, `workflow-tool-patterns`, `workflow-auto-rescue`) in `plugin/skills/`. The redundant workflow files have been removed.
 
 ### Workflow Details
 
@@ -731,42 +730,17 @@ Execute an approved plan by delegating tasks to appropriate worker agents.
 3. Progress Tracking: monitor completion, update todo lists
 4. Verification: validate each phase's output before proceeding
 
-#### delegate-to-omo
+#### Operational Skills (formerly Reference Workflows)
 
-Workflow for delegating large coding tasks from OpenClaw to Oh-My-OpenCode running in the `opencode` tmux session.
+The following are now skills (auto-loaded by all agents), not standalone workflows:
 
-**When to Use:**
-- Complex multi-file coding tasks
-- Deep codebase refactoring
-- Tasks requiring LSP, AST-Grep, or build verification
-- Sustained autonomous execution (ultrawork/ralph loop)
-- Tasks that benefit from OmO's Prometheus planning + Atlas orchestration
-
-**Prerequisites:** OpenCode tmux session (`opencode`) must be running; oh-my-opencode plugin must be installed in OpenCode.
-
-#### tmux-orchestration
-
-Multi-tool orchestration via tmux. OpenClaw simultaneously manages multiple tmux sessions for parallel coding, visual verification, and result collection.
-
-**Architecture:** OpenClaw (main AI) coordinates multiple sessions via `tmux send-keys` and `tmux capture-pane`, supporting parallel workflows across opencode, gemini, build, and custom sessions.
-
-#### tool-patterns
-
-Reference mapping from OmO's `src/tools/` patterns to their OpenClaw equivalents. Standardizes tool selection, reduces tool choice errors, and maintains consistency across planning, execution, and verification.
-
-#### auto-rescue
-
-Session recovery workflow with checkpointing, failure detection, and automatic restore.
-
-**When to Use:**
-- Long implementation/refactoring sessions
-- Multi-step tasks (5+ steps)
-- High failure-probability debugging/build recovery
-
-**Core Mechanism:**
-- Checkpoint save: write file-based checkpoints at major steps (`workspace/checkpoints/`)
-- Checkpoint query: read + `memory_search` (OpenClaw native) for recovery
-- Auto-restore: restart from most recent healthy state
+| Skill | File | Purpose |
+|-------|------|---------|
+| `opencode-controller` | `plugin/skills/opencode-controller.md` | Delegate to OpenCode/OmO via tmux |
+| `tmux` | `plugin/skills/tmux.md` | Multi-session tmux orchestration |
+| `tmux-agents` | `plugin/skills/tmux-agents.md` | Agent spawning/monitoring in tmux |
+| `workflow-tool-patterns` | `plugin/skills/workflow-tool-patterns.md` | OmO→OpenClaw tool mapping |
+| `workflow-auto-rescue` | `plugin/skills/workflow-auto-rescue.md` | Checkpoint-based recovery |
 
 ---
 

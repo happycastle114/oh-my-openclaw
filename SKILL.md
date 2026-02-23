@@ -139,29 +139,17 @@ Categories map user intent to optimal model selection:
 3. Workers execute with Todo tracking
 4. Verification loop until completion
 
-### `/delegate-to-omo` - Delegate to OpenCode tmux
+### tmux/OmO Delegation (Skills)
 
-For tasks that need deep codebase work (LSP, AST-Grep, build verification):
+Coding delegation and multi-session orchestration are handled by dedicated skills (loaded automatically):
 
-1. Verify opencode tmux session is running
-2. Select appropriate OmO agent (Sisyphus/Hephaestus/Prometheus)
-3. Send task via tmux send-keys
-4. Monitor progress and collect results
-5. Report back to user via messaging channel
-
-### `tool-patterns` - OmO Tool Mapping Reference
-
-1. Maps OmO `src/tools/*` patterns to OpenClaw-native tool usage
-2. Standardizes planning/implementation/verification tool flow
-3. Documents background task collection and cleanup rules
-
-### `tmux-orchestration` - Multi-Tool tmux Orchestration
-
-OpenCode(코딩) + Gemini CLI(멀티모달) + tmux(제어)를 연결:
-
-1. OpenCode tmux 세션으로 코딩/빌드
-2. Gemini CLI tmux 세션으로 시각적 검증 (PDF/스크린샷)
-3. OpenClaw가 두 세션을 오케스트레이션하며 결과 수집/보고
+| Skill | Purpose |
+|-------|---------|
+| `opencode-controller` | Delegate to OpenCode/OmO via tmux (session mgmt, agent switching, task templates) |
+| `tmux` | Multi-session tmux orchestration (parallel coding + verification) |
+| `tmux-agents` | Spawn/monitor coding agents (Claude, Codex, Gemini, Ollama) in tmux |
+| `workflow-tool-patterns` | OmO tool → OpenClaw tool mapping reference |
+| `workflow-auto-rescue` | Checkpoint-based failure recovery |
 
 ## Wisdom Accumulation
 
@@ -263,9 +251,6 @@ oh-my-openclaw/
     ultrawork.md        # Full automation workflow
     plan.md             # Planning-only workflow
     start-work.md       # Execute existing plan workflow
-    delegate-to-omo.md  # Delegate to OpenCode tmux (OmO)
-    tool-patterns.md    # OmO src/tools to OpenClaw usage pattern mapping
-    tmux-orchestration.md # Multi-tool tmux orchestration (OpenCode + Gemini CLI)
   scripts/
     setup.sh            # One-command install + notepad initialization
     init-deep.sh        # Generate hierarchical AGENTS.md files
