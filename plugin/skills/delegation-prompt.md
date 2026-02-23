@@ -14,10 +14,29 @@ sessions_spawn(
   task="...",           # 7요소 프롬프트 (아래 참조)
   mode="run",           # "run" (일회성) | "session" (영구)
   model="...",          # 카테고리별 모델 (아래 표 참조)
+  agentId="...",        # 특정 에이전트 지정 (선택 — omoc_prometheus, omoc_sisyphus 등)
   label="...",          # 식별용 라벨 (선택)
   thread=true           # Discord 스레드로 결과 전달 (선택)
 )
 ```
+
+### agentId로 전문 에이전트 지정
+
+`agentId`를 명시하면 해당 에이전트의 페르소나/권한/모델이 자동 적용된다:
+
+| agentId | 역할 | 권한 |
+|---------|------|------|
+| `omoc_prometheus` | 전략 기획 | read-only (코드 수정 불가) |
+| `omoc_atlas` | 오케스트레이션 | read-only (코드 수정 불가) |
+| `omoc_sisyphus` | 구현 워커 | full (코드 수정 가능) |
+| `omoc_hephaestus` | 딥 구현 | full (코드 수정 가능) |
+| `omoc_oracle` | 아키텍처 컨설팅 | read-only |
+| `omoc_explore` | 코드 탐색 | read-only |
+| `omoc_librarian` | 문서 리서치 | read-only |
+| `omoc_metis` | 갭 분석 | read-only |
+| `omoc_momus` | 플랜 리뷰 | read-only |
+
+`agentId` 생략 시 기본 에이전트가 `model`에 맞춰 실행된다.
 
 ## 카테고리별 모델 매핑
 
@@ -128,6 +147,31 @@ sessions_spawn(task="테스트 작성...", mode="run", model="claude-sonnet-4-6"
 - [ ] 적절한 카테고리/모델을 선택했다
 - [ ] mode가 맞다 (run=일회성, session=영구)
 
+## 서브에이전트 완료 후 행동 (강제)
+
+서브에이전트 완료 통지("✅ Subagent finished")는 **FYI가 아니라 행동 트리거**다.
+
+### 완료 통지를 받으면 반드시:
+
+1. **결과 확인** — 서브에이전트가 산출한 결과를 즉시 읽는다
+2. **성공 기준 대조** — 위임 시 명시한 EXPECTED OUTCOME과 비교 검증한다
+3. **다음 단계 실행** — 검증 통과 시 즉시 다음 phase/step을 진행한다
+4. **실패 시 재시도** — 검증 실패 시 같은 에이전트로 재시도 (최대 3회) 또는 에스컬레이션
+5. **멈추지 않는다** — 모든 phase가 완료될 때까지 절대 멈추지 않는다
+
+### 금지사항:
+
+- ❌ 완료 통지를 받고 아무 행동 없이 멈추기
+- ❌ "완료되었습니다"만 보고하고 결과를 확인하지 않기
+- ❌ 다음 phase가 있는데 사용자 확인을 기다리기 (자동 진행이 기본)
+- ❌ 서브에이전트 결과를 무시하고 직접 다시 작업하기
+
+### 병렬 서브에이전트인 경우:
+
+- 각 완료 통지마다 해당 결과를 수집한다
+- 모든 병렬 에이전트가 완료되면 의존 phase를 즉시 시작한다
+- 일부만 완료된 상태에서는 독립적인 다음 작업을 먼저 진행한다
+
 ## Anti-Patterns
 
 - "적당히", "알아서" 같은 모호한 지시
@@ -137,3 +181,4 @@ sessions_spawn(task="테스트 작성...", mode="run", model="claude-sonnet-4-6"
 - spawn 후 poll 루프로 결과 대기
 - 모든 작업을 직접 처리 (서브에이전트 미활용)
 - 구현 작업인데 sessions_spawn 없이 직접 코드 수정
+- **완료 통지 후 멈추기 (가장 흔한 실패 패턴)**

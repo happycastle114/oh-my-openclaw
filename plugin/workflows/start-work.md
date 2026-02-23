@@ -48,22 +48,25 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
    | ultrabrain | oracle | claude-opus-4-5-thinking |
    | visual-engineering | sisyphus-junior | claude-opus-4-6-thinking |
 
-   c. **Delegate the task** with clear instructions:
+   c. **Delegate the task** via `sessions_spawn`:
    ```
-   Task: <task name>
-   Description: <from plan>
-   Acceptance Criteria:
-   - <criterion 1>
-   - <criterion 2>
-   Context: <relevant files, dependencies>
+   sessions_spawn(
+     task="7요소 프롬프트 (TASK/OUTCOME/SKILLS/TOOLS/MUST DO/MUST NOT/CONTEXT)",
+     agentId="omoc_sisyphus",  # 또는 적합한 전문 에이전트
+     model="...",
+     label="task-N-name"
+   )
    ```
 
    c-1. **Mandatory execution path for coding tasks**
-   - Use `sessions_spawn` for worker execution
+   - Use `sessions_spawn` with `agentId` for worker execution
    - For implementation-heavy tasks, route to OmO via tmux orchestration stack
    - Require execution evidence (changed files, test/build outputs) before marking done
 
-   d. **Verify task completion** against acceptance criteria
+   d. **서브에이전트 완료 통지 → 즉시 행동** (강제)
+   - 완료 통지를 받으면 결과를 즉시 확인한다
+   - Acceptance criteria와 대조 검증한다
+   - 멈추지 않는다 — 다음 task로 즉시 진행한다
 
    e. **Mark task as completed** in todo list
 
@@ -71,8 +74,9 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
 
 4. **Handle parallel tasks**
    - Tasks with no mutual dependencies can run in parallel
-   - Use multiple agent spawns simultaneously
-   - Wait for all parallel tasks before moving to dependent tasks
+   - Use multiple `sessions_spawn` simultaneously (각각 다른 `label`로 식별)
+   - 각 완료 통지마다 해당 결과를 즉시 수집/검증
+   - 모든 병렬 task 완료 후 의존 task 즉시 시작
 
 ### Phase 3: Error Handling
 

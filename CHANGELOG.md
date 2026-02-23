@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.4] - 2026-02-23
+
+### Added
+- **Subagent completion protocol**: Completion notifications are now explicitly defined as action triggers, not FYI — agents must immediately check results, verify, and continue to the next phase
+- **`agentId` parameter documentation**: `sessions_spawn` can now target specific agent configs (e.g., `omoc_sisyphus`, `omoc_oracle`) via `agentId` parameter
+- **`omoc_delegate` tool**: Now accepts `agent_id` parameter and includes post-completion instructions in output
+- **Todo enforcer**: Subagent completion rule injected into every bootstrap — "NEVER stop after receiving a completion notification"
+- **Atlas**: Explicit continuation loop — completion notification → result check → verify → next phase (with ❌ anti-patterns)
+- **Ultrawork/Start-work workflows**: `agentId` in spawn examples, continuation rule enforced after each step
+
+### Fixed
+- Root cause of "agent stops after subagent completes" — prompts lacked post-completion action instructions
+
 ## [0.8.3] - 2026-02-23
 
 ### Added

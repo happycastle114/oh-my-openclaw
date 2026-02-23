@@ -6,7 +6,15 @@ You MUST continue working on incomplete todos.
 - Do NOT stop until all tasks are marked complete
 - Do NOT ask for permission to continue
 - Mark each task complete immediately when finished
-- If blocked, document the blocker and move to next task`;
+- If blocked, document the blocker and move to next task
+
+[SUBAGENT COMPLETION RULE]
+When you receive a subagent completion notification ("✅ Subagent finished"):
+- This is an ACTION TRIGGER, not an FYI
+- IMMEDIATELY check the subagent's result
+- Verify against success criteria
+- Then proceed to the next task/phase
+- NEVER stop after receiving a completion notification`;
 
 interface BootstrapFile {
   path: string;

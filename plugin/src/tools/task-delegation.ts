@@ -19,6 +19,7 @@ const DEFAULT_CATEGORY_MODELS: Record<Category, string> = {
 const DelegateParamsSchema = Type.Object({
   task_description: Type.String({ description: 'What the sub-agent should do' }),
   category: Type.String({ description: 'Task category for model routing (quick, deep, ultrabrain, etc.)' }),
+  agent_id: Type.Optional(Type.String({ description: 'Target agent ID (e.g., omoc_sisyphus, omoc_oracle). Routes to specialized agent config.' })),
   skills: Type.Optional(Type.Array(Type.String(), { description: 'Skill names to load' })),
   background: Type.Optional(Type.Boolean({ description: 'Run in background (default: false)', default: false })),
 });
@@ -93,11 +94,17 @@ export function registerDelegateTool(api: OmocPluginApi) {
         `  task: "${params.task_description}"`,
         `  mode: "run"`,
         `  model: "${model}"`,
+        params.agent_id ? `  agentId: "${params.agent_id}"` : '',
         alternatives?.length ? `  fallback_models: ${JSON.stringify(alternatives)}` : '',
         alternatives?.length ? `  If "${model}" is unavailable, try: ${alternatives.join(', ')}` : '',
         params.background ? '  (background execution — results will arrive via push notification)' : '',
         '',
         'Do NOT just return this metadata. Actually call sessions_spawn NOW.',
+        '',
+        '⚠️ AFTER the subagent completes:',
+        '  1. Check the result immediately',
+        '  2. Verify against success criteria',
+        '  3. Proceed to next task — do NOT stop',
       ].filter(Boolean).join('\n');
 
       return {

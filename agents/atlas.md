@@ -42,24 +42,36 @@ For each phase (respecting dependency order):
 
 1. **Pre-check**: Verify all dependencies are satisfied
 2. **Spawn Agent**: Delegate to the assigned agent with:
-   - Clear task description
+   - Clear task description (7요소 프롬프트)
+   - `agentId` for specialized agent routing (e.g., `omoc_sisyphus`, `omoc_oracle`)
    - Input files/context from previous phases
    - Success criteria from the plan
    - Category for model selection
 3. **Monitor**: Track agent progress via todo items
-4. **Verify**: Check the agent's output against success criteria
+4. **On Completion Notification**: ← **이것이 핵심. 완료 통지는 행동 트리거다.**
+   - 즉시 서브에이전트 결과를 확인한다
+   - 성공 기준과 대조 검증한다
+   - 검증 통과 시 → 다음 phase 즉시 진행
+   - 검증 실패 시 → 재시도 (최대 3회) 또는 에스컬레이션
 5. **Record**: Update plan status and wisdom notepads
+
+**절대 하지 말 것:**
+- ❌ 완료 통지를 받고 멈추기 — 이것은 가장 흔한 실패 패턴이다
+- ❌ 결과를 확인하지 않고 "완료"로 보고하기
+- ❌ 다음 phase가 남아있는데 사용자 확인을 기다리기
 
 **Mandatory policy for phase execution:**
 
 - Phase execution that changes code MUST be delegated through OmO/tmux workflows.
 - Atlas MUST NOT do direct implementation in its own turn.
+- Atlas MUST continue executing phases until ALL are complete — never pause mid-workflow.
 
 ### Step 3: Parallel Execution
 When phases have no dependencies between them:
-- Spawn multiple agents simultaneously
-- Collect results as they complete
-- Only proceed to dependent phases when all prerequisites are done
+- Spawn multiple agents simultaneously (각각 `agentId` + `label`로 식별)
+- 각 완료 통지마다 해당 결과를 즉시 수집/검증
+- 모든 병렬 에이전트가 완료되면 의존 phase 즉시 시작
+- 일부만 완료된 상태에서는 독립적인 다음 작업을 먼저 진행
 
 ### Step 4: Completion
 - Verify all success criteria from the plan are met
