@@ -6,9 +6,9 @@
 [![GitHub Issues](https://img.shields.io/github/issues/happycastle114/oh-my-openclaw?color=ff80eb&labelColor=black&style=flat-square)](https://github.com/happycastle114/oh-my-openclaw/issues)
 [![License](https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square)](https://github.com/happycastle114/oh-my-openclaw/blob/master/LICENSE)
 
-**Install. Type `/omoc`. Done.**
+**OmO, but on Discord and Telegram. Not your terminal.**
 
-Agent orchestration for [OpenClaw](https://openclaw.ai) — brought to you by the patterns that made [OmO](https://github.com/code-yeongyu/oh-my-opencode) unstoppable.
+Agent orchestration for [OpenClaw](https://openclaw.ai) — the patterns that made [OmO](https://github.com/code-yeongyu/oh-my-opencode) unstoppable, now running everywhere you chat.
 
 [English](#installation) | [한국어](#한국어-설치-가이드)
 
@@ -21,16 +21,10 @@ For the impatient:
 
 ```bash
 openclaw plugins install @happycastle/oh-my-openclaw
+openclaw omoc-setup
 ```
 
-Or the manual way:
-
-```bash
-git clone https://github.com/happycastle114/oh-my-openclaw.git
-ln -s "$(pwd)/oh-my-openclaw" ~/.openclaw/workspace/skills/oh-my-openclaw
-bash oh-my-openclaw/scripts/init-deep.sh
-```
-Now open your messaging channel and type `/omoc` to activate, then `/ultrawork`. You're done.
+Now open your messaging channel and type `/omoc`. You're done.
 
 ---
 
@@ -90,7 +84,6 @@ These aren't generic "assistant" prompts. Each agent has a personality and a man
 - *(Optional)* [Gemini CLI](https://ai.google.dev/) — for multimodal analysis
 
 ## Installation
-### Option 1: Official Plugin Install (Recommended)
 
 ```bash
 openclaw plugins install @happycastle/oh-my-openclaw
@@ -98,31 +91,7 @@ openclaw plugins install @happycastle/oh-my-openclaw
 
 One command. Skills, hooks, tools — all registered automatically.
 
-### Option 2: Clone + Symlink
-
-```bash
-git clone https://github.com/happycastle114/oh-my-openclaw.git
-cd oh-my-openclaw
-ln -s "$(pwd)" ~/.openclaw/workspace/skills/oh-my-openclaw
-bash scripts/init-deep.sh
-```
-
-### Option 3: Direct Clone into Skills
-
-```bash
-git clone https://github.com/happycastle114/oh-my-openclaw.git \
-  ~/.openclaw/workspace/skills/oh-my-openclaw
-bash ~/.openclaw/workspace/skills/oh-my-openclaw/scripts/init-deep.sh
-```
-
-### Option 4: Global Skill
-
-```bash
-git clone https://github.com/happycastle114/oh-my-openclaw.git \
-  ~/.openclaw/skills/oh-my-openclaw
-```
-
-### Agent Setup (v0.6.0+)
+### Agent Setup
 
 Register the 11 built-in agent personas as OpenClaw sub-agents:
 
@@ -130,7 +99,7 @@ Register the 11 built-in agent personas as OpenClaw sub-agents:
 openclaw omoc-setup
 ```
 
-This injects agent configs into your `openclaw.json5`. Use `--force` to overwrite existing configs, `--dry-run` to preview changes.
+Interactive wizard walks you through provider selection. Use `--force` to overwrite existing configs, `--dry-run` to preview changes.
 
 ### Verify
 
@@ -385,15 +354,10 @@ Requires `NPM_TOKEN` secret in GitHub repo settings.
 ### 설치
 
 ```bash
-# 1. 레포 클론
-git clone https://github.com/happycastle114/oh-my-openclaw.git
-
-# 2. OpenClaw 워크스페이스 스킬로 심링크
-ln -s "$(pwd)/oh-my-openclaw" ~/.openclaw/workspace/skills/oh-my-openclaw
-
-# 3. 초기화
-bash oh-my-openclaw/scripts/init-deep.sh
+openclaw plugins install @happycastle/oh-my-openclaw
 ```
+
+플러그인 설치 한 줄이면 끝. 스킬, 훅, 도구 전부 자동 등록.
 
 ### 모델 변경
 
