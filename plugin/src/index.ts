@@ -73,7 +73,7 @@ export default function register(api: OmocPluginApi) {
   try {
     registerContextInjector(api);
     registry.hooks.push('context-injector');
-    api.logger.info(`[${PLUGIN_ID}] Context injector hook registered`);
+    api.logger.info(`[${PLUGIN_ID}] Context injector hook registered (before_prompt_build)`);
   } catch (err) {
     api.logger.error(`[${PLUGIN_ID}] Failed to register Context Injector:`, err);
   }

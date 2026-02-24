@@ -19,6 +19,12 @@ interface AgentBootstrapEvent {
   };
 }
 
+interface BeforePromptBuildEvent {
+  agentId?: string;
+  messages?: unknown[];
+  prependContext?: string;
+}
+
 interface ToolResultPayload {
   tool?: string;
   content?: string;
@@ -254,7 +260,7 @@ describe('context-injector hook', () => {
     contextCollector.clearAll();
   });
 
-  it('injects collected context entries into bootstrapFiles', () => {
+  it('injects collected context entries into prependContext', () => {
     const api = createMockApi();
     registerContextInjector(api);
 
@@ -271,17 +277,18 @@ describe('context-injector hook', () => {
       source: 'persona',
     });
 
-    const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
-    const event: AgentBootstrapEvent = { context: { agentId: 'omoc_atlas', bootstrapFiles: [] } };
-    handler(event);
+    expect(api.registerHook.mock.calls[0][0]).toBe('before_prompt_build');
 
-    expect(event.context.bootstrapFiles).toHaveLength(2);
-    expect(event.context.bootstrapFiles?.[0].path).toBe('omoc://context/persona/persona/omoc_atlas');
-    expect(event.context.bootstrapFiles?.[1].path).toBe('omoc://context/todo-enforcer/todo-enforcer');
+    const handler = api.registerHook.mock.calls[0][1] as (event: BeforePromptBuildEvent) => BeforePromptBuildEvent;
+    const event: BeforePromptBuildEvent = { agentId: 'omoc_atlas', messages: [] };
+    const result = handler(event);
+
+    expect(result.prependContext).toContain('persona prompt');
+    expect(result.prependContext).toContain('todo directive');
     expect(contextCollector.hasEntries('omoc_atlas')).toBe(true);
   });
 
-  it('creates bootstrapFiles array when missing', () => {
+  it('uses default session key when agentId is missing', () => {
     const api = createMockApi();
     registerContextInjector(api);
 
@@ -291,25 +298,25 @@ describe('context-injector hook', () => {
       source: 'todo-enforcer',
     });
 
-    const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
-    const event: AgentBootstrapEvent = { context: {} };
-    handler(event);
+    const handler = api.registerHook.mock.calls[0][1] as (event: BeforePromptBuildEvent) => BeforePromptBuildEvent;
+    const event: BeforePromptBuildEvent = { messages: [] };
+    const result = handler(event);
 
-    expect(event.context.bootstrapFiles).toHaveLength(1);
+    expect(result.prependContext).toContain('todo directive');
   });
 
   it('does not inject when no entries exist', () => {
     const api = createMockApi();
     registerContextInjector(api);
 
-    const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
-    const event: AgentBootstrapEvent = { context: { bootstrapFiles: [] } };
-    handler(event);
+    const handler = api.registerHook.mock.calls[0][1] as (event: BeforePromptBuildEvent) => BeforePromptBuildEvent;
+    const event: BeforePromptBuildEvent = { messages: [] };
+    const result = handler(event);
 
-    expect(event.context.bootstrapFiles).toEqual([]);
+    expect(result.prependContext).toBeUndefined();
   });
 
-  it('avoids duplicate injection when context paths already exist', () => {
+  it('returns event unchanged when no collector entries for session', () => {
     const api = createMockApi();
     registerContextInjector(api);
 
@@ -319,15 +326,15 @@ describe('context-injector hook', () => {
       source: 'todo-enforcer',
     });
 
-    const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
-    const event: AgentBootstrapEvent = {
-      context: {
-        bootstrapFiles: [{ path: 'omoc://context/existing/entry', content: 'existing' }],
-      },
+    const handler = api.registerHook.mock.calls[0][1] as (event: BeforePromptBuildEvent) => BeforePromptBuildEvent;
+    const event: BeforePromptBuildEvent = {
+      agentId: 'omoc_other',
+      messages: [],
+      prependContext: 'existing prepend',
     };
-    handler(event);
+    const result = handler(event);
 
-    expect(event.context.bootstrapFiles).toHaveLength(1);
+    expect(result.prependContext).toBe('existing prepend');
     expect(contextCollector.hasEntries('default')).toBe(true);
   });
 });

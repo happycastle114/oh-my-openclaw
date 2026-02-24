@@ -1,54 +1,39 @@
 import { contextCollector } from '../features/context-collector.js';
 import { OmocPluginApi } from '../types.js';
 
-interface BootstrapFile {
-  path: string;
-  content: string;
-}
-
-interface AgentBootstrapEvent {
-  context: {
-    agentId?: string;
-    bootstrapFiles?: BootstrapFile[];
-  };
+interface BeforePromptBuildEvent {
+  messages?: unknown[];
+  agentId?: string;
+  sessionId?: string;
+  prependContext?: string;
+  systemPrompt?: string;
 }
 
 export function registerContextInjector(api: OmocPluginApi): void {
   api.registerHook(
-    'agent:bootstrap',
-    (event: AgentBootstrapEvent): void => {
-      const sessionKey = event.context.agentId || 'default';
+    'before_prompt_build',
+    (event: BeforePromptBuildEvent): BeforePromptBuildEvent => {
+      const sessionKey = event.agentId || 'default';
 
       if (!contextCollector.hasEntries(sessionKey)) {
-        return;
+        return event;
       }
 
-      if (!event.context.bootstrapFiles) {
-        event.context.bootstrapFiles = [];
+      const entryCount = contextCollector.getEntries(sessionKey).length;
+      const collectedContext = contextCollector.collectAsString(sessionKey);
+
+      if (!collectedContext) {
+        return event;
       }
 
-      const alreadyInjected = event.context.bootstrapFiles.some((file) =>
-        file.path.startsWith('omoc://context/')
-      );
-      if (alreadyInjected) {
-        return;
-      }
+      event.prependContext = collectedContext;
+      api.logger.info(`[omoc] Context injected: ${entryCount} entries for ${sessionKey}`);
 
-      const entries = contextCollector.collect(sessionKey);
-      for (const entry of entries) {
-        event.context.bootstrapFiles.push({
-          path: `omoc://context/${entry.source}/${entry.id}`,
-          content: entry.content,
-        });
-      }
-
-      if (entries.length > 0) {
-        api.logger.info(`[omoc] Context injected: ${entries.length} entries for ${sessionKey}`);
-      }
+      return event;
     },
     {
       name: 'oh-my-openclaw.context-injector',
-      description: 'Unified context injection from ContextCollector into bootstrapFiles',
+      description: 'Unified context injection from ContextCollector into prependContext',
     }
   );
 }
