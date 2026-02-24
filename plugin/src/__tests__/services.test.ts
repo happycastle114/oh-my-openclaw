@@ -22,34 +22,7 @@ import {
   getStatus,
   incrementIteration,
 } from '../services/ralph-loop.js';
-
-function createMockApi(configOverrides = {}): any {
-  return {
-    config: {
-      max_ralph_iterations: 10,
-      todo_enforcer_enabled: true,
-      todo_enforcer_cooldown_ms: 2000,
-      todo_enforcer_max_failures: 5,
-      comment_checker_enabled: true,
-      notepad_dir: 'workspace/notepads',
-      plans_dir: 'workspace/plans',
-      checkpoint_dir: 'workspace/checkpoints',
-      tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
-      ...configOverrides,
-    },
-    logger: {
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-    },
-    registerHook: vi.fn(),
-    registerTool: vi.fn(),
-    registerCommand: vi.fn(),
-    registerService: vi.fn(),
-    registerGatewayMethod: vi.fn(),
-    registerCli: vi.fn(),
-  };
-}
+import { createMockApi } from './helpers/mock-factory.js';
 
 describe('Ralph Loop Service', () => {
   let mockApi: ReturnType<typeof createMockApi>;
@@ -111,5 +84,44 @@ describe('Ralph Loop Service', () => {
     const second = await startLoop('other.md', 5);
     expect(second.success).toBe(false);
     expect(second.message).toContain('already running');
+  });
+
+  it('getStatus returns a clone and protects internal state', async () => {
+    const factoryApi = createMockApi();
+    registerRalphLoop(factoryApi);
+    await stopLoop();
+    await startLoop('clone-check.md', 4);
+
+    const firstStatus = await getStatus();
+    firstStatus.iteration = 999;
+    firstStatus.active = false;
+    firstStatus.taskFile = 'mutated.md';
+
+    const secondStatus = await getStatus();
+
+    expect(secondStatus.iteration).toBe(0);
+    expect(secondStatus.active).toBe(true);
+    expect(secondStatus.taskFile).toBe('clone-check.md');
+  });
+
+  it('concurrent incrementIteration and stopLoop does not corrupt state', async () => {
+    const factoryApi = createMockApi();
+    registerRalphLoop(factoryApi);
+    await stopLoop();
+    await startLoop('race.md', 5);
+
+    const [incrementResult, stopResult] = await Promise.all([
+      incrementIteration(),
+      stopLoop(),
+    ]);
+    const finalStatus = await getStatus();
+
+    expect(stopResult.success).toBe(true);
+    expect(finalStatus.active).toBe(false);
+    expect(finalStatus.iteration).toBeGreaterThanOrEqual(0);
+    expect(finalStatus.iteration).toBeLessThanOrEqual(1);
+    expect(finalStatus.maxIterations).toBe(5);
+    expect(incrementResult.state.taskFile).toBe('race.md');
+    expect(finalStatus.taskFile).toBe('race.md');
   });
 });
