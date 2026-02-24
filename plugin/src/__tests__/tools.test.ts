@@ -38,14 +38,16 @@ import { registerCheckpointTool } from '../tools/checkpoint.js';
 import { readState, writeState, ensureDir } from '../utils/state.js';
 import { createMockApi, createMockConfig } from './helpers/mock-factory.js';
 
+const createMockApiAny = createMockApi as (...args: any[]) => any;
+
 // ─── Delegate Tool Tests ────────────────────────────────────────────
 
 describe('registerDelegateTool', () => {
-  let mockApi: ReturnType<typeof createMockApi>;
+  let mockApi: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApi = createMockApi();
+    mockApi = createMockApiAny();
   });
 
   it("registers with name 'omoc_delegate' and optional=true", () => {
@@ -73,7 +75,7 @@ describe('registerDelegateTool', () => {
   });
 
   it('uses custom model from config.model_routing', async () => {
-    const customApi = createMockApi({
+    const customApi = createMockApiAny({
       config: createMockConfig({ model_routing: { quick: { model: 'custom-model-v1', alternatives: ['fallback-1'] } } }),
     });
     registerDelegateTool(customApi);
@@ -110,7 +112,7 @@ describe('registerDelegateTool', () => {
   });
 
   it('includes fallback suggestion text when alternatives exist', async () => {
-    const customApi = createMockApi({
+    const customApi = createMockApiAny({
       config: createMockConfig({
         model_routing: {
           deep: {
@@ -160,11 +162,11 @@ describe('registerDelegateTool', () => {
 // ─── Look-At Tool Tests ─────────────────────────────────────────────
 
 describe('registerLookAtTool', () => {
-  let mockApi: ReturnType<typeof createMockApi>;
+  let mockApi: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApi = createMockApi();
+    mockApi = createMockApiAny();
   });
 
   it("registers with name 'omoc_look_at' and optional=true", () => {
@@ -230,7 +232,7 @@ describe('registerLookAtTool', () => {
   });
 
   it('passes file_path as execFileSync arg array without shell interpolation', async () => {
-    const mockApiFromFactory = createMockApi();
+    const mockApiFromFactory = createMockApiAny();
 
     const mockedExecFileSync = vi.fn();
     Object.defineProperty(childProcess, 'execFileSync', {
@@ -265,11 +267,11 @@ describe('registerLookAtTool', () => {
 // ─── Checkpoint Tool Tests ──────────────────────────────────────────
 
 describe('registerCheckpointTool', () => {
-  let mockApi: ReturnType<typeof createMockApi>;
+  let mockApi: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApi = createMockApi({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
+    mockApi = createMockApiAny({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
   });
 
   it("registers with name 'omoc_checkpoint' and optional=true", () => {
@@ -329,7 +331,7 @@ describe('registerCheckpointTool', () => {
   });
 
   it('load returns error when most recent checkpoint is corrupted', async () => {
-    const factoryApi = createMockApi({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
+    const factoryApi = createMockApiAny({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
     vi.mocked(ensureDir).mockResolvedValue(undefined);
     vi.mocked(fs.readdir).mockResolvedValue(['checkpoint-999.json'] as any);
     vi.mocked(readState).mockResolvedValue({
@@ -348,7 +350,7 @@ describe('registerCheckpointTool', () => {
   });
 
   it('load handles missing checkpoint file by returning tool error', async () => {
-    const factoryApi = createMockApi({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
+    const factoryApi = createMockApiAny({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
     vi.mocked(ensureDir).mockResolvedValue(undefined);
     vi.mocked(fs.readdir).mockResolvedValue(['checkpoint-111.json'] as any);
     vi.mocked(readState).mockResolvedValue({
@@ -367,7 +369,7 @@ describe('registerCheckpointTool', () => {
   });
 
   it('list handles missing directory gracefully with empty result message', async () => {
-    const factoryApi = createMockApi({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
+    const factoryApi = createMockApiAny({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
     vi.mocked(ensureDir).mockResolvedValue(undefined);
     vi.mocked(fs.readdir).mockResolvedValue([] as any);
 
