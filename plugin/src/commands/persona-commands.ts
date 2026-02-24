@@ -1,7 +1,12 @@
 import { OmocPluginApi } from '../types.js';
 import { getActivePersona, setActivePersona, resetPersonaState } from '../utils/persona-state.js';
 import { resolvePersonaId, listPersonas, DEFAULT_PERSONA_ID } from '../agents/persona-prompts.js';
-import { resetPersonaInjectorState, resetPersonaContextEntries } from '../hooks/persona-injector.js';
+import { resetPersonaInjectorState } from '../hooks/persona-injector.js';
+
+function getDisplayName(personaId: string): string {
+  const persona = listPersonas().find((p) => p.id === personaId);
+  return persona ? `${persona.emoji} ${persona.displayName}` : personaId;
+}
 
 export function registerPersonaCommands(api: OmocPluginApi) {
   api.registerCommand({
@@ -14,25 +19,29 @@ export function registerPersonaCommands(api: OmocPluginApi) {
       api.logger.info(`[omoc] Parsed args: "${args}" (length: ${args.length})`);
 
       if (!args) {
+        const previousId = getActivePersona();
+        resetPersonaInjectorState();
         setActivePersona(DEFAULT_PERSONA_ID);
-        const personas = listPersonas();
-        const defaultPersona = personas.find((p) => p.id === DEFAULT_PERSONA_ID);
-        const name = defaultPersona
-          ? `${defaultPersona.emoji} ${defaultPersona.displayName}`
-          : DEFAULT_PERSONA_ID;
+        const name = getDisplayName(DEFAULT_PERSONA_ID);
+
+        const switchNote =
+          previousId && previousId !== DEFAULT_PERSONA_ID
+            ? `\n\nSwitched from **${getDisplayName(previousId)}**.`
+            : '';
 
         return {
-          text: `# OmOC Mode: ON\n\nActive persona: **${name}**\n\nThe persona prompt will be injected into all new agent sessions.\n\nUse \`/omoc list\` to see available personas, or \`/omoc <name>\` to switch.`,
+          text: `# OmOC Mode: ON\n\nActive persona: **${name}**${switchNote}\n\nApplied immediately — your next message will use this persona.\n\nUse \`/omoc list\` to see available personas, or \`/omoc <name>\` to switch.`,
         };
       }
 
       if (args === 'off') {
         const wasActive = getActivePersona();
+        const wasName = wasActive ? getDisplayName(wasActive) : null;
         resetPersonaState();
         resetPersonaInjectorState();
         return {
-          text: wasActive
-            ? `# OmOC Mode: OFF\n\nPersona **${wasActive}** deactivated. Agent sessions will use default behavior.`
+          text: wasName
+            ? `# OmOC Mode: OFF\n\nPersona **${wasName}** deactivated. Applied immediately — your next message will use default behavior.`
             : '# OmOC Mode: OFF\n\nNo persona was active.',
         };
       }
@@ -49,7 +58,7 @@ export function registerPersonaCommands(api: OmocPluginApi) {
           text: [
             '# OmOC Personas',
             '',
-            `Active: ${activeId ? `**${activeId}**` : '_none_'}`,
+            `Active: ${activeId ? `**${getDisplayName(activeId)}**` : '_none_'}`,
             '',
             '| | Command | Name | Role |',
             '|---|---------|------|------|',
@@ -69,16 +78,19 @@ export function registerPersonaCommands(api: OmocPluginApi) {
         };
       }
 
-      resetPersonaContextEntries();
+      const previousId = getActivePersona();
+      resetPersonaInjectorState();
       setActivePersona(resolvedId);
-      const personas = listPersonas();
-      const switched = personas.find((p) => p.id === resolvedId);
-      const displayName = switched
-        ? `${switched.emoji} ${switched.displayName}`
-        : resolvedId;
+      const displayName = getDisplayName(resolvedId);
+      const switched = listPersonas().find((p) => p.id === resolvedId);
+
+      const switchNote =
+        previousId && previousId !== resolvedId
+          ? `\n\nSwitched from **${getDisplayName(previousId)}**.`
+          : '';
 
       return {
-        text: `# Persona Switched\n\nActive persona: **${displayName}**\n\nThe ${switched?.theme ?? 'persona'} prompt will be injected into all new agent sessions.`,
+        text: `# Persona Switched\n\nActive persona: **${displayName}**${switchNote}\n\nApplied immediately — your next message will use the ${switched?.theme ?? 'persona'} prompt.`,
       };
     },
   });

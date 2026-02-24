@@ -17,7 +17,17 @@ import { registerPersonaInjector } from './hooks/persona-injector.js';
 import { registerContextInjector } from './hooks/context-injector.js';
 import { registerSetupCli } from './cli/setup.js';
 
-let initialized = false;
+/**
+ * Generation counter for multi-registration handling.
+ *
+ * OpenClaw may call register() multiple times with different api instances.
+ * Only the LAST call's api connects to the live hook dispatcher.
+ * We track a generation number so that hooks from stale registrations
+ * become no-ops, solving both:
+ *   - hooks not firing (stale api from early call)
+ *   - triple firing (all 3 registrations' hooks executing)
+ */
+let generation = 0;
 
 const registry = {
   hooks: [] as string[],
@@ -27,19 +37,38 @@ const registry = {
   cli: [] as string[],
 };
 
+function guardedApi(api: OmocPluginApi, gen: number): OmocPluginApi {
+  return {
+    ...api,
+    registerHook: <TEvent>(
+      event: string,
+      handler: (event: TEvent) => TEvent | void | undefined,
+      meta?: { name: string; description?: string },
+    ) => {
+      api.registerHook(event, (evt: TEvent) => {
+        if (gen !== generation) return evt;
+        return handler(evt);
+      }, meta);
+    },
+  };
+}
+
 export default function register(api: OmocPluginApi) {
-  if (initialized) {
-    api.logger.warn(`[${PLUGIN_ID}] Plugin already initialized — skipping duplicate register() call`);
-    return;
-  }
-  initialized = true;
+  const gen = ++generation;
+  registry.hooks = [];
+  registry.services = [];
+  registry.tools = [];
+  registry.commands = [];
+  registry.cli = [];
 
   const config = getConfig(api);
 
-  api.logger.info(`[${PLUGIN_ID}] Initializing plugin v${VERSION}`);
+  api.logger.info(`[${PLUGIN_ID}] Initializing plugin v${VERSION} (register call #${gen})`);
+
+  const guarded = guardedApi(api, gen);
 
   try {
-    registerTodoEnforcer(api);
+    registerTodoEnforcer(guarded);
     registry.hooks.push('todo-enforcer');
     api.logger.info(`[${PLUGIN_ID}] Todo Enforcer hook registered (enabled: ${config.todo_enforcer_enabled})`);
   } catch (err) {
@@ -47,7 +76,7 @@ export default function register(api: OmocPluginApi) {
   }
 
   try {
-    registerCommentChecker(api);
+    registerCommentChecker(guarded);
     registry.hooks.push('comment-checker');
     api.logger.info(`[${PLUGIN_ID}] Comment Checker hook registered (enabled: ${config.comment_checker_enabled})`);
   } catch (err) {
@@ -55,7 +84,7 @@ export default function register(api: OmocPluginApi) {
   }
 
   try {
-    registerMessageMonitor(api);
+    registerMessageMonitor(guarded);
     registry.hooks.push('message-monitor', 'message-received-monitor');
     api.logger.info(`[${PLUGIN_ID}] Message Monitor hook registered`);
   } catch (err) {
@@ -63,7 +92,7 @@ export default function register(api: OmocPluginApi) {
   }
 
   try {
-    registerStartupHook(api);
+    registerStartupHook(guarded);
     registry.hooks.push('gateway-startup');
     api.logger.info(`[${PLUGIN_ID}] Gateway startup hook registered`);
   } catch (err) {
@@ -71,7 +100,7 @@ export default function register(api: OmocPluginApi) {
   }
 
   try {
-    registerPersonaInjector(api);
+    registerPersonaInjector(guarded);
     registry.hooks.push('persona-injector');
     api.logger.info(`[${PLUGIN_ID}] Persona injector hook registered`);
   } catch (err) {
@@ -79,7 +108,7 @@ export default function register(api: OmocPluginApi) {
   }
 
   try {
-    registerContextInjector(api);
+    registerContextInjector(guarded);
     registry.hooks.push('context-injector');
     api.logger.info(`[${PLUGIN_ID}] Context injector hook registered (before_prompt_build)`);
   } catch (err) {

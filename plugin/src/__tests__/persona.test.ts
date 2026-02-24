@@ -399,7 +399,7 @@ describe('persona-commands (/omoc)', () => {
 
     expect(getActivePersona()).toBeNull();
     expect(result.text).toContain('OmOC Mode: OFF');
-    expect(result.text).toContain('omoc_atlas');
+    expect(result.text).toContain('Atlas');
   });
 
   it('/omoc off when no persona active', async () => {
@@ -436,7 +436,7 @@ describe('persona-commands (/omoc)', () => {
     const result = await handler({ args: 'list' });
 
     expect(result.text).toContain('← active');
-    expect(result.text).toContain('omoc_oracle');
+    expect(result.text).toContain('Oracle');
   });
 
   it('/omoc <name> switches persona by short name', async () => {
