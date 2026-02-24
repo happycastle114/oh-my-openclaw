@@ -1,13 +1,9 @@
 import { readFileSync, statSync } from 'fs';
 import { promises as fs } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
 import { OMOC_AGENT_CONFIGS } from './agent-configs.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-// From dist/agents/ → plugin root is ../../ (same pattern as workflow-commands.ts)
-const PLUGIN_ROOT = join(__dirname, '..', '..');
+import { PLUGIN_ROOT } from '../utils/paths.js';
+import { AGENT_MD_MAP } from './agent-ids.js';
 
 /** mtime-based file content cache (matches OpenClaw's readFileWithCache pattern) */
 interface PersonaCacheEntry {
@@ -20,20 +16,6 @@ const personaCache = new Map<string, PersonaCacheEntry>();
 export function clearPersonaCache(): void {
   personaCache.clear();
 }
-
-const AGENT_MD_MAP: Record<string, string> = {
-  omoc_atlas: 'atlas',
-  omoc_prometheus: 'prometheus',
-  omoc_sisyphus: 'sisyphus-junior',
-  omoc_hephaestus: 'hephaestus',
-  omoc_oracle: 'oracle',
-  omoc_explore: 'explore',
-  omoc_librarian: 'librarian',
-  omoc_metis: 'metis',
-  omoc_momus: 'momus',
-  omoc_looker: 'multimodal-looker',
-  omoc_frontend: 'frontend',
-};
 
 const SHORT_ID_MAP: Record<string, string> = {};
 for (const id of Object.keys(AGENT_MD_MAP)) {

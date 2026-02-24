@@ -2,6 +2,8 @@
  * Defines the Oh-My-OpenClaw plugin's local agent configuration contracts
  * and the canonical list of built-in OMOC agent definitions.
  */
+import { READ_ONLY_DENY } from '../constants.js';
+
 export type OmocAgentConfig = {
   id: string;
   name?: string;
@@ -103,7 +105,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     },
     tools: {
       profile: 'coding',
-      deny: ['write', 'edit', 'apply_patch', 'sessions_spawn'],
+      deny: READ_ONLY_DENY,
     },
   },
   // Read-only codebase search specialist.
@@ -118,7 +120,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     },
     tools: {
       profile: 'coding',
-      deny: ['write', 'edit', 'apply_patch', 'sessions_spawn'],
+      deny: READ_ONLY_DENY,
     },
   },
   // Read-only documentation research specialist.
@@ -133,7 +135,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     },
     tools: {
       profile: 'coding',
-      deny: ['write', 'edit', 'apply_patch', 'sessions_spawn'],
+      deny: READ_ONLY_DENY,
     },
   },
   // Read-only pre-planning analyst.
@@ -151,7 +153,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     },
     tools: {
       profile: 'coding',
-      deny: ['write', 'edit', 'apply_patch', 'sessions_spawn'],
+      deny: READ_ONLY_DENY,
     },
   },
   // Read-only plan review specialist.
@@ -169,7 +171,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     },
     tools: {
       profile: 'coding',
-      deny: ['write', 'edit', 'apply_patch', 'sessions_spawn'],
+      deny: READ_ONLY_DENY,
     },
   },
   // Multimodal visual analysis specialist (read-only — allowlist approach).
@@ -187,7 +189,7 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     },
     tools: {
       allow: ['read'],
-      deny: ['write', 'edit', 'apply_patch', 'sessions_spawn'],
+      deny: READ_ONLY_DENY,
     },
   },
   // Frontend-focused visual engineering specialist.

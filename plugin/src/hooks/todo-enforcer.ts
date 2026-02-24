@@ -1,19 +1,9 @@
 import { OmocPluginApi } from '../types.js';
 import { getConfig } from '../utils/config.js';
 import { contextCollector } from '../features/context-collector.js';
+import { ORCHESTRATOR_IDS, WORKER_IDS } from '../agents/agent-ids.js';
 
 export type AgentRole = 'orchestrator' | 'worker' | 'lightweight';
-
-const ORCHESTRATOR_IDS = new Set([
-  'omoc_prometheus',
-  'omoc_atlas',
-]);
-
-const WORKER_IDS = new Set([
-  'omoc_sisyphus',
-  'omoc_hephaestus',
-  'omoc_frontend',
-]);
 
 export function classifyAgentRole(agentId?: string): AgentRole {
   if (!agentId) return 'orchestrator';

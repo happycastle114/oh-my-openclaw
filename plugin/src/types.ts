@@ -1,7 +1,5 @@
-// Constants
-export const ABSOLUTE_MAX_RALPH_ITERATIONS = 100;
-export const TOOL_PREFIX = 'omoc_';
-export const PLUGIN_ID = 'oh-my-openclaw';
+// Re-export constants from constants.ts for backward compatibility
+export { PLUGIN_ID, TOOL_PREFIX, ABSOLUTE_MAX_RALPH_ITERATIONS, LOG_PREFIX, READ_ONLY_DENY } from './constants.js';
 
 // PluginConfig interface
 export interface PluginConfig {

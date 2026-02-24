@@ -1,5 +1,5 @@
 import { OmocPluginApi } from '../types.js';
-import { getActivePersona, setActivePersona, resetPersonaState } from '../utils/persona-state.js';
+import { getActivePersona, setActivePersonaId, resetPersonaState } from '../utils/persona-state.js';
 import { resolvePersonaId, listPersonas, DEFAULT_PERSONA_ID } from '../agents/persona-prompts.js';
 
 function getDisplayName(personaId: string): string {
@@ -18,8 +18,8 @@ export function registerPersonaCommands(api: OmocPluginApi) {
       api.logger.info(`[omoc] Parsed args: "${args}" (length: ${args.length})`);
 
       if (!args) {
-        const previousId = getActivePersona();
-        setActivePersona(DEFAULT_PERSONA_ID);
+        const previousId = await getActivePersona();
+        await setActivePersonaId(DEFAULT_PERSONA_ID);
         const name = getDisplayName(DEFAULT_PERSONA_ID);
 
         const switchNote =
@@ -33,9 +33,9 @@ export function registerPersonaCommands(api: OmocPluginApi) {
       }
 
       if (args === 'off') {
-        const wasActive = getActivePersona();
+        const wasActive = await getActivePersona();
         const wasName = wasActive ? getDisplayName(wasActive) : null;
-        resetPersonaState();
+        await resetPersonaState();
         return {
           text: wasName
             ? `# OmOC Mode: OFF\n\nPersona **${wasName}** deactivated. Applied immediately — your next message will use default behavior.`
@@ -45,7 +45,7 @@ export function registerPersonaCommands(api: OmocPluginApi) {
 
       if (args === 'list') {
         const personas = listPersonas();
-        const activeId = getActivePersona();
+        const activeId = await getActivePersona();
         const lines = personas.map((p) => {
           const active = p.id === activeId ? ' ← active' : '';
           return `| ${p.emoji} | \`${p.shortName}\` | ${p.displayName} | ${p.theme} |${active}`;
@@ -75,8 +75,8 @@ export function registerPersonaCommands(api: OmocPluginApi) {
         };
       }
 
-      const previousId = getActivePersona();
-      setActivePersona(resolvedId);
+      const previousId = await getActivePersona();
+      await setActivePersonaId(resolvedId);
       const displayName = getDisplayName(resolvedId);
       const switched = listPersonas().find((p) => p.id === resolvedId);
 

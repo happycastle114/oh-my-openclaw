@@ -5,11 +5,18 @@ export type StateResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: 'not_found' | 'corrupted' | 'io_error'; message: string };
 
-export async function readState<T>(filePath: string): Promise<StateResult<T>> {
+export async function readState<T>(
+  filePath: string,
+  validate?: (data: unknown) => T,
+): Promise<StateResult<T>> {
   try {
     const data = await fs.readFile(filePath, 'utf-8');
     try {
-      return { ok: true, data: JSON.parse(data) as T };
+      const parsed = JSON.parse(data);
+      if (validate) {
+        return { ok: true, data: validate(parsed) };
+      }
+      return { ok: true, data: parsed as T };
     } catch {
       return { ok: false, error: 'corrupted', message: `Malformed JSON in ${filePath}` };
     }

@@ -1,17 +1,12 @@
 import { promises as fs } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
 import { OmocPluginApi } from '../types.js';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-// From dist/commands/ → plugin root is ../../
-const PLUGIN_ROOT = join(__dirname, '..', '..');
+import { resolvePluginPath } from '../utils/paths.js';
 async function readWorkflow(workflowName: string): Promise<string> {
   try {
-    const workflowPath = join(PLUGIN_ROOT, 'workflows', `${workflowName}.md`);
+    const workflowPath = resolvePluginPath('workflows', `${workflowName}.md`);
     return await fs.readFile(workflowPath, 'utf-8');
   } catch {
-    return `Error: Could not read workflow file 'workflows/${workflowName}.md'. Plugin root: ${PLUGIN_ROOT}`;
+    return `Error: Could not read workflow file 'workflows/${workflowName}.md'.`;
   }
 }
 

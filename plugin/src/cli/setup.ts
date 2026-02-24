@@ -69,11 +69,52 @@ export function findConfigPath(workspaceDir?: string): string | undefined {
 }
 
 /**
+ * Validate that parsed config has the expected shape.
+ * Throws descriptive error if validation fails.
+ */
+function validateConfigShape(data: unknown): ConfigShape {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid config: expected object at root level');
+  }
+
+  const config = data as Record<string, unknown>;
+
+  // If agents section exists, validate its structure
+  if (config.agents !== undefined) {
+    if (typeof config.agents !== 'object' || config.agents === null) {
+      throw new Error('Invalid config: agents must be an object');
+    }
+
+    const agents = config.agents as Record<string, unknown>;
+    if (agents.list !== undefined) {
+      if (!Array.isArray(agents.list)) {
+        throw new Error('Invalid config: agents.list must be an array');
+      }
+
+      // Validate each agent has an id
+      for (let i = 0; i < agents.list.length; i++) {
+        const agent = agents.list[i];
+        if (!agent || typeof agent !== 'object') {
+          throw new Error(`Invalid config: agents.list[${i}] must be an object`);
+        }
+        if (!('id' in agent) || typeof (agent as Record<string, unknown>).id !== 'string') {
+          throw new Error(`Invalid config: agents.list[${i}] must have a string id field`);
+        }
+      }
+    }
+  }
+
+  return config as ConfigShape;
+}
+
+/**
  * Parse OpenClaw config using JSON5 (matches OpenClaw's own parser).
  * Handles comments, trailing commas, unquoted keys, multi-line strings, etc.
+ * Validates the resulting shape before returning.
  */
 export function parseConfig(raw: string): ConfigShape {
-  return JSON5.parse(raw) as ConfigShape;
+  const parsed = JSON5.parse(raw);
+  return validateConfigShape(parsed);
 }
 
 export function serializeConfig(config: ConfigShape): string {

@@ -10,8 +10,8 @@ import { readPersonaPromptSync, resolvePersonaId } from '../agents/persona-promp
  *   2. agentId from the hook context (set by OpenClaw core)
  *   3. null — no persona to inject
  */
-function resolveEffectivePersona(ctx: TypedHookContext): { personaId: string; source: 'manual' | 'auto' } | null {
-  const manual = getActivePersona();
+async function resolveEffectivePersona(ctx: TypedHookContext): Promise<{ personaId: string; source: 'manual' | 'auto' } | null> {
+  const manual = await getActivePersona();
   if (manual) {
     const resolved = resolvePersonaId(manual);
     if (resolved) return { personaId: resolved, source: 'manual' };
@@ -34,14 +34,15 @@ export function registerPersonaInjector(api: OmocPluginApi): void {
   // api.registerHook('before_prompt_build', ...) registers into the internal
   // hook system which does NOT trigger before_prompt_build — only hookRunner
   // (typed hooks via api.on) does.
-  api.on<BeforePromptBuildEvent, BeforePromptBuildResult>(
+  api.on<BeforePromptBuildEvent, BeforePromptBuildResult | void>(
     'before_prompt_build',
-    (_event: BeforePromptBuildEvent, ctx: TypedHookContext): BeforePromptBuildResult | void => {
-      const result = resolveEffectivePersona(ctx);
+    async (_event: BeforePromptBuildEvent, ctx: TypedHookContext): Promise<BeforePromptBuildResult | void> => {
+      const result = await resolveEffectivePersona(ctx);
 
       if (!result) {
+        const manual = await getActivePersona();
         api.logger.info(
-          `[omoc] Persona injector: no persona resolved (agentId=${ctx.agentId ?? 'none'}, manual=${getActivePersona() ?? 'none'})`
+          `[omoc] Persona injector: no persona resolved (agentId=${ctx.agentId ?? 'none'}, manual=${manual ?? 'none'})`
         );
         return;
       }
