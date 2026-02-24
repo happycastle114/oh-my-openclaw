@@ -21,6 +21,22 @@ const DEFAULT_STATE: RalphLoopState = {
 let apiRef: OmocPluginApi | null = null;
 let stateFilePath = '';
 let currentState: RalphLoopState = { ...DEFAULT_STATE };
+let stateLock: Promise<void> = Promise.resolve();
+
+async function withStateLock<T>(fn: () => Promise<T>): Promise<T> {
+  const current = stateLock;
+  let release!: () => void;
+  stateLock = new Promise<void>(resolve => {
+    release = resolve;
+  });
+
+  await current;
+  try {
+    return await fn();
+  } finally {
+    release();
+  }
+}
 
 function getApi(): OmocPluginApi {
   if (!apiRef) {
@@ -108,48 +124,52 @@ export async function startLoop(
 }
 
 export async function stopLoop(): Promise<{ success: boolean; message: string; state: RalphLoopState }> {
-  const api = getApi();
+  return withStateLock(async () => {
+    const api = getApi();
 
-  currentState = {
-    ...currentState,
-    active: false,
-  };
+    currentState = {
+      ...currentState,
+      active: false,
+    };
 
-  await saveStateToFile();
-  api.logger.info('[omoc] Ralph Loop stopped');
+    await saveStateToFile();
+    api.logger.info('[omoc] Ralph Loop stopped');
 
-  return {
-    success: true,
-    message: 'Ralph Loop stopped',
-    state: currentState,
-  };
+    return {
+      success: true,
+      message: 'Ralph Loop stopped',
+      state: currentState,
+    };
+  });
 }
 
 export async function getStatus(): Promise<RalphLoopState> {
-  return currentState;
+  return { ...currentState };
 }
 
 export async function incrementIteration(): Promise<{ continue: boolean; state: RalphLoopState }> {
-  if (!currentState.active) {
+  return withStateLock(async () => {
+    if (!currentState.active) {
+      return {
+        continue: false,
+        state: currentState,
+      };
+    }
+
+    const nextIteration = currentState.iteration + 1;
+    const reachedLimit = nextIteration >= currentState.maxIterations;
+
+    currentState = {
+      ...currentState,
+      iteration: nextIteration,
+      active: reachedLimit ? false : currentState.active,
+    };
+
+    await saveStateToFile();
+
     return {
-      continue: false,
+      continue: currentState.active,
       state: currentState,
     };
-  }
-
-  const nextIteration = currentState.iteration + 1;
-  const reachedLimit = nextIteration >= currentState.maxIterations;
-
-  currentState = {
-    ...currentState,
-    iteration: nextIteration,
-    active: reachedLimit ? false : currentState.active,
-  };
-
-  await saveStateToFile();
-
-  return {
-    continue: currentState.active,
-    state: currentState,
-  };
+  });
 }
