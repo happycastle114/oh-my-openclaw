@@ -3,6 +3,7 @@ import { OmocPluginApi, TOOL_PREFIX } from '../types.js';
 import { isValidCategory } from '../utils/validation.js';
 import { type Category } from '../constants.js';
 import { getConfig } from '../utils/config.js';
+import { toolResponse, toolError } from '../utils/helpers.js';
 
 const DEFAULT_CATEGORY_MODELS: Record<Category, string> = {
   quick: 'claude-sonnet-4-6',
@@ -44,44 +45,23 @@ export function registerDelegateTool(api: OmocPluginApi) {
       const validCategories = Object.keys(DEFAULT_CATEGORY_MODELS);
 
       if (!params.task_description?.trim()) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ error: 'Task description is required and cannot be empty' }, null, 2),
-            },
-          ],
-        };
-      }
+         return toolResponse(JSON.stringify({ error: 'Task description is required and cannot be empty' }, null, 2));
+       }
 
       if (params.task_description.length > 10000) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ error: 'Task description too long (max 10000 chars)' }, null, 2),
-            },
-          ],
-        };
-      }
+         return toolResponse(JSON.stringify({ error: 'Task description too long (max 10000 chars)' }, null, 2));
+       }
 
-      if (!isValidCategory(params.category)) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(
-                {
-                  error: `Invalid category: ${params.category}`,
-                  valid_categories: validCategories,
-                },
-                null,
-                2,
-              ),
-            },
-          ],
-        };
-      }
+       if (!isValidCategory(params.category)) {
+         return toolResponse(JSON.stringify(
+           {
+             error: `Invalid category: ${params.category}`,
+             valid_categories: validCategories,
+           },
+           null,
+           2,
+         ));
+       }
 
       const { model, alternatives } = getModelForCategory(params.category as Category, api);
 
@@ -107,14 +87,7 @@ export function registerDelegateTool(api: OmocPluginApi) {
         '  3. Proceed to next task — do NOT stop',
       ].filter(Boolean).join('\n');
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: instruction,
-          },
-        ],
-      };
+       return toolResponse(instruction);
     },
     optional: true,
   });
