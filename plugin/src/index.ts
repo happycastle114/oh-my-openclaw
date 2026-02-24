@@ -14,6 +14,7 @@ import { registerRalphCommands } from './commands/ralph-commands.js';
 import { registerStatusCommands } from './commands/status-commands.js';
 import { registerPersonaCommands } from './commands/persona-commands.js';
 import { registerPersonaInjector } from './hooks/persona-injector.js';
+import { registerContextInjector } from './hooks/context-injector.js';
 import { registerSetupCli } from './cli/setup.js';
 
 const registry = {
@@ -67,6 +68,14 @@ export default function register(api: OmocPluginApi) {
     api.logger.info(`[${PLUGIN_ID}] Persona injector hook registered`);
   } catch (err) {
     api.logger.error(`[${PLUGIN_ID}] Failed to register Persona Injector:`, err);
+  }
+
+  try {
+    registerContextInjector(api);
+    registry.hooks.push('context-injector');
+    api.logger.info(`[${PLUGIN_ID}] Context injector hook registered (before_prompt_build)`);
+  } catch (err) {
+    api.logger.error(`[${PLUGIN_ID}] Failed to register Context Injector:`, err);
   }
 
   try {

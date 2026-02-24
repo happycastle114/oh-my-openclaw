@@ -1,5 +1,6 @@
 import { OmocPluginApi } from '../types.js';
 import { getConfig } from '../utils/config.js';
+import { contextCollector } from '../features/context-collector.js';
 
 export type AgentRole = 'orchestrator' | 'worker' | 'lightweight';
 
@@ -43,15 +44,9 @@ const DIRECTIVES: Record<AgentRole, string | null> = {
   lightweight: null,
 };
 
-interface BootstrapFile {
-  path: string;
-  content: string;
-}
-
 interface AgentBootstrapEvent {
   context: {
     agentId?: string;
-    bootstrapFiles?: BootstrapFile[];
   };
 }
 
@@ -75,30 +70,22 @@ export function registerTodoEnforcer(api: OmocPluginApi): void {
 
       const role = classifyAgentRole(event.context.agentId);
       const directive = DIRECTIVES[role];
+      const sessionKey = event.context.agentId || 'default';
 
       if (!directive) {
         return;
       }
 
-      if (!event.context.bootstrapFiles) {
-        event.context.bootstrapFiles = [];
-      }
-
-      const alreadyInjected = event.context.bootstrapFiles.some(
-        (f) => f.path === 'omoc://todo-enforcer'
-      );
-      if (alreadyInjected) {
-        return;
-      }
-
       try {
-        event.context.bootstrapFiles.push({
-          path: 'omoc://todo-enforcer',
+        contextCollector.register(sessionKey, {
+          id: 'todo-enforcer',
           content: directive,
+          priority: 'normal',
+          source: 'todo-enforcer',
         });
-        api.logger.info(`[omoc] Todo enforcer injected (role: ${role})`);
+        api.logger.info(`[omoc] Todo enforcer context registered (role: ${role})`);
       } catch (err) {
-        api.logger.error('[omoc] Todo enforcer injection failed:', err);
+        api.logger.error('[omoc] Todo enforcer context registration failed:', err);
       }
     },
     {

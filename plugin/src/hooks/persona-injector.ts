@@ -1,6 +1,7 @@
 import { OmocPluginApi } from '../types.js';
 import { getActivePersona } from '../utils/persona-state.js';
 import { readPersonaPromptSync } from '../agents/persona-prompts.js';
+import { contextCollector } from '../features/context-collector.js';
 
 interface BootstrapFile {
   path: string;
@@ -9,14 +10,29 @@ interface BootstrapFile {
 
 interface AgentBootstrapEvent {
   context: {
+    agentId?: string;
     bootstrapFiles?: BootstrapFile[];
   };
 }
 
 let lastInjectedPersonaId: string | null = null;
+const personaSessionKeys = new Set<string>();
+
+export function resetPersonaContextEntries(): void {
+  for (const sessionKey of personaSessionKeys) {
+    const entries = contextCollector.getEntries(sessionKey);
+    for (const entry of entries) {
+      if (entry.source === 'persona') {
+        contextCollector.unregister(sessionKey, entry.id);
+      }
+    }
+  }
+  personaSessionKeys.clear();
+}
 
 export function resetPersonaInjectorState(): void {
   lastInjectedPersonaId = null;
+  resetPersonaContextEntries();
 }
 
 export function getPersonaInjectorState() {
@@ -28,19 +44,9 @@ export function registerPersonaInjector(api: OmocPluginApi): void {
     'agent:bootstrap',
     (event: AgentBootstrapEvent): void => {
       const personaId = getActivePersona();
+      const sessionKey = event.context.agentId || 'default';
 
       if (!personaId) {
-        return;
-      }
-
-      if (!event.context.bootstrapFiles) {
-        event.context.bootstrapFiles = [];
-      }
-
-      const alreadyInFiles = event.context.bootstrapFiles.some(
-        (f) => f.path.startsWith('omoc://persona/')
-      );
-      if (alreadyInFiles) {
         return;
       }
 
@@ -49,15 +55,22 @@ export function registerPersonaInjector(api: OmocPluginApi): void {
       }
 
       try {
+        if (lastInjectedPersonaId) {
+          contextCollector.unregister(sessionKey, `persona/${lastInjectedPersonaId}`);
+        }
+
         const content = readPersonaPromptSync(personaId);
-        event.context.bootstrapFiles.push({
-          path: `omoc://persona/${personaId}`,
+        contextCollector.register(sessionKey, {
+          id: `persona/${personaId}`,
           content,
+          priority: 'high',
+          source: 'persona',
         });
+        personaSessionKeys.add(sessionKey);
         lastInjectedPersonaId = personaId;
-        api.logger.info(`[omoc] Persona injected: ${personaId}`);
+        api.logger.info(`[omoc] Persona context registered: ${personaId}`);
       } catch (err) {
-        api.logger.error(`[omoc] Failed to inject persona ${personaId}:`, err);
+        api.logger.error(`[omoc] Failed to register persona context ${personaId}:`, err);
       }
     },
     {
