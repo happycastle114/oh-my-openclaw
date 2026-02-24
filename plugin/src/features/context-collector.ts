@@ -9,6 +9,11 @@ export interface ContextEntry {
   oneShot?: boolean;
 }
 
+interface SessionData {
+  entries: Map<string, ContextEntry>;
+  lastAccessed: number;
+}
+
 export interface RegisterContextOptions {
   id: string;
   content: string;
@@ -24,10 +29,15 @@ const PRIORITY_ORDER: Record<ContextPriority, number> = {
   low: 3,
 };
 
+const MAX_SESSIONS = 100;
+const SESSION_TTL_MS = 30 * 60 * 1000;
+
 export class ContextCollector {
-  private sessions: Map<string, Map<string, ContextEntry>> = new Map();
+  private sessions: Map<string, SessionData> = new Map();
 
   register(sessionKey: string, options: RegisterContextOptions): void {
+    this.pruneExpiredSessions();
+
     const sessionEntries = this.getOrCreateSession(sessionKey);
     const entry: ContextEntry = {
       id: options.id,
@@ -37,26 +47,37 @@ export class ContextCollector {
       oneShot: options.oneShot ?? false,
     };
     sessionEntries.set(options.id, entry);
+
+    if (this.sessions.size > MAX_SESSIONS) {
+      const oldestKey = this.sessions.entries().next().value?.[0];
+      if (oldestKey !== undefined) {
+        this.sessions.delete(oldestKey);
+      }
+    }
   }
 
   unregister(sessionKey: string, entryId: string): void {
-    const sessionEntries = this.sessions.get(sessionKey);
-    if (!sessionEntries) {
+    const sessionData = this.sessions.get(sessionKey);
+    if (!sessionData) {
       return;
     }
 
-    sessionEntries.delete(entryId);
-    if (sessionEntries.size === 0) {
+    sessionData.entries.delete(entryId);
+    if (sessionData.entries.size === 0) {
       this.sessions.delete(sessionKey);
     }
   }
 
   collect(sessionKey: string): ContextEntry[] {
-    const sessionEntries = this.sessions.get(sessionKey);
-    if (!sessionEntries) {
+    this.pruneExpiredSessions();
+
+    const sessionData = this.sessions.get(sessionKey);
+    if (!sessionData) {
       return [];
     }
 
+    sessionData.lastAccessed = Date.now();
+    const sessionEntries = sessionData.entries;
     const entries = this.sortEntries([...sessionEntries.values()]);
     for (const entry of entries) {
       if (entry.oneShot) {
@@ -85,26 +106,46 @@ export class ContextCollector {
   }
 
   getEntries(sessionKey: string): ContextEntry[] {
-    const sessionEntries = this.sessions.get(sessionKey);
-    if (!sessionEntries) {
+    const sessionData = this.sessions.get(sessionKey);
+    if (!sessionData) {
       return [];
     }
 
-    return this.sortEntries([...sessionEntries.values()]);
+    return this.sortEntries([...sessionData.entries.values()]);
   }
 
   hasEntries(sessionKey: string): boolean {
-    const sessionEntries = this.sessions.get(sessionKey);
-    return Boolean(sessionEntries && sessionEntries.size > 0);
+    const sessionData = this.sessions.get(sessionKey);
+    return Boolean(sessionData && sessionData.entries.size > 0);
   }
 
   private getOrCreateSession(sessionKey: string): Map<string, ContextEntry> {
-    let sessionEntries = this.sessions.get(sessionKey);
-    if (!sessionEntries) {
-      sessionEntries = new Map();
-      this.sessions.set(sessionKey, sessionEntries);
+    let sessionData = this.sessions.get(sessionKey);
+    if (!sessionData) {
+      sessionData = {
+        entries: new Map(),
+        lastAccessed: Date.now(),
+      };
+      this.sessions.set(sessionKey, sessionData);
+    } else {
+      sessionData.lastAccessed = Date.now();
     }
-    return sessionEntries;
+    return sessionData.entries;
+  }
+
+  private pruneExpiredSessions(): void {
+    const now = Date.now();
+    const keysToDelete: string[] = [];
+
+    for (const [key, sessionData] of this.sessions.entries()) {
+      if (now - sessionData.lastAccessed > SESSION_TTL_MS) {
+        keysToDelete.push(key);
+      }
+    }
+
+    for (const key of keysToDelete) {
+      this.sessions.delete(key);
+    }
   }
 
   private sortEntries(entries: ContextEntry[]): ContextEntry[] {
