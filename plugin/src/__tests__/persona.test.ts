@@ -230,7 +230,7 @@ describe('persona-injector hook', () => {
     expect(api.registerHook.mock.calls[0][0]).toBe('agent:bootstrap');
   });
 
-  it('does not inject when no persona is active', () => {
+  it('does not inject when no persona is active and no agentId', () => {
     const api = createMockApi();
     registerPersonaInjector(api);
 
@@ -241,7 +241,21 @@ describe('persona-injector hook', () => {
     expect(event.context.bootstrapFiles).toHaveLength(0);
   });
 
-  it('injects persona prompt when persona is active', () => {
+  it('does not inject when agentId is not an omoc agent', () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.registerHook.mock.calls[0][1];
+    const event = { context: { bootstrapFiles: [], agentId: 'some_other_agent' } };
+    handler(event);
+
+    expect(event.context.bootstrapFiles).toHaveLength(0);
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('no persona resolved')
+    );
+  });
+
+  it('injects persona prompt when persona is manually active', () => {
     setActivePersona('omoc_atlas');
     const api = createMockApi();
     registerPersonaInjector(api);
@@ -253,6 +267,67 @@ describe('persona-injector hook', () => {
     expect(event.context.bootstrapFiles).toHaveLength(1);
     expect(event.context.bootstrapFiles[0].path).toBe('omoc://persona/omoc_atlas');
     expect(event.context.bootstrapFiles[0].content).toContain('Mock Persona Content');
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('manual')
+    );
+  });
+
+  it('auto-injects persona from event.context.agentId', () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.registerHook.mock.calls[0][1];
+    const event = { context: { bootstrapFiles: [], agentId: 'omoc_atlas' } };
+    handler(event);
+
+    expect(event.context.bootstrapFiles).toHaveLength(1);
+    expect(event.context.bootstrapFiles[0].path).toBe('omoc://persona/omoc_atlas');
+    expect(event.context.bootstrapFiles[0].content).toContain('Mock Persona Content');
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('auto')
+    );
+  });
+
+  it('auto-injects for all known omoc agents', () => {
+    const knownAgentIds = [
+      'omoc_prometheus', 'omoc_sisyphus', 'omoc_hephaestus',
+      'omoc_oracle', 'omoc_explore', 'omoc_librarian',
+      'omoc_metis', 'omoc_momus', 'omoc_looker', 'omoc_frontend',
+    ];
+
+    for (const agentId of knownAgentIds) {
+      vi.clearAllMocks();
+      clearPersonaCache();
+      resetPersonaState();
+      vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
+      vi.mocked(readFileSync).mockReturnValue(`# ${agentId} Content`);
+
+      const api = createMockApi();
+      registerPersonaInjector(api);
+
+      const handler = api.registerHook.mock.calls[0][1];
+      const event = { context: { bootstrapFiles: [], agentId } };
+      handler(event);
+
+      expect(event.context.bootstrapFiles).toHaveLength(1);
+      expect(event.context.bootstrapFiles[0].path).toBe(`omoc://persona/${agentId}`);
+    }
+  });
+
+  it('manual persona takes priority over agentId', () => {
+    setActivePersona('omoc_oracle');
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.registerHook.mock.calls[0][1];
+    const event = { context: { bootstrapFiles: [], agentId: 'omoc_atlas' } };
+    handler(event);
+
+    expect(event.context.bootstrapFiles).toHaveLength(1);
+    expect(event.context.bootstrapFiles[0].path).toBe('omoc://persona/omoc_oracle');
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('manual')
+    );
   });
 
   it('creates bootstrapFiles array if missing', () => {
@@ -262,6 +337,17 @@ describe('persona-injector hook', () => {
 
     const handler = api.registerHook.mock.calls[0][1];
     const event = { context: {} } as any;
+    handler(event);
+
+    expect(event.context.bootstrapFiles).toHaveLength(1);
+  });
+
+  it('creates bootstrapFiles array if missing (auto mode)', () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.registerHook.mock.calls[0][1];
+    const event = { context: { agentId: 'omoc_prometheus' } } as any;
     handler(event);
 
     expect(event.context.bootstrapFiles).toHaveLength(1);
