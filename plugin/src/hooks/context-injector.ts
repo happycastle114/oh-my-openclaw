@@ -8,7 +8,7 @@ export function registerContextInjector(api: OmocPluginApi): void {
   api.on<BeforePromptBuildEvent, BeforePromptBuildResult>(
     'before_prompt_build',
     (_event: BeforePromptBuildEvent, ctx: TypedHookContext): BeforePromptBuildResult | void => {
-      const sessionKey = ctx.agentId || 'default';
+      const sessionKey = ctx.sessionKey ?? ctx.sessionId ?? ctx.agentId ?? 'default';
 
       if (!contextCollector.hasEntries(sessionKey)) {
         return;

@@ -37,6 +37,8 @@ const DIRECTIVES: Record<AgentRole, string | null> = {
 interface AgentBootstrapEvent {
   context: {
     agentId?: string;
+    sessionKey?: string;
+    sessionId?: string;
   };
 }
 
@@ -60,7 +62,7 @@ export function registerTodoEnforcer(api: OmocPluginApi): void {
 
       const role = classifyAgentRole(event.context.agentId);
       const directive = DIRECTIVES[role];
-      const sessionKey = event.context.agentId || 'default';
+      const sessionKey = event.context.sessionKey ?? event.context.sessionId ?? event.context.agentId ?? 'default';
 
       if (!directive) {
         return;
@@ -72,6 +74,7 @@ export function registerTodoEnforcer(api: OmocPluginApi): void {
           content: directive,
           priority: 'normal',
           source: 'todo-enforcer',
+          oneShot: true,
         });
         api.logger.info(`[omoc] Todo enforcer context registered (role: ${role})`);
       } catch (err) {
