@@ -33,20 +33,7 @@ import {
 } from '../agents/persona-prompts.js';
 import { registerPersonaInjector } from '../hooks/persona-injector.js';
 import { registerPersonaCommands } from '../commands/persona-commands.js';
-
-function createMockApi(): any {
-  return {
-    config: {},
-    logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-    registerHook: vi.fn(),
-    registerTool: vi.fn(),
-    registerCommand: vi.fn(),
-    registerService: vi.fn(),
-    registerGatewayMethod: vi.fn(),
-    registerCli: vi.fn(),
-    on: vi.fn(),
-  };
-}
+import { createMockApi } from './helpers/mock-factory.js';
 
 describe('persona-state', () => {
   beforeEach(async () => {
