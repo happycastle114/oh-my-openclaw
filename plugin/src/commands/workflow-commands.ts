@@ -6,7 +6,8 @@ async function readWorkflow(workflowName: string): Promise<string> {
   try {
     const workflowPath = resolvePluginPath('workflows', `${workflowName}.md`);
     return await fs.readFile(workflowPath, 'utf-8');
-  } catch {
+  } catch (error) {
+    console.warn('[omoc] Failed to read workflow file:', `workflows/${workflowName}.md`, error);
     return `Error: Could not read workflow file 'workflows/${workflowName}.md'.`;
   }
 }

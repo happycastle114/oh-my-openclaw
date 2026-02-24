@@ -55,7 +55,8 @@ export function readPersonaPromptSync(agentId: string): string {
     const content = readFileSync(agentPath, 'utf-8');
     personaCache.set(agentPath, { content, mtimeMs: stat.mtimeMs });
     return content;
-  } catch {
+  } catch (error) {
+    console.warn('[omoc] Failed to read persona file synchronously:', agentPath, error);
     personaCache.delete(agentPath);
     return `[OmOC] Could not read persona file: agents/${mdName}.md (looked in ${agentPath})`;
   }
@@ -70,7 +71,8 @@ export async function readPersonaPrompt(agentId: string): Promise<string> {
   const agentPath = join(PLUGIN_ROOT, 'agents', `${mdName}.md`);
   try {
     return await fs.readFile(agentPath, 'utf-8');
-  } catch {
+  } catch (error) {
+    console.warn('[omoc] Failed to read persona file asynchronously:', agentPath, error);
     return `[OmOC] Could not read persona file: agents/${mdName}.md (looked in ${agentPath})`;
   }
 }
