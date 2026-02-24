@@ -2,8 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('fs', () => ({
   readFileSync: vi.fn().mockReturnValue('# Mock Persona Content\nYou are Atlas.'),
-  writeFileSync: vi.fn(),
-  mkdirSync: vi.fn(),
   statSync: vi.fn().mockReturnValue({ mtimeMs: 1000 }),
   promises: {
     readFile: vi.fn().mockResolvedValue('# Mock Persona Content\nYou are Atlas.'),
@@ -19,12 +17,11 @@ vi.mock('../utils/config.js', () => ({
   })),
 }));
 
-import { readFileSync, writeFileSync, mkdirSync, statSync, promises as fsPromises } from 'fs';
+import { readFileSync, statSync, promises as fsPromises } from 'fs';
 import {
   setActivePersona,
   getActivePersona,
   resetPersonaState,
-  resetPersonaStateForTesting,
 } from '../utils/persona-state.js';
 import {
   resolvePersonaId,
@@ -34,13 +31,8 @@ import {
   DEFAULT_PERSONA_ID,
   clearPersonaCache,
 } from '../agents/persona-prompts.js';
-import {
-  registerPersonaInjector,
-  resetPersonaContextEntries,
-  resetPersonaInjectorState,
-} from '../hooks/persona-injector.js';
+import { registerPersonaInjector } from '../hooks/persona-injector.js';
 import { registerPersonaCommands } from '../commands/persona-commands.js';
-import { contextCollector } from '../features/context-collector.js';
 
 function createMockApi(): any {
   return {
@@ -52,12 +44,13 @@ function createMockApi(): any {
     registerService: vi.fn(),
     registerGatewayMethod: vi.fn(),
     registerCli: vi.fn(),
+    on: vi.fn(),
   };
 }
 
 describe('persona-state', () => {
   beforeEach(() => {
-    resetPersonaStateForTesting();
+    resetPersonaState();
   });
 
   it('starts with null active persona', () => {
@@ -79,35 +72,6 @@ describe('persona-state', () => {
     setActivePersona('omoc_atlas');
     setActivePersona('omoc_oracle');
     expect(getActivePersona()).toBe('omoc_oracle');
-  });
-
-  it('persists to disk on setActivePersona', () => {
-    vi.mocked(writeFileSync).mockClear();
-    setActivePersona('omoc_atlas');
-    expect(writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('active-persona'),
-      'omoc_atlas',
-      'utf-8'
-    );
-  });
-
-  it('persists empty string on resetPersonaState', () => {
-    vi.mocked(writeFileSync).mockClear();
-    resetPersonaState();
-    expect(writeFileSync).toHaveBeenCalledWith(
-      expect.stringContaining('active-persona'),
-      '',
-      'utf-8'
-    );
-  });
-
-  it('creates directory before writing', () => {
-    vi.mocked(mkdirSync).mockClear();
-    setActivePersona('omoc_atlas');
-    expect(mkdirSync).toHaveBeenCalledWith(
-      expect.any(String),
-      { recursive: true }
-    );
   });
 });
 
@@ -250,122 +214,166 @@ describe('persona-prompts', () => {
   });
 });
 
-describe('persona-injector hook', () => {
+describe('persona-injector hook (before_prompt_build)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearPersonaCache();
-    resetPersonaStateForTesting();
-    resetPersonaInjectorState();
-    resetPersonaContextEntries();
-    contextCollector.clearAll();
+    resetPersonaState();
     vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
     vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
   });
 
-  it('registers agent:bootstrap hook', () => {
+  it('registers before_prompt_build typed hook via api.on()', () => {
     const api = createMockApi();
     registerPersonaInjector(api);
 
-    expect(api.registerHook).toHaveBeenCalledTimes(1);
-    expect(api.registerHook.mock.calls[0][0]).toBe('agent:bootstrap');
+    expect(api.on).toHaveBeenCalledTimes(1);
+    expect(api.on.mock.calls[0][0]).toBe('before_prompt_build');
+    expect(api.on.mock.calls[0][2]).toEqual({ priority: 100 });
+    expect(api.registerHook).not.toHaveBeenCalled();
   });
 
-  it('does not register context when no persona is active', () => {
+  it('does not inject when no persona is active and no agentId', () => {
     const api = createMockApi();
     registerPersonaInjector(api);
 
-    const handler = api.registerHook.mock.calls[0][1];
-    const event = { context: { bootstrapFiles: [] } };
-    handler(event);
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello' };
+    const ctx = {};
+    const result = handler(event, ctx);
 
-    expect(contextCollector.getEntries('default')).toHaveLength(0);
+    expect(result).toBeUndefined();
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('no persona resolved')
+    );
   });
 
-  it('registers persona context when persona is active', () => {
+  it('does not inject when agentId is not an omoc agent', () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello' };
+    const ctx = { agentId: 'some_other_agent' };
+    const result = handler(event, ctx);
+
+    expect(result).toBeUndefined();
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('no persona resolved')
+    );
+  });
+
+  it('injects persona prompt when persona is manually active', () => {
     setActivePersona('omoc_atlas');
     const api = createMockApi();
     registerPersonaInjector(api);
 
-    const handler = api.registerHook.mock.calls[0][1];
-    const event = { context: { agentId: 'omoc_atlas', bootstrapFiles: [] } };
-    handler(event);
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello' };
+    const ctx = {};
+    const result = handler(event, ctx);
 
-    const entries = contextCollector.getEntries('omoc_atlas');
-    expect(entries).toHaveLength(1);
-    expect(entries[0].id).toBe('persona/omoc_atlas');
-    expect(entries[0].content).toContain('Mock Persona Content');
+    expect(result).toBeDefined();
+    expect(result.prependContext).toContain('Mock Persona Content');
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('manual')
+    );
   });
 
-  it('uses default session key when agentId is missing', () => {
-    setActivePersona('omoc_atlas');
+  it('auto-injects persona from ctx.agentId', () => {
     const api = createMockApi();
     registerPersonaInjector(api);
 
-    const handler = api.registerHook.mock.calls[0][1];
-    const event = { context: {} } as any;
-    handler(event);
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello' };
+    const ctx = { agentId: 'omoc_atlas' };
+    const result = handler(event, ctx);
 
-    expect(contextCollector.getEntries('default')).toHaveLength(1);
+    expect(result).toBeDefined();
+    expect(result.prependContext).toContain('Mock Persona Content');
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('auto')
+    );
   });
 
-  it('preserves existing bootstrap files without direct mutation', () => {
+  it('auto-injects for all known omoc agents', () => {
+    const knownAgentIds = [
+      'omoc_prometheus', 'omoc_sisyphus', 'omoc_hephaestus',
+      'omoc_oracle', 'omoc_explore', 'omoc_librarian',
+      'omoc_metis', 'omoc_momus', 'omoc_looker', 'omoc_frontend',
+    ];
+
+    for (const agentId of knownAgentIds) {
+      vi.clearAllMocks();
+      clearPersonaCache();
+      resetPersonaState();
+      vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
+      vi.mocked(readFileSync).mockReturnValue(`# ${agentId} Content`);
+
+      const api = createMockApi();
+      registerPersonaInjector(api);
+
+      const handler = api.on.mock.calls[0][1];
+      const event = { prompt: 'hello' };
+      const ctx = { agentId };
+      const result = handler(event, ctx);
+
+      expect(result).toBeDefined();
+      expect(result.prependContext).toContain(`${agentId} Content`);
+    }
+  });
+
+  it('manual persona takes priority over agentId', () => {
     setActivePersona('omoc_oracle');
     const api = createMockApi();
     registerPersonaInjector(api);
 
-    const handler = api.registerHook.mock.calls[0][1];
-    const event = {
-      context: {
-        bootstrapFiles: [{ path: 'existing', content: 'keep me' }],
-      },
-    };
-    handler(event);
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello' };
+    const ctx = { agentId: 'omoc_atlas' };
+    const result = handler(event, ctx);
 
-    expect(event.context.bootstrapFiles).toHaveLength(1);
-    expect(event.context.bootstrapFiles[0]).toEqual({ path: 'existing', content: 'keep me' });
-    expect(contextCollector.getEntries('default')).toHaveLength(1);
+    expect(result).toBeDefined();
+    expect(result.prependContext).toContain('Mock Persona Content');
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('manual')
+    );
   });
 
-  it('skips second registration for same persona (once-per-change)', () => {
-    setActivePersona('omoc_atlas');
+  it('returns prependContext (not bootstrapFiles)', () => {
     const api = createMockApi();
     registerPersonaInjector(api);
 
-    const handler = api.registerHook.mock.calls[0][1];
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello' };
+    const ctx = { agentId: 'omoc_atlas' };
+    const result = handler(event, ctx);
 
-    const event1 = { context: { bootstrapFiles: [] as any[] } };
-    handler(event1);
-    expect(contextCollector.getEntries('default')).toHaveLength(1);
-
-    const event2 = { context: { bootstrapFiles: [] as any[] } };
-    handler(event2);
-    expect(contextCollector.getEntries('default')).toHaveLength(1);
+    expect(result).toHaveProperty('prependContext');
+    expect(result).not.toHaveProperty('bootstrapFiles');
+    expect(result).not.toHaveProperty('systemPrompt');
   });
 
-  it('re-registers when persona changes', () => {
-    setActivePersona('omoc_atlas');
+  it('logs with source=auto for agentId detection', () => {
     const api = createMockApi();
     registerPersonaInjector(api);
 
-    const handler = api.registerHook.mock.calls[0][1];
+    const handler = api.on.mock.calls[0][1];
+    handler({ prompt: 'hello' }, { agentId: 'omoc_prometheus' });
 
-    const event1 = { context: { bootstrapFiles: [] as any[] } };
-    handler(event1);
-    expect(contextCollector.getEntries('default')).toHaveLength(1);
-    expect(contextCollector.getEntries('default')[0].id).toBe('persona/omoc_atlas');
-
-    setActivePersona('omoc_oracle');
-    const event2 = { context: { bootstrapFiles: [] as any[] } };
-    handler(event2);
-    expect(contextCollector.getEntries('default')).toHaveLength(1);
-    expect(contextCollector.getEntries('default')[0].id).toBe('persona/omoc_oracle');
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('before_prompt_build')
+    );
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('auto')
+    );
   });
 });
 
 describe('persona-commands (/omoc)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetPersonaStateForTesting();
+    resetPersonaState();
   });
 
   it('registers the /omoc command', () => {

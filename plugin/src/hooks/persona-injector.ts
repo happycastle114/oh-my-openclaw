@@ -1,86 +1,65 @@
-import { OmocPluginApi } from '../types.js';
+import { OmocPluginApi, TypedHookContext, BeforePromptBuildEvent, BeforePromptBuildResult } from '../types.js';
 import { getActivePersona } from '../utils/persona-state.js';
-import { readPersonaPromptSync } from '../agents/persona-prompts.js';
-import { contextCollector } from '../features/context-collector.js';
+import { readPersonaPromptSync, resolvePersonaId } from '../agents/persona-prompts.js';
 
-interface BootstrapFile {
-  path: string;
-  content: string;
-}
-
-interface AgentBootstrapEvent {
-  context: {
-    agentId?: string;
-    bootstrapFiles?: BootstrapFile[];
-  };
-}
-
-let lastInjectedPersonaId: string | null = null;
-const personaSessionKeys = new Set<string>();
-
-export function resetPersonaContextEntries(): void {
-  for (const sessionKey of personaSessionKeys) {
-    const entries = contextCollector.getEntries(sessionKey);
-    for (const entry of entries) {
-      if (entry.source === 'persona') {
-        contextCollector.unregister(sessionKey, entry.id);
-      }
-    }
+/**
+ * Resolve the effective persona ID.
+ *
+ * Priority:
+ *   1. Manually set persona via /omoc command (getActivePersona())
+ *   2. agentId from the hook context (set by OpenClaw core)
+ *   3. null — no persona to inject
+ */
+function resolveEffectivePersona(ctx: TypedHookContext): { personaId: string; source: 'manual' | 'auto' } | null {
+  const manual = getActivePersona();
+  if (manual) {
+    const resolved = resolvePersonaId(manual);
+    if (resolved) return { personaId: resolved, source: 'manual' };
   }
-  personaSessionKeys.clear();
-}
 
-export function resetPersonaInjectorState(): void {
-  lastInjectedPersonaId = null;
-  resetPersonaContextEntries();
-}
+  const agentId = ctx.agentId;
+  if (!agentId) return null;
 
-export function getPersonaInjectorState() {
-  return { lastInjectedPersonaId };
+  const resolved = resolvePersonaId(agentId);
+  if (!resolved) return null;
+
+  return { personaId: resolved, source: 'auto' };
 }
 
 export function registerPersonaInjector(api: OmocPluginApi): void {
-  api.registerHook(
-    'agent:bootstrap',
-    (event: AgentBootstrapEvent): void => {
-      const personaId = getActivePersona();
-      const sessionKey = event.context.agentId || 'default';
+  // Use the typed hook system (api.on) for before_prompt_build.
+  // This directly injects into the system prompt via prependContext,
+  // which is more reliable than bootstrapFiles via agent:bootstrap.
+  //
+  // api.registerHook('before_prompt_build', ...) registers into the internal
+  // hook system which does NOT trigger before_prompt_build — only hookRunner
+  // (typed hooks via api.on) does.
+  api.on<BeforePromptBuildEvent, BeforePromptBuildResult>(
+    'before_prompt_build',
+    (_event: BeforePromptBuildEvent, ctx: TypedHookContext): BeforePromptBuildResult | void => {
+      const result = resolveEffectivePersona(ctx);
 
-      if (!personaId) {
-        if (lastInjectedPersonaId) {
-          contextCollector.unregister(sessionKey, `persona/${lastInjectedPersonaId}`);
-          lastInjectedPersonaId = null;
-          api.logger.info(`[omoc] Persona context cleared for ${sessionKey}`);
-        }
+      if (!result) {
+        api.logger.info(
+          `[omoc] Persona injector: no persona resolved (agentId=${ctx.agentId ?? 'none'}, manual=${getActivePersona() ?? 'none'})`
+        );
         return;
       }
 
-      if (lastInjectedPersonaId === personaId) {
-        return;
-      }
+      const { personaId, source } = result;
 
       try {
-        if (lastInjectedPersonaId) {
-          contextCollector.unregister(sessionKey, `persona/${lastInjectedPersonaId}`);
-        }
-
         const content = readPersonaPromptSync(personaId);
-        contextCollector.register(sessionKey, {
-          id: `persona/${personaId}`,
-          content,
-          priority: 'high',
-          source: 'persona',
-        });
-        personaSessionKeys.add(sessionKey);
-        lastInjectedPersonaId = personaId;
-        api.logger.info(`[omoc] Persona context registered: ${personaId}`);
+        api.logger.info(`[omoc] Persona injected via before_prompt_build: ${personaId} (${source}, agentId=${ctx.agentId ?? 'none'})`);
+
+        return {
+          prependContext: content,
+        };
       } catch (err) {
-        api.logger.error(`[omoc] Failed to register persona context ${personaId}:`, err);
+        api.logger.error(`[omoc] Failed to inject persona ${personaId}:`, err);
+        return;
       }
     },
-    {
-      name: 'oh-my-openclaw.persona-injector',
-      description: 'Injects active persona prompt once per persona change',
-    }
+    { priority: 100 } // High priority — persona prompt should be prepended first
   );
 }

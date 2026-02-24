@@ -1,7 +1,6 @@
 import { OmocPluginApi } from '../types.js';
 import { getActivePersona, setActivePersona, resetPersonaState } from '../utils/persona-state.js';
 import { resolvePersonaId, listPersonas, DEFAULT_PERSONA_ID } from '../agents/persona-prompts.js';
-import { resetPersonaInjectorState } from '../hooks/persona-injector.js';
 
 function getDisplayName(personaId: string): string {
   const persona = listPersonas().find((p) => p.id === personaId);
@@ -20,7 +19,6 @@ export function registerPersonaCommands(api: OmocPluginApi) {
 
       if (!args) {
         const previousId = getActivePersona();
-        resetPersonaInjectorState();
         setActivePersona(DEFAULT_PERSONA_ID);
         const name = getDisplayName(DEFAULT_PERSONA_ID);
 
@@ -38,7 +36,6 @@ export function registerPersonaCommands(api: OmocPluginApi) {
         const wasActive = getActivePersona();
         const wasName = wasActive ? getDisplayName(wasActive) : null;
         resetPersonaState();
-        resetPersonaInjectorState();
         return {
           text: wasName
             ? `# OmOC Mode: OFF\n\nPersona **${wasName}** deactivated. Applied immediately — your next message will use default behavior.`
@@ -79,7 +76,6 @@ export function registerPersonaCommands(api: OmocPluginApi) {
       }
 
       const previousId = getActivePersona();
-      resetPersonaInjectorState();
       setActivePersona(resolvedId);
       const displayName = getDisplayName(resolvedId);
       const switched = listPersonas().find((p) => p.id === resolvedId);
