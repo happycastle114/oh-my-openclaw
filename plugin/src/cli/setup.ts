@@ -118,7 +118,7 @@ export function parseConfig(raw: string): ConfigShape {
 }
 
 export function serializeConfig(config: ConfigShape): string {
-  return JSON.stringify(config, null, 2) + '\n';
+  return JSON5.stringify(config, null, 2) + '\n';
 }
 
 export interface MergeResult {
@@ -141,14 +141,14 @@ export function mergeAgentConfigs(
       if (force) {
         const idx = merged.findIndex((a) => a.id === agent.id);
         if (idx !== -1) {
-          merged[idx] = agent as unknown as { id: string; [key: string]: unknown };
+          merged[idx] = agent as { id: string; [key: string]: unknown };
           result.updated.push(agent.id);
         }
       } else {
         result.skipped.push(agent.id);
       }
     } else {
-      merged.push(agent as unknown as { id: string; [key: string]: unknown });
+      merged.push(agent as { id: string; [key: string]: unknown });
       result.added.push(agent.id);
     }
   }

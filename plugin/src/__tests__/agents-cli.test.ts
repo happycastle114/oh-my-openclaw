@@ -234,9 +234,9 @@ describe('serializeConfig', () => {
   it('should serialize config to JSON with proper formatting', () => {
     const config = { agents: { list: [{ id: 'test' }] } };
     const serialized = serializeConfig(config);
-    expect(serialized).toContain('"agents"');
-    expect(serialized).toContain('"list"');
-    expect(serialized).toContain('"id"');
+    expect(serialized).toContain('agents');
+    expect(serialized).toContain('list');
+    expect(serialized).toContain('id');
     expect(serialized).toContain('test');
     expect(serialized).toMatch(/\n$/);
   });
