@@ -40,38 +40,12 @@ export interface CheckpointData {
   timestamp: string;
 }
 
-// TodoItem interface
-export interface TodoItem {
-  id: string;
-  content: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  priority: string;
-}
-
 // CommentViolation interface
 export interface CommentViolation {
   file: string;
   line: number;
   content: string;
   reason: string;
-}
-
-// DelegationParams interface
-export interface DelegationParams {
-  task: string;
-  category: string;
-  agentId?: string;
-  skills?: string[];
-  context?: string;
-}
-
-// CategoryConfig interface
-export interface CategoryConfig {
-  model: string;
-  description: string;
-  agents?: string[];
-  alternatives?: string[];
-  tool?: string;
 }
 
 // Hook/Tool/Command/Service registration types

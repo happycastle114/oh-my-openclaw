@@ -31,16 +31,12 @@ export async function resetPersonaState(): Promise<void> {
   await saveToDisk();
 }
 
-export async function resetPersonaStateForTesting(): Promise<void> {
-  activePersonaId = null;
-  loaded = true;
-}
-
 async function loadFromDisk(): Promise<void> {
   try {
     const content = (await readFile(stateFilePath, 'utf-8')).trim();
     activePersonaId = content || null;
-  } catch {
+  } catch (error) {
+    console.warn('[omoc] Failed to load persona state from disk:', error);
     activePersonaId = null;
   }
   loaded = true;
@@ -50,7 +46,8 @@ async function saveToDisk(): Promise<void> {
   try {
     await mkdir(dirname(stateFilePath), { recursive: true });
     await writeFile(stateFilePath, activePersonaId ?? '', 'utf-8');
-  } catch {
-    // silent fail — in-memory state still works
+  } catch (error) {
+    // silent fail — in-memory state still works, but log for debugging
+    console.warn('[omoc] Failed to persist persona state to disk:', error);
   }
 }
