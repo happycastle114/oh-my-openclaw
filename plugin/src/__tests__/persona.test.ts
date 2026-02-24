@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('fs', () => ({
   readFileSync: vi.fn().mockReturnValue('# Mock Persona Content\nYou are Atlas.'),
+  writeFileSync: vi.fn(),
+  mkdirSync: vi.fn(),
   statSync: vi.fn().mockReturnValue({ mtimeMs: 1000 }),
   promises: {
     readFile: vi.fn().mockResolvedValue('# Mock Persona Content\nYou are Atlas.'),
@@ -17,11 +19,12 @@ vi.mock('../utils/config.js', () => ({
   })),
 }));
 
-import { readFileSync, statSync, promises as fsPromises } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, statSync, promises as fsPromises } from 'fs';
 import {
   setActivePersona,
   getActivePersona,
   resetPersonaState,
+  resetPersonaStateForTesting,
 } from '../utils/persona-state.js';
 import {
   resolvePersonaId,
@@ -54,7 +57,7 @@ function createMockApi(): any {
 
 describe('persona-state', () => {
   beforeEach(() => {
-    resetPersonaState();
+    resetPersonaStateForTesting();
   });
 
   it('starts with null active persona', () => {
@@ -76,6 +79,35 @@ describe('persona-state', () => {
     setActivePersona('omoc_atlas');
     setActivePersona('omoc_oracle');
     expect(getActivePersona()).toBe('omoc_oracle');
+  });
+
+  it('persists to disk on setActivePersona', () => {
+    vi.mocked(writeFileSync).mockClear();
+    setActivePersona('omoc_atlas');
+    expect(writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('active-persona'),
+      'omoc_atlas',
+      'utf-8'
+    );
+  });
+
+  it('persists empty string on resetPersonaState', () => {
+    vi.mocked(writeFileSync).mockClear();
+    resetPersonaState();
+    expect(writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining('active-persona'),
+      '',
+      'utf-8'
+    );
+  });
+
+  it('creates directory before writing', () => {
+    vi.mocked(mkdirSync).mockClear();
+    setActivePersona('omoc_atlas');
+    expect(mkdirSync).toHaveBeenCalledWith(
+      expect.any(String),
+      { recursive: true }
+    );
   });
 });
 
@@ -222,7 +254,7 @@ describe('persona-injector hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearPersonaCache();
-    resetPersonaState();
+    resetPersonaStateForTesting();
     resetPersonaInjectorState();
     resetPersonaContextEntries();
     contextCollector.clearAll();
@@ -333,7 +365,7 @@ describe('persona-injector hook', () => {
 describe('persona-commands (/omoc)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetPersonaState();
+    resetPersonaStateForTesting();
   });
 
   it('registers the /omoc command', () => {
