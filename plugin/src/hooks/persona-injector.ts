@@ -47,6 +47,11 @@ export function registerPersonaInjector(api: OmocPluginApi): void {
       const sessionKey = event.context.agentId || 'default';
 
       if (!personaId) {
+        if (lastInjectedPersonaId) {
+          contextCollector.unregister(sessionKey, `persona/${lastInjectedPersonaId}`);
+          lastInjectedPersonaId = null;
+          api.logger.info(`[omoc] Persona context cleared for ${sessionKey}`);
+        }
         return;
       }
 

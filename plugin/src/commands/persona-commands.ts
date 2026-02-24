@@ -1,6 +1,7 @@
 import { OmocPluginApi } from '../types.js';
 import { getActivePersona, setActivePersona, resetPersonaState } from '../utils/persona-state.js';
 import { resolvePersonaId, listPersonas, DEFAULT_PERSONA_ID } from '../agents/persona-prompts.js';
+import { resetPersonaInjectorState, resetPersonaContextEntries } from '../hooks/persona-injector.js';
 
 export function registerPersonaCommands(api: OmocPluginApi) {
   api.registerCommand({
@@ -8,7 +9,9 @@ export function registerPersonaCommands(api: OmocPluginApi) {
     description: 'OmOC mode — activate, switch, or list personas',
     acceptsArgs: true,
     handler: async (ctx: { args?: string }) => {
+      api.logger.info(`[omoc] /omoc command received — raw ctx.args: ${JSON.stringify(ctx.args)}, ctx keys: ${JSON.stringify(Object.keys(ctx))}`);
       const args = (ctx.args ?? '').trim().toLowerCase();
+      api.logger.info(`[omoc] Parsed args: "${args}" (length: ${args.length})`);
 
       if (!args) {
         setActivePersona(DEFAULT_PERSONA_ID);
@@ -26,6 +29,7 @@ export function registerPersonaCommands(api: OmocPluginApi) {
       if (args === 'off') {
         const wasActive = getActivePersona();
         resetPersonaState();
+        resetPersonaInjectorState();
         return {
           text: wasActive
             ? `# OmOC Mode: OFF\n\nPersona **${wasActive}** deactivated. Agent sessions will use default behavior.`
@@ -65,6 +69,7 @@ export function registerPersonaCommands(api: OmocPluginApi) {
         };
       }
 
+      resetPersonaContextEntries();
       setActivePersona(resolvedId);
       const personas = listPersonas();
       const switched = personas.find((p) => p.id === resolvedId);
