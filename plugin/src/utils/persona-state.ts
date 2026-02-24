@@ -7,6 +7,11 @@ let loaded = false;
 let stateFilePath = join('workspace', '.omoc-state', 'active-persona');
 
 export async function initPersonaState(_api: OmocPluginApi): Promise<void> {
+  try {
+    await mkdir(dirname(stateFilePath), { recursive: true });
+  } catch (error) {
+    console.warn('[omoc] Failed to initialize persona state directory:', error);
+  }
   await loadFromDisk();
 }
 

@@ -4,13 +4,13 @@ import { getConfig } from '../utils/config.js';
 import { contextCollector } from '../features/context-collector.js';
 import { ORCHESTRATOR_IDS, WORKER_IDS } from '../agents/agent-ids.js';
 
-export type AgentRole = 'orchestrator' | 'worker' | 'lightweight';
+export type AgentRole = 'orchestrator' | 'worker' | 'unknown';
 
 export function classifyAgentRole(agentId?: string): AgentRole {
   if (!agentId) return 'orchestrator';
   if (ORCHESTRATOR_IDS.has(agentId)) return 'orchestrator';
   if (WORKER_IDS.has(agentId)) return 'worker';
-  return 'lightweight';
+  return 'unknown';
 }
 
 const ORCHESTRATOR_DIRECTIVE = `[SYSTEM REMINDER - TODO CONTINUATION]
@@ -32,7 +32,7 @@ Complete your assigned task, return the result, then stop.
 const DIRECTIVES: Record<AgentRole, string | null> = {
   orchestrator: ORCHESTRATOR_DIRECTIVE,
   worker: WORKER_DIRECTIVE,
-  lightweight: null,
+  unknown: null,
 };
 
 interface AgentBootstrapEvent {
