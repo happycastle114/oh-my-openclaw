@@ -17,6 +17,8 @@ import { registerPersonaInjector } from './hooks/persona-injector.js';
 import { registerContextInjector } from './hooks/context-injector.js';
 import { registerSetupCli } from './cli/setup.js';
 
+let initialized = false;
+
 const registry = {
   hooks: [] as string[],
   services: [] as string[],
@@ -26,6 +28,12 @@ const registry = {
 };
 
 export default function register(api: OmocPluginApi) {
+  if (initialized) {
+    api.logger.warn(`[${PLUGIN_ID}] Plugin already initialized — skipping duplicate register() call`);
+    return;
+  }
+  initialized = true;
+
   const config = getConfig(api);
 
   api.logger.info(`[${PLUGIN_ID}] Initializing plugin v${VERSION}`);
