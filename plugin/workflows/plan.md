@@ -9,7 +9,7 @@ Strategic planning workflow that analyzes requirements and creates a structured 
 ## Hard Boundary
 
 - Planning role does not implement code.
-- If execution is needed, plan MUST include OmO delegation steps using `sessions_spawn` and tmux orchestration (`opencode-controller`, `tmux`, `tmux-agents`).
+- If execution is needed, plan MUST include OmO delegation steps using `omoc_delegate` and tmux orchestration (`opencode-controller`, `tmux`, `tmux-agents`).
 
 ## When to Use
 

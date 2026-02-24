@@ -17,6 +17,19 @@ const DEFAULT_CATEGORY_MODELS: Record<Category, string> = {
   writing: 'claude-sonnet-4-6',
 };
 
+/** Maps each category to its best-fit sub-agent persona */
+const DEFAULT_CATEGORY_AGENTS: Record<Category, string> = {
+  quick: 'omoc_sisyphus',
+  deep: 'omoc_hephaestus',
+  ultrabrain: 'omoc_oracle',
+  'visual-engineering': 'omoc_frontend',
+  multimodal: 'omoc_looker',
+  artistry: 'omoc_hephaestus',
+  'unspecified-low': 'omoc_sisyphus',
+  'unspecified-high': 'omoc_hephaestus',
+  writing: 'omoc_sisyphus',
+};
+
 const DelegateParamsSchema = Type.Object({
   task_description: Type.String({ description: 'What the sub-agent should do' }),
   category: Type.String({ description: 'Task category for model routing (quick, deep, ultrabrain, etc.)' }),
@@ -63,18 +76,20 @@ export function registerDelegateTool(api: OmocPluginApi) {
          ));
        }
 
-      const { model, alternatives } = getModelForCategory(params.category as Category, api);
+      const category = params.category as Category;
+      const { model, alternatives } = getModelForCategory(category, api);
+      const agentId = params.agent_id || DEFAULT_CATEGORY_AGENTS[category];
 
-       api.logger.info(`${LOG_PREFIX} Delegating task:`, { category: params.category, model });
+       api.logger.info(`${LOG_PREFIX} Delegating task:`, { category, model, agentId });
 
       const instruction = [
-        `Category "${params.category}" → model "${model}"`,
+        `Category "${category}" → agent "${agentId}" → model "${model}"`,
         '',
         '⚡ NOW CALL sessions_spawn with these parameters:',
         `  task: "${params.task_description}"`,
         `  mode: "run"`,
         `  model: "${model}"`,
-        params.agent_id ? `  agentId: "${params.agent_id}"` : '',
+        `  agentId: "${agentId}"`,
         alternatives?.length ? `  fallback_models: ${JSON.stringify(alternatives)}` : '',
         alternatives?.length ? `  If "${model}" is unavailable, try: ${alternatives.join(', ')}` : '',
         params.background ? '  (background execution — results will arrive via push notification)' : '',

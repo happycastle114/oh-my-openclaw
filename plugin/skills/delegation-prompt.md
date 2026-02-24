@@ -1,11 +1,13 @@
 ---
 name: delegation-prompt
-description: Sub-agent delegation guide using sessions_spawn. 7-element prompt template + token-efficient delegation patterns.
+description: Sub-agent delegation guide using omoc_delegate. 7-element prompt template + token-efficient delegation patterns.
 ---
 
-# Delegation Prompt + sessions_spawn Guide
+# Delegation Prompt Guide
 
-The core concept of OmOC is **sub-agent utilization**. oh-my-openclaw uses OpenClaw's `sessions_spawn` to create real sub-agent sessions.
+The core concept of OmOC is **sub-agent utilization**. All sub-agent delegation **MUST** go through the `omoc_delegate` tool, which handles both model routing AND agent selection automatically.
+
+> **⛔ NEVER call `sessions_spawn` directly.** Always use `omoc_delegate`. It selects the right agent persona for the task category and returns the exact `sessions_spawn` call you need to execute.
 
 ## Token Efficiency Principle (Primary Rule)
 
@@ -23,22 +25,37 @@ This replaces the old "5-minute rule." The decision criterion is **not time** bu
 - Making a yes/no decision from known context → **Direct** (no raw data needed)
 - Writing a 2-line response to user → **Direct** (no raw data needed)
 
-## sessions_spawn Usage
+## omoc_delegate Usage
 
 ```
-sessions_spawn(
-  task="...",           # 7-element prompt (see below)
-  mode="run",           # "run" (one-shot) | "session" (persistent)
-  model="...",          # Category-based model (see table below)
-  agentId="...",        # Specific agent (optional — omoc_prometheus, omoc_sisyphus, etc.)
-  label="...",          # Identification label (optional)
-  thread=true           # Deliver results via Discord thread (optional)
+omoc_delegate(
+  task_description="7-element prompt (see below)",
+  category="deep",           # Category determines both model AND agent
+  agent_id="omoc_oracle",    # Override auto-selected agent (optional)
+  skills=["git-master"],     # Skills to load (optional)
+  background=false            # Run in background (optional)
 )
 ```
 
-### Specifying Agents via agentId
+`omoc_delegate` returns a `sessions_spawn` instruction with the correct `model` and `agentId` pre-filled. **Execute the returned instruction immediately.**
 
-When `agentId` is specified, the agent's persona/permissions/model are auto-applied:
+### Category → Agent Auto-Selection
+
+Each category automatically selects the best-fit agent. You can override with `agent_id` if needed.
+
+| Category | Default Agent | Model | Use Case |
+|----------|--------------|-------|----------|
+| quick | `omoc_sisyphus` | claude-sonnet-4-6 | Simple fixes, search, grep |
+| deep | `omoc_hephaestus` | claude-opus-4-6-thinking | Complex refactoring, analysis |
+| ultrabrain | `omoc_oracle` | gpt-5.3-codex | Architecture, deep reasoning |
+| visual-engineering | `omoc_frontend` | gemini-3.1-pro | Frontend, UI/UX, design |
+| multimodal | `omoc_looker` | gemini-2.5-flash | PDF, image, video analysis |
+| artistry | `omoc_hephaestus` | claude-opus-4-6-thinking | Creative complex problems |
+| unspecified-low | `omoc_sisyphus` | claude-sonnet-4-6 | General low-effort tasks |
+| unspecified-high | `omoc_hephaestus` | claude-opus-4-6-thinking | General high-effort tasks |
+| writing | `omoc_sisyphus` | claude-sonnet-4-6 | Documentation, prose |
+
+### Available Agents
 
 | agentId | Role | Permissions |
 |---------|------|-------------|
@@ -51,18 +68,8 @@ When `agentId` is specified, the agent's persona/permissions/model are auto-appl
 | `omoc_librarian` | Documentation research | read-only |
 | `omoc_metis` | Gap analysis | read-only |
 | `omoc_momus` | Plan review | read-only |
-
-When `agentId` is omitted, the default agent runs with the specified `model`.
-
-## Category-to-Model Mapping
-
-| Category | Model | Use Case |
-|----------|-------|----------|
-| quick | claude-sonnet-4-6 | Simple fixes, file search, grep, exploration |
-| deep | claude-opus-4-6-thinking | Complex refactoring, analysis, autonomous work |
-| ultrabrain | gpt-5.3-codex | Deep reasoning, architecture design |
-| visual-engineering | gemini-3.1-pro | Frontend, UI/UX, design |
-| writing | claude-sonnet-4-6 | Documentation, technical writing |
+| `omoc_looker` | Multimodal visual analysis | read-only |
+| `omoc_frontend` | Visual engineering | full |
 
 ## Delegation Decision Criteria
 
@@ -141,10 +148,10 @@ MUST DO:
 
 ## Execution Examples
 
-### Example 1: Code Analysis (deep, background)
+### Example 1: Code Analysis (deep)
 ```
-sessions_spawn(
-  task="""
+omoc_delegate(
+  task_description="""
   1) TASK: Analyze test coverage for /home/happycastle/Projects/my-app/src/
   2) EXPECTED OUTCOME: List of untested files + prioritized test writing plan
   3) REQUIRED SKILLS: none
@@ -154,16 +161,16 @@ sessions_spawn(
   6) MUST NOT DO: Do not write test files directly
   7) CONTEXT: Jest + TypeScript project, src/utils/ is highest priority
   """,
-  mode="run",
-  model="claude-opus-4-6-thinking",
-  label="test-coverage-analysis"
+  category="deep"
 )
+# → omoc_delegate auto-selects omoc_hephaestus + claude-opus-4-6-thinking
+# → Execute the returned sessions_spawn instruction immediately
 ```
 
-### Example 2: Web Research (quick, background)
+### Example 2: Web Research (quick)
 ```
-sessions_spawn(
-  task="""
+omoc_delegate(
+  task_description="""
   1) TASK: Research Next.js 15 Server Actions changes
   2) EXPECTED OUTCOME: Key changes summary + migration guide
   3) REQUIRED SKILLS: web-search
@@ -173,32 +180,37 @@ sessions_spawn(
   6) MUST NOT DO: Do not modify code
   7) CONTEXT: Currently using Next.js 14, evaluating upgrade
   """,
-  mode="run",
-  model="claude-sonnet-4-6",
-  label="nextjs-migration-research"
+  category="quick",
+  agent_id="omoc_librarian",
+  skills=["web-search"]
 )
+# → Uses omoc_librarian (overrides default omoc_sisyphus for research tasks)
 ```
 
-### Example 3: Parallel Tasks (multiple spawns)
+### Example 3: Parallel Tasks (multiple delegates)
 ```
 # 3 sub-agents running simultaneously
-sessions_spawn(task="Refactor file A...", mode="run", model="claude-opus-4-6-thinking", label="refactor-a")
-sessions_spawn(task="Refactor file B...", mode="run", model="claude-opus-4-6-thinking", label="refactor-b")
-sessions_spawn(task="Write tests...", mode="run", model="claude-sonnet-4-6", label="write-tests")
+omoc_delegate(task_description="Refactor file A...", category="deep", background=true)
+omoc_delegate(task_description="Refactor file B...", category="deep", background=true)
+omoc_delegate(task_description="Write tests...", category="quick", background=true)
+# → Each gets the right agent: omoc_hephaestus for deep, omoc_sisyphus for quick
 ```
 
-## Relationship with omoc_delegate
+## Mandatory Delegation Flow
 
-`omoc_delegate` only handles category → model mapping. Actual sub-agent creation requires calling `sessions_spawn`.
+**⛔ NEVER call `sessions_spawn` directly. ALWAYS use `omoc_delegate` first.**
+
+`omoc_delegate` handles category → model mapping AND category → agent selection. It returns a ready-to-execute `sessions_spawn` instruction.
 
 **Correct flow:**
-1. Use `omoc_delegate` to check category/model (optional)
-2. Use `sessions_spawn` to create the actual sub-agent
+1. Call `omoc_delegate` with category + task description → **MANDATORY**
+2. Execute the returned `sessions_spawn` instruction immediately
 3. Receive automatic completion notification (push-based)
 
 **Never do this:**
-- Do NOT poll `subagents list` in a loop — results arrive automatically
-- Do NOT expect immediate results after spawn — execution is asynchronous
+- ⛔ Do NOT call `sessions_spawn` directly — agent selection will be skipped
+- ⛔ Do NOT poll `subagents list` in a loop — results arrive automatically
+- ⛔ Do NOT expect immediate results after spawn — execution is asynchronous
 
 ## Sub-Agent Routing Metadata
 
@@ -262,13 +274,14 @@ Sub-agent completion notification ("✅ Subagent finished") is **not FYI — it'
 
 ## Anti-Patterns
 
+- ⛔ **Calling `sessions_spawn` directly** — bypasses agent selection, use `omoc_delegate`
 - Vague instructions like "roughly", "as you see fit"
 - Unlimited tool allowance
 - Large requests without context
 - Delegation without expected deliverables
 - Poll loop to wait for results after spawn
 - Handling all tasks directly (underutilizing sub-agents)
-- Code modification without sessions_spawn for implementation work
+- Code modification without delegation for implementation work
 - **Stopping after completion notification (most common failure pattern)**
 - **Injecting raw file contents into the main session instead of delegating**
 - **Omitting compression directive for read-only agent delegations**
