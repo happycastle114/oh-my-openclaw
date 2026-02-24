@@ -1,11 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { registerTodoEnforcer, resetEnforcerState, getEnforcerState } from '../hooks/todo-enforcer.js';
+import { registerTodoEnforcer, resetEnforcerState, getEnforcerState, classifyAgentRole } from '../hooks/todo-enforcer.js';
 import { registerContextInjector } from '../hooks/context-injector.js';
 import { registerCommentChecker } from '../hooks/comment-checker.js';
 import { registerMessageMonitor, getMessageCount } from '../hooks/message-monitor.js';
 import { registerStartupHook } from '../hooks/startup.js';
 import { ContextCollector, contextCollector } from '../features/context-collector.js';
-import type { OmocPluginApi, PluginConfig } from '../types.js';
+import type { OmocPluginApi } from '../types.js';
+import { createMockApi as createFactoryMockApi, createMockConfig } from './helpers/mock-factory.js';
+
+type MockApi = Omit<
+  OmocPluginApi,
+  'logger' | 'registerHook' | 'registerTool' | 'registerCommand' | 'registerService' | 'registerGatewayMethod' | 'registerCli' | 'on'
+> & {
+  logger: {
+    info: ReturnType<typeof vi.fn>;
+    warn: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+  };
+  registerHook: ReturnType<typeof vi.fn>;
+  registerTool: ReturnType<typeof vi.fn>;
+  registerCommand: ReturnType<typeof vi.fn>;
+  registerService: ReturnType<typeof vi.fn>;
+  registerGatewayMethod: ReturnType<typeof vi.fn>;
+  registerCli: ReturnType<typeof vi.fn>;
+  on: ReturnType<typeof vi.fn>;
+};
+
+const createMockApi = (overrides?: Partial<OmocPluginApi>): MockApi => {
+  return createFactoryMockApi(overrides) as unknown as MockApi;
+};
 
 interface BootstrapFile {
   path: string;
@@ -15,14 +38,10 @@ interface BootstrapFile {
 interface AgentBootstrapEvent {
   context: {
     agentId?: string;
+    sessionKey?: string;
+    sessionId?: string;
     bootstrapFiles?: BootstrapFile[];
   };
-}
-
-interface BeforePromptBuildEvent {
-  agentId?: string;
-  messages?: unknown[];
-  prependContext?: string;
 }
 
 interface ToolResultPayload {
@@ -34,45 +53,6 @@ interface ToolResultPayload {
   [key: string]: unknown;
 }
 
-type MockApi = OmocPluginApi & {
-  logger: {
-    info: ReturnType<typeof vi.fn>;
-    warn: ReturnType<typeof vi.fn>;
-    error: ReturnType<typeof vi.fn>;
-  };
-  registerHook: ReturnType<typeof vi.fn>;
-  registerTool: ReturnType<typeof vi.fn>;
-  registerCommand: ReturnType<typeof vi.fn>;
-  registerService: ReturnType<typeof vi.fn>;
-  registerGatewayMethod: ReturnType<typeof vi.fn>;
-  on: ReturnType<typeof vi.fn>;
-};
-
-function createMockApi(configOverrides: Partial<PluginConfig> = {}): MockApi {
-  return {
-    config: {
-      max_ralph_iterations: 10,
-      todo_enforcer_enabled: true,
-      todo_enforcer_cooldown_ms: 2000,
-      todo_enforcer_max_failures: 5,
-      comment_checker_enabled: true,
-      notepad_dir: 'workspace/notepads',
-      plans_dir: 'workspace/plans',
-      checkpoint_dir: 'workspace/checkpoints',
-      tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
-      ...configOverrides,
-    },
-    logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-    registerHook: vi.fn(),
-    registerTool: vi.fn(),
-    registerCommand: vi.fn(),
-    registerService: vi.fn(),
-    registerGatewayMethod: vi.fn(),
-    registerCli: vi.fn(),
-    on: vi.fn(),
-  };
-}
-
 describe('todo-enforcer hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -81,7 +61,7 @@ describe('todo-enforcer hook', () => {
   });
 
   it('registers directive context when todo_enforcer_enabled=true', () => {
-    const api = createMockApi({ todo_enforcer_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
     registerTodoEnforcer(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
@@ -97,7 +77,7 @@ describe('todo-enforcer hook', () => {
   });
 
   it('does not register when todo_enforcer_enabled=false', () => {
-    const api = createMockApi({ todo_enforcer_enabled: false });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: false }) });
     registerTodoEnforcer(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
@@ -109,7 +89,7 @@ describe('todo-enforcer hook', () => {
   });
 
   it('registers expected directive content text', () => {
-    const api = createMockApi({ todo_enforcer_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
     registerTodoEnforcer(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
@@ -120,7 +100,7 @@ describe('todo-enforcer hook', () => {
   });
 
   it('preserves existing bootstrapFiles without direct mutation', () => {
-    const api = createMockApi({ todo_enforcer_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
     registerTodoEnforcer(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
@@ -137,7 +117,7 @@ describe('todo-enforcer hook', () => {
   });
 
   it('skips registration for lightweight agents (explore, librarian, oracle)', () => {
-    const api = createMockApi({ todo_enforcer_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
     registerTodoEnforcer(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (event: { context: { agentId?: string; bootstrapFiles?: BootstrapFile[] } }) => void;
@@ -150,7 +130,7 @@ describe('todo-enforcer hook', () => {
   });
 
   it('registers orchestrator directive for atlas/prometheus', () => {
-    const api = createMockApi({ todo_enforcer_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
     registerTodoEnforcer(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (event: { context: { agentId?: string; bootstrapFiles?: BootstrapFile[] } }) => void;
@@ -164,7 +144,7 @@ describe('todo-enforcer hook', () => {
   });
 
   it('registers worker directive for sisyphus/hephaestus', () => {
-    const api = createMockApi({ todo_enforcer_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
     registerTodoEnforcer(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (event: { context: { agentId?: string; bootstrapFiles?: BootstrapFile[] } }) => void;
@@ -178,7 +158,7 @@ describe('todo-enforcer hook', () => {
   });
 
   it('defaults to orchestrator when agentId is missing', () => {
-    const api = createMockApi({ todo_enforcer_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
     registerTodoEnforcer(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
@@ -190,7 +170,7 @@ describe('todo-enforcer hook', () => {
   });
 
   it('anti-regurgitation clause is present in all directives', () => {
-    const api = createMockApi({ todo_enforcer_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
     registerTodoEnforcer(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (event: { context: { agentId?: string; bootstrapFiles?: BootstrapFile[] } }) => void;
@@ -208,6 +188,35 @@ describe('todo-enforcer hook', () => {
     resetEnforcerState();
     const state = getEnforcerState();
     expect(state).toBeDefined();
+  });
+
+  it('injects todo directive only once when collector consumes oneShot entry', () => {
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+
+    registerTodoEnforcer(api);
+    const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
+
+    handler({ context: { agentId: 'omoc_atlas', sessionKey: 'sess-1' } });
+
+    const firstCollect = contextCollector.collect('sess-1');
+    expect(firstCollect.some((entry) => entry.id === 'todo-enforcer')).toBe(true);
+
+    const secondCollect = contextCollector.collect('sess-1');
+    expect(secondCollect.some((entry) => entry.id === 'todo-enforcer')).toBe(false);
+  });
+});
+
+describe('classifyAgentRole', () => {
+  it('classifies orchestrator IDs as orchestrator', () => {
+    expect(classifyAgentRole('omoc_atlas')).toBe('orchestrator');
+  });
+
+  it('classifies worker IDs as worker', () => {
+    expect(classifyAgentRole('omoc_sisyphus')).toBe('worker');
+  });
+
+  it('classifies unknown IDs as unknown', () => {
+    expect(classifyAgentRole('omoc_not_real')).toBe('unknown');
   });
 });
 
@@ -253,6 +262,35 @@ describe('context-collector', () => {
     collector.register('s3', { id: 'd', content: 'D', source: 'plugin' });
     collector.clearAll();
     expect(collector.hasEntries('s3')).toBe(false);
+  });
+
+  it('unregister removes the entry and subsequent collect returns empty', () => {
+    const collector = new ContextCollector();
+
+    collector.register('s1', { id: 'entry-1', content: 'keep me', source: 'plugin' });
+    collector.unregister('s1', 'entry-1');
+
+    expect(collector.hasEntries('s1')).toBe(false);
+    expect(collector.collect('s1')).toEqual([]);
+  });
+
+  it('prunes sessions that exceed 30 minute TTL', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
+
+    const collector = new ContextCollector();
+    collector.register('ttl-session', {
+      id: 'ttl-entry',
+      content: 'expires',
+      source: 'plugin',
+    });
+
+    vi.setSystemTime(new Date('2026-01-01T00:31:00.000Z'));
+
+    expect(collector.collect('ttl-session')).toEqual([]);
+    expect(collector.hasEntries('ttl-session')).toBe(false);
+
+    vi.useRealTimers();
   });
 });
 
@@ -348,6 +386,27 @@ describe('context-injector hook (typed hook)', () => {
     expect(result).toBeUndefined();
     expect(contextCollector.hasEntries('default')).toBe(true);
   });
+
+  it('keeps same agentId isolated across different sessionKey values', () => {
+    const api = createMockApi();
+    registerContextInjector(api);
+
+    contextCollector.register('session-1', {
+      id: 'entry-1',
+      content: 'session-1 context',
+      source: 'plugin',
+    });
+
+    const handler = api.on.mock.calls[0][1];
+    const result = handler(
+      { prompt: 'hello' },
+      { agentId: 'omoc_sisyphus', sessionKey: 'session-2' },
+    );
+
+    expect(result).toBeUndefined();
+    expect(contextCollector.hasEntries('session-1')).toBe(true);
+    expect(contextCollector.hasEntries('session-2')).toBe(false);
+  });
 });
 
 describe('comment-checker hook', () => {
@@ -356,7 +415,7 @@ describe('comment-checker hook', () => {
   });
 
   it('detects AI slop comment: // Import the necessary modules', () => {
-    const api = createMockApi({ comment_checker_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ comment_checker_enabled: true }) });
     registerCommentChecker(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (
@@ -374,7 +433,7 @@ describe('comment-checker hook', () => {
   });
 
   it('detects AI slop comment: // This function handles...', () => {
-    const api = createMockApi({ comment_checker_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ comment_checker_enabled: true }) });
     registerCommentChecker(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (
@@ -392,7 +451,7 @@ describe('comment-checker hook', () => {
   });
 
   it('ignores clean comments like TODO notes', () => {
-    const api = createMockApi({ comment_checker_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ comment_checker_enabled: true }) });
     registerCommentChecker(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (
@@ -409,7 +468,7 @@ describe('comment-checker hook', () => {
   });
 
   it('returns undefined when checker is disabled', () => {
-    const api = createMockApi({ comment_checker_enabled: false });
+    const api = createMockApi({ config: createMockConfig({ comment_checker_enabled: false }) });
     registerCommentChecker(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (
@@ -426,7 +485,7 @@ describe('comment-checker hook', () => {
   });
 
   it('skips markdown files', () => {
-    const api = createMockApi({ comment_checker_enabled: true });
+    const api = createMockApi({ config: createMockConfig({ comment_checker_enabled: true }) });
     registerCommentChecker(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (
@@ -517,6 +576,26 @@ describe('message-monitor hook', () => {
         channelId: 'channel-3',
       }),
     );
+  });
+
+  it('caps messageCounts at 1000 and evicts the oldest channel', async () => {
+    vi.resetModules();
+    const messageMonitor = await import('../hooks/message-monitor.js');
+    const api = createMockApi();
+    messageMonitor.registerMessageMonitor(api);
+
+    const sentHandler = api.registerHook.mock.calls[0][1] as (context: {
+      content?: string;
+      channelId?: string;
+    }) => undefined;
+
+    for (let i = 0; i <= 1000; i++) {
+      sentHandler({ content: `message-${i}`, channelId: `mm-${i}` });
+    }
+
+    expect(messageMonitor.getMessageCount('mm-0')).toBe(0);
+    expect(messageMonitor.getMessageCount('mm-1')).toBe(1);
+    expect(messageMonitor.getMessageCount('mm-1000')).toBe(1);
   });
 });
 
