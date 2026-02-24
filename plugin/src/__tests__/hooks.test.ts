@@ -45,6 +45,7 @@ type MockApi = OmocPluginApi & {
   registerCommand: ReturnType<typeof vi.fn>;
   registerService: ReturnType<typeof vi.fn>;
   registerGatewayMethod: ReturnType<typeof vi.fn>;
+  on: ReturnType<typeof vi.fn>;
 };
 
 function createMockApi(configOverrides: Partial<PluginConfig> = {}): MockApi {
@@ -68,6 +69,7 @@ function createMockApi(configOverrides: Partial<PluginConfig> = {}): MockApi {
     registerService: vi.fn(),
     registerGatewayMethod: vi.fn(),
     registerCli: vi.fn(),
+    on: vi.fn(),
   };
 }
 
@@ -254,13 +256,22 @@ describe('context-collector', () => {
   });
 });
 
-describe('context-injector hook', () => {
+describe('context-injector hook (typed hook)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     contextCollector.clearAll();
   });
 
-  it('injects collected context entries into prependContext', () => {
+  it('registers before_prompt_build typed hook via api.on()', () => {
+    const api = createMockApi();
+    registerContextInjector(api);
+
+    expect(api.on).toHaveBeenCalledTimes(1);
+    expect(api.on.mock.calls[0][0]).toBe('before_prompt_build');
+    expect(api.on.mock.calls[0][2]).toEqual({ priority: 50 });
+  });
+
+  it('injects collected context entries via prependContext', () => {
     const api = createMockApi();
     registerContextInjector(api);
 
@@ -277,12 +288,12 @@ describe('context-injector hook', () => {
       source: 'persona',
     });
 
-    expect(api.registerHook.mock.calls[0][0]).toBe('before_prompt_build');
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello' };
+    const ctx = { agentId: 'omoc_atlas' };
+    const result = handler(event, ctx);
 
-    const handler = api.registerHook.mock.calls[0][1] as (event: BeforePromptBuildEvent) => BeforePromptBuildEvent;
-    const event: BeforePromptBuildEvent = { agentId: 'omoc_atlas', messages: [] };
-    const result = handler(event);
-
+    expect(result).toBeDefined();
     expect(result.prependContext).toContain('persona prompt');
     expect(result.prependContext).toContain('todo directive');
     expect(contextCollector.hasEntries('omoc_atlas')).toBe(true);
@@ -298,25 +309,28 @@ describe('context-injector hook', () => {
       source: 'todo-enforcer',
     });
 
-    const handler = api.registerHook.mock.calls[0][1] as (event: BeforePromptBuildEvent) => BeforePromptBuildEvent;
-    const event: BeforePromptBuildEvent = { messages: [] };
-    const result = handler(event);
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello' };
+    const ctx = {};
+    const result = handler(event, ctx);
 
+    expect(result).toBeDefined();
     expect(result.prependContext).toContain('todo directive');
   });
 
-  it('does not inject when no entries exist', () => {
+  it('returns undefined when no entries exist', () => {
     const api = createMockApi();
     registerContextInjector(api);
 
-    const handler = api.registerHook.mock.calls[0][1] as (event: BeforePromptBuildEvent) => BeforePromptBuildEvent;
-    const event: BeforePromptBuildEvent = { messages: [] };
-    const result = handler(event);
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello' };
+    const ctx = {};
+    const result = handler(event, ctx);
 
-    expect(result.prependContext).toBeUndefined();
+    expect(result).toBeUndefined();
   });
 
-  it('returns event unchanged when no collector entries for session', () => {
+  it('returns undefined when no collector entries for session', () => {
     const api = createMockApi();
     registerContextInjector(api);
 
@@ -326,15 +340,12 @@ describe('context-injector hook', () => {
       source: 'todo-enforcer',
     });
 
-    const handler = api.registerHook.mock.calls[0][1] as (event: BeforePromptBuildEvent) => BeforePromptBuildEvent;
-    const event: BeforePromptBuildEvent = {
-      agentId: 'omoc_other',
-      messages: [],
-      prependContext: 'existing prepend',
-    };
-    const result = handler(event);
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello' };
+    const ctx = { agentId: 'omoc_other' };
+    const result = handler(event, ctx);
 
-    expect(result.prependContext).toBe('existing prepend');
+    expect(result).toBeUndefined();
     expect(contextCollector.hasEntries('default')).toBe(true);
   });
 });

@@ -124,4 +124,30 @@ export interface OmocPluginApi {
   registerService: (config: ServiceRegistration) => void;
   registerGatewayMethod: (name: string, handler: () => unknown) => void;
   registerCli: (registrar: (ctx: { program: unknown; config: unknown; workspaceDir?: string; logger: OmocPluginApi['logger'] }) => void | Promise<void>, opts?: { commands?: string[] }) => void;
+  on: <TEvent = unknown, TResult = unknown>(
+    hookName: string,
+    handler: (event: TEvent, ctx: TypedHookContext) => TResult | Promise<TResult> | void,
+    opts?: { priority?: number }
+  ) => void;
+}
+
+// Typed hook context provided by OpenClaw hookRunner to api.on() handlers
+export interface TypedHookContext {
+  agentId?: string;
+  sessionKey?: string;
+  sessionId?: string;
+  workspaceDir?: string;
+  messageProvider?: unknown;
+}
+
+// Result shape for before_prompt_build / before_agent_start hooks
+export interface BeforePromptBuildResult {
+  systemPrompt?: string;
+  prependContext?: string;
+}
+
+// Event shape for before_prompt_build / before_agent_start hooks
+export interface BeforePromptBuildEvent {
+  prompt?: string;
+  messages?: unknown[];
 }

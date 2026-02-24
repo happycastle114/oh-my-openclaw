@@ -1,40 +1,32 @@
 import { contextCollector } from '../features/context-collector.js';
-import { OmocPluginApi } from '../types.js';
-
-interface BeforePromptBuildEvent {
-  messages?: unknown[];
-  agentId?: string;
-  sessionId?: string;
-  prependContext?: string;
-  systemPrompt?: string;
-}
+import { OmocPluginApi, TypedHookContext, BeforePromptBuildEvent, BeforePromptBuildResult } from '../types.js';
 
 export function registerContextInjector(api: OmocPluginApi): void {
-  api.registerHook(
+  // Use the typed hook system (api.on) instead of api.registerHook.
+  // api.registerHook registers into the internal hook system which does NOT
+  // trigger before_prompt_build — only hookRunner (typed hooks) does.
+  api.on<BeforePromptBuildEvent, BeforePromptBuildResult>(
     'before_prompt_build',
-    (event: BeforePromptBuildEvent): BeforePromptBuildEvent => {
-      const sessionKey = event.agentId || 'default';
+    (_event: BeforePromptBuildEvent, ctx: TypedHookContext): BeforePromptBuildResult | void => {
+      const sessionKey = ctx.agentId || 'default';
 
       if (!contextCollector.hasEntries(sessionKey)) {
-        return event;
+        return;
       }
 
       const entryCount = contextCollector.getEntries(sessionKey).length;
       const collectedContext = contextCollector.collectAsString(sessionKey);
 
       if (!collectedContext) {
-        return event;
+        return;
       }
 
-      const existing = event.prependContext || '';
-      event.prependContext = existing ? `${existing}\n\n${collectedContext}` : collectedContext;
-      api.logger.info(`[omoc] Context injected: ${entryCount} entries for ${sessionKey}`);
+      api.logger.info(`[omoc] Context injected via before_prompt_build: ${entryCount} entries for ${sessionKey}`);
 
-      return event;
+      return {
+        prependContext: collectedContext,
+      };
     },
-    {
-      name: 'oh-my-openclaw.context-injector',
-      description: 'Unified context injection from ContextCollector into prependContext',
-    }
+    { priority: 50 } // Lower priority than persona (100) — persona goes first
   );
 }
