@@ -68,7 +68,7 @@ export function registerLookAtTool(api: OmocPluginApi) {
         }),
       ),
     }),
-    execute: async (params: LookAtParams) => {
+    execute: async (_toolCallId: string, params: LookAtParams) => {
       return withLock(async () => {
         const tempFile = `/tmp/omoc-look-at-${randomUUID()}.md`;
         const tmuxSocket = getConfig(api).tmux_socket;

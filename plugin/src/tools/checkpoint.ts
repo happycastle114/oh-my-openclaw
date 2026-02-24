@@ -111,7 +111,7 @@ export function registerCheckpointTool(api: OmocPluginApi) {
     name: `${TOOL_PREFIX}checkpoint`,
     description: 'Save, load, or list session checkpoints for crash recovery',
     parameters: CheckpointParamsSchema,
-    execute: async (params: CheckpointParams) => {
+    execute: async (_toolCallId: string, params: CheckpointParams) => {
       const config = getConfig(api);
       const checkpointDir = config.checkpoint_dir;
       await ensureDir(checkpointDir);

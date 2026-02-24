@@ -54,7 +54,7 @@ export function registerDelegateTool(api: OmocPluginApi) {
     name: `${TOOL_PREFIX}delegate`,
     description: 'Delegate a task to a sub-agent with category-based model routing',
     parameters: DelegateParamsSchema,
-    execute: async (params: DelegateParams) => {
+    execute: async (_toolCallId: string, params: DelegateParams) => {
       const validCategories = Object.keys(DEFAULT_CATEGORY_MODELS);
 
       if (!params.task_description?.trim()) {

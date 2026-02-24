@@ -63,7 +63,7 @@ describe('registerDelegateTool', () => {
     registerDelegateTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({
+    const result = await toolConfig.execute('test-call-id', {
       task_description: 'test task',
       category: 'quick',
     });
@@ -81,7 +81,7 @@ describe('registerDelegateTool', () => {
     registerDelegateTool(customApi);
     const toolConfig = customApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({ task_description: 'test', category: 'quick' });
+    const result = await toolConfig.execute('test-call-id', { task_description: 'test', category: 'quick' });
 
     expect(result.content[0].text).toContain('custom-model-v1');
     expect(result.content[0].text).toContain('fallback-1');
@@ -91,7 +91,7 @@ describe('registerDelegateTool', () => {
     registerDelegateTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({
+    const result = await toolConfig.execute('test-call-id', {
       task_description: '   ',
       category: 'quick',
     });
@@ -103,7 +103,7 @@ describe('registerDelegateTool', () => {
     registerDelegateTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({
+    const result = await toolConfig.execute('test-call-id', {
       task_description: 'a'.repeat(10001),
       category: 'quick',
     });
@@ -125,7 +125,7 @@ describe('registerDelegateTool', () => {
     registerDelegateTool(customApi);
     const toolConfig = customApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({
+    const result = await toolConfig.execute('test-call-id', {
       task_description: 'test fallback messaging',
       category: 'deep',
     });
@@ -137,7 +137,7 @@ describe('registerDelegateTool', () => {
     registerDelegateTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({
+    const result = await toolConfig.execute('test-call-id', {
       task_description: 'test task',
       category: 'nonexistent',
     });
@@ -186,7 +186,7 @@ describe('registerLookAtTool', () => {
     vi.mocked(fs.unlink).mockResolvedValue(undefined);
     registerLookAtTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
-    await toolConfig.execute({
+    await toolConfig.execute('test-call-id', {
       file_path: "file'with'quotes.pdf",
       goal: 'analyze this',
     });
@@ -205,7 +205,7 @@ describe('registerLookAtTool', () => {
     registerLookAtTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({
+    const result = await toolConfig.execute('test-call-id', {
       file_path: '/some/file.pdf',
       goal: 'analyze this',
     });
@@ -222,7 +222,7 @@ describe('registerLookAtTool', () => {
     vi.mocked(fs.unlink).mockResolvedValue(undefined);
     registerLookAtTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
-    await toolConfig.execute({
+    await toolConfig.execute('test-call-id', {
       file_path: '/test/file.pdf',
       goal: 'test',
     });
@@ -248,7 +248,7 @@ describe('registerLookAtTool', () => {
     const toolConfig = mockApiFromFactory.registerTool.mock.calls[0][0];
 
     const maliciousPath = "report.pdf; rm -rf / $(whoami)";
-    await toolConfig.execute({
+    await toolConfig.execute('test-call-id', {
       file_path: maliciousPath,
       goal: 'security regression',
     });
@@ -290,7 +290,7 @@ describe('registerCheckpointTool', () => {
     registerCheckpointTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({
+    const result = await toolConfig.execute('test-call-id', {
       action: 'save',
       task: 'test-task',
       step: 'step-1',
@@ -325,7 +325,7 @@ describe('registerCheckpointTool', () => {
     registerCheckpointTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({ action: 'load' });
+    const result = await toolConfig.execute('test-call-id', { action: 'load' });
 
     expect(result.content[0].text).toBe('No checkpoints found');
   });
@@ -343,7 +343,7 @@ describe('registerCheckpointTool', () => {
     registerCheckpointTool(factoryApi);
     const toolConfig = factoryApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({ action: 'load' });
+    const result = await toolConfig.execute('test-call-id', { action: 'load' });
 
     expect(result.content[0].text).toContain('Error: Failed to load checkpoint checkpoint-999.json');
     expect(result.content[0].text).toContain('Malformed JSON');
@@ -362,7 +362,7 @@ describe('registerCheckpointTool', () => {
     registerCheckpointTool(factoryApi);
     const toolConfig = factoryApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({ action: 'load' });
+    const result = await toolConfig.execute('test-call-id', { action: 'load' });
 
     expect(result.content[0].text).toContain('Error: Failed to load checkpoint checkpoint-111.json');
     expect(result.content[0].text).toContain('File not found');
@@ -376,7 +376,7 @@ describe('registerCheckpointTool', () => {
     registerCheckpointTool(factoryApi);
     const toolConfig = factoryApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({ action: 'list' });
+    const result = await toolConfig.execute('test-call-id', { action: 'list' });
 
     expect(result.content[0].text).toBe('No checkpoints found');
   });
@@ -401,7 +401,7 @@ describe('registerCheckpointTool', () => {
     registerCheckpointTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
 
-    const result = await toolConfig.execute({ action: 'list' });
+    const result = await toolConfig.execute('test-call-id', { action: 'list' });
 
     const parsed = JSON.parse(result.content[0].text);
     expect(parsed.checkpoints).toHaveLength(3);

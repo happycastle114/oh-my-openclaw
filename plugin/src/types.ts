@@ -62,7 +62,7 @@ export interface ToolRegistration<TParams = unknown> {
   name: string;
   description: string;
   parameters: unknown;
-  execute: (params: TParams) => Promise<ToolResult>;
+  execute: (toolCallId: string, params: TParams, options?: unknown, callback?: unknown) => Promise<ToolResult>;
   optional?: boolean;
 }
 
