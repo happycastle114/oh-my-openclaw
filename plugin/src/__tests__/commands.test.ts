@@ -63,35 +63,7 @@ import { registerRalphCommands } from '../commands/ralph-commands.js';
 import { registerStatusCommands } from '../commands/status-commands.js';
 import { startLoop, stopLoop, getStatus } from '../services/ralph-loop.js';
 import { getMessageCount } from '../hooks/message-monitor.js';
-
-function createMockApi(configOverrides = {}): any {
-  return {
-    config: {
-      max_ralph_iterations: 10,
-      todo_enforcer_enabled: true,
-      todo_enforcer_cooldown_ms: 2000,
-      todo_enforcer_max_failures: 5,
-      comment_checker_enabled: true,
-      notepad_dir: 'workspace/notepads',
-      plans_dir: 'workspace/plans',
-      checkpoint_dir: 'workspace/checkpoints',
-      tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
-      model_routing: undefined,
-      ...configOverrides,
-    },
-    logger: {
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-    },
-    registerHook: vi.fn(),
-    registerTool: vi.fn(),
-    registerCommand: vi.fn(),
-    registerService: vi.fn(),
-    registerGatewayMethod: vi.fn(),
-    registerCli: vi.fn(),
-  };
-}
+import { createMockApi, createMockConfig } from './helpers/mock-factory.js';
 
 // ─── Workflow Commands ──────────────────────────────────────
 describe('registerWorkflowCommands', () => {
@@ -99,7 +71,7 @@ describe('registerWorkflowCommands', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApi = createMockApi();
+    mockApi = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
   });
 
   it('registers 3 commands (ultrawork, plan, start_work)', () => {
@@ -181,7 +153,7 @@ describe('registerRalphCommands', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApi = createMockApi();
+    mockApi = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
   });
 
   it('registers 3 commands (ralph_loop, ralph_stop, omoc_status)', () => {
@@ -247,7 +219,7 @@ describe('registerStatusCommands', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApi = createMockApi();
+    mockApi = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
   });
 
   it('registers omoc_health and omoc_config commands', () => {
@@ -288,9 +260,12 @@ describe('registerStatusCommands', () => {
 
   it('omoc_config masks sensitive values', () => {
     const apiWithSensitiveConfig = createMockApi({
-      api_token: 'token-value',
-      service_secret: 'secret-value',
-      api_key: 'key-value',
+      config: {
+        ...createMockConfig({ todo_enforcer_enabled: true }),
+        api_token: 'token-value',
+        service_secret: 'secret-value',
+        api_key: 'key-value',
+      } as any,
     });
     registerStatusCommands(apiWithSensitiveConfig);
     const configCall = apiWithSensitiveConfig.registerCommand.mock.calls.find((c: any) => c[0].name === 'omoc_config');
@@ -301,5 +276,28 @@ describe('registerStatusCommands', () => {
     expect(result.text).toContain('"api_token": "***"');
     expect(result.text).toContain('"service_secret": "***"');
     expect(result.text).toContain('"api_key": "***"');
+  });
+
+  it('omoc_config masks uppercase, camelCase, and secret keys while preserving normal fields', () => {
+    const apiFromFactory = createMockApi({
+      config: {
+        ...createMockApi().config,
+        API_KEY: 'secret123',
+        apiToken: 'token456',
+        SECRET_VALUE: 'hidden',
+        normalField: 'visible',
+      } as any,
+    });
+    registerStatusCommands(apiFromFactory);
+    const configCall = (apiFromFactory.registerCommand as ReturnType<typeof vi.fn>).mock.calls.find((c: any) => c[0].name === 'omoc_config');
+    expect(configCall).toBeDefined();
+    const handler = configCall![0].handler;
+
+    const result = handler({});
+
+    expect(result.text).toContain('"API_KEY": "***"');
+    expect(result.text).toContain('"apiToken": "***"');
+    expect(result.text).toContain('"SECRET_VALUE": "***"');
+    expect(result.text).toContain('"normalField": "visible"');
   });
 });
