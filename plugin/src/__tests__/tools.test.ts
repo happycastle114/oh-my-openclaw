@@ -30,45 +30,24 @@ vi.mock('../utils/config.js', () => ({
 }));
 
 import { execSync } from 'child_process';
+import * as childProcess from 'child_process';
 import { promises as fs } from 'fs';
 import { registerDelegateTool } from '../tools/task-delegation.js';
 import { registerLookAtTool } from '../tools/look-at.js';
 import { registerCheckpointTool } from '../tools/checkpoint.js';
 import { readState, writeState, ensureDir } from '../utils/state.js';
+import { createMockApi, createMockConfig } from './helpers/mock-factory.js';
 
-function createMockApi(configOverrides = {}): any {
-  return {
-    config: {
-      max_ralph_iterations: 10,
-      todo_enforcer_enabled: true,
-      todo_enforcer_cooldown_ms: 2000,
-      todo_enforcer_max_failures: 5,
-      comment_checker_enabled: true,
-      notepad_dir: 'workspace/notepads',
-      plans_dir: 'workspace/plans',
-      checkpoint_dir: '/tmp/test-checkpoints',
-      tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
-      model_routing: undefined,
-      ...configOverrides,
-    },
-    logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-    registerHook: vi.fn(),
-    registerTool: vi.fn(),
-    registerCommand: vi.fn(),
-    registerService: vi.fn(),
-    registerGatewayMethod: vi.fn(),
-    registerCli: vi.fn(),
-  };
-}
+const createMockApiAny = createMockApi as (...args: any[]) => any;
 
 // ─── Delegate Tool Tests ────────────────────────────────────────────
 
 describe('registerDelegateTool', () => {
-  let mockApi: ReturnType<typeof createMockApi>;
+  let mockApi: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApi = createMockApi();
+    mockApi = createMockApiAny();
   });
 
   it("registers with name 'omoc_delegate' and optional=true", () => {
@@ -96,8 +75,8 @@ describe('registerDelegateTool', () => {
   });
 
   it('uses custom model from config.model_routing', async () => {
-    const customApi = createMockApi({
-      model_routing: { quick: { model: 'custom-model-v1', alternatives: ['fallback-1'] } },
+    const customApi = createMockApiAny({
+      config: createMockConfig({ model_routing: { quick: { model: 'custom-model-v1', alternatives: ['fallback-1'] } } }),
     });
     registerDelegateTool(customApi);
     const toolConfig = customApi.registerTool.mock.calls[0][0];
@@ -133,13 +112,15 @@ describe('registerDelegateTool', () => {
   });
 
   it('includes fallback suggestion text when alternatives exist', async () => {
-    const customApi = createMockApi({
-      model_routing: {
-        deep: {
-          model: 'custom-deep-model',
-          alternatives: ['fallback-a', 'fallback-b'],
+    const customApi = createMockApiAny({
+      config: createMockConfig({
+        model_routing: {
+          deep: {
+            model: 'custom-deep-model',
+            alternatives: ['fallback-a', 'fallback-b'],
+          },
         },
-      },
+      }),
     });
     registerDelegateTool(customApi);
     const toolConfig = customApi.registerTool.mock.calls[0][0];
@@ -181,11 +162,11 @@ describe('registerDelegateTool', () => {
 // ─── Look-At Tool Tests ─────────────────────────────────────────────
 
 describe('registerLookAtTool', () => {
-  let mockApi: ReturnType<typeof createMockApi>;
+  let mockApi: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApi = createMockApi();
+    mockApi = createMockApiAny();
   });
 
   it("registers with name 'omoc_look_at' and optional=true", () => {
@@ -249,16 +230,48 @@ describe('registerLookAtTool', () => {
     const cmdArg = mockedExecSync.mock.calls[0][0] as string;
     expect(cmdArg).toContain('/tmp/openclaw-tmux-sockets/openclaw.sock');
   });
+
+  it('passes file_path as execFileSync arg array without shell interpolation', async () => {
+    const mockApiFromFactory = createMockApiAny();
+
+    const mockedExecFileSync = vi.fn();
+    Object.defineProperty(childProcess, 'execFileSync', {
+      value: mockedExecFileSync,
+      configurable: true,
+    });
+
+    vi.mocked(fs.stat).mockResolvedValue({ size: 128 } as any);
+    vi.mocked(fs.readFile).mockResolvedValue('ok');
+    vi.mocked(fs.unlink).mockResolvedValue(undefined);
+
+    registerLookAtTool(mockApiFromFactory);
+    const toolConfig = mockApiFromFactory.registerTool.mock.calls[0][0];
+
+    const maliciousPath = "report.pdf; rm -rf / $(whoami)";
+    await toolConfig.execute({
+      file_path: maliciousPath,
+      goal: 'security regression',
+    });
+
+    expect(mockedExecFileSync).toHaveBeenCalled();
+    const firstCall = mockedExecFileSync.mock.calls[0];
+    expect(firstCall[0]).toBe('tmux');
+    expect(Array.isArray(firstCall[1])).toBe(true);
+    expect(firstCall[1]).toContain('-l');
+    expect(firstCall[1]).toContain('--');
+    expect(firstCall[1][firstCall[1].length - 1]).toContain(maliciousPath);
+    expect(firstCall[1][firstCall[1].length - 1]).toContain("-f 'report.pdf; rm -rf / $(whoami)'");
+  });
 });
 
 // ─── Checkpoint Tool Tests ──────────────────────────────────────────
 
 describe('registerCheckpointTool', () => {
-  let mockApi: ReturnType<typeof createMockApi>;
+  let mockApi: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockApi = createMockApi();
+    mockApi = createMockApiAny({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
   });
 
   it("registers with name 'omoc_checkpoint' and optional=true", () => {
@@ -313,6 +326,57 @@ describe('registerCheckpointTool', () => {
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
 
     const result = await toolConfig.execute({ action: 'load' });
+
+    expect(result.content[0].text).toBe('No checkpoints found');
+  });
+
+  it('load returns error when most recent checkpoint is corrupted', async () => {
+    const factoryApi = createMockApiAny({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
+    vi.mocked(ensureDir).mockResolvedValue(undefined);
+    vi.mocked(fs.readdir).mockResolvedValue(['checkpoint-999.json'] as any);
+    vi.mocked(readState).mockResolvedValue({
+      ok: false,
+      error: 'corrupted',
+      message: 'Malformed JSON in /tmp/test-checkpoints/checkpoint-999.json',
+    });
+
+    registerCheckpointTool(factoryApi);
+    const toolConfig = factoryApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute({ action: 'load' });
+
+    expect(result.content[0].text).toContain('Error: Failed to load checkpoint checkpoint-999.json');
+    expect(result.content[0].text).toContain('Malformed JSON');
+  });
+
+  it('load handles missing checkpoint file by returning tool error', async () => {
+    const factoryApi = createMockApiAny({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
+    vi.mocked(ensureDir).mockResolvedValue(undefined);
+    vi.mocked(fs.readdir).mockResolvedValue(['checkpoint-111.json'] as any);
+    vi.mocked(readState).mockResolvedValue({
+      ok: false,
+      error: 'not_found',
+      message: 'File not found: /tmp/test-checkpoints/checkpoint-111.json',
+    });
+
+    registerCheckpointTool(factoryApi);
+    const toolConfig = factoryApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute({ action: 'load' });
+
+    expect(result.content[0].text).toContain('Error: Failed to load checkpoint checkpoint-111.json');
+    expect(result.content[0].text).toContain('File not found');
+  });
+
+  it('list handles missing directory gracefully with empty result message', async () => {
+    const factoryApi = createMockApiAny({ config: createMockConfig({ checkpoint_dir: '/tmp/test-checkpoints' }) });
+    vi.mocked(ensureDir).mockResolvedValue(undefined);
+    vi.mocked(fs.readdir).mockResolvedValue([] as any);
+
+    registerCheckpointTool(factoryApi);
+    const toolConfig = factoryApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute({ action: 'list' });
 
     expect(result.content[0].text).toBe('No checkpoints found');
   });

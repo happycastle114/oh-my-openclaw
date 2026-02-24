@@ -34,9 +34,10 @@ When the user invokes `/ultrawork [task description]` or ultrawork mode is activ
 ```
 5. For each step in the plan:
    a. Mark step as in_progress in todo list
-   b. Delegate coding execution to worker sessions:
-      - sessions_spawn(task=..., agentId="omoc_sisyphus", model=..., label=...)
-      - Use agentId to specify specialized agents if needed (omoc_oracle, omoc_explore, etc.)
+   b. Delegate coding execution via omoc_delegate:
+       - omoc_delegate(task_description=..., category="deep")
+       - Category auto-selects the right agent (omoc_hephaestus for deep, omoc_sisyphus for quick, etc.)
+       - Override with agent_id if needed: omoc_delegate(..., agent_id="omoc_oracle")
    c. When sub-agent completion notification is received, immediately:
       - Check the results (do NOT stop!)
       - Verify against success criteria

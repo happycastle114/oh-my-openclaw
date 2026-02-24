@@ -64,7 +64,8 @@ function commandExists(cmd: string): boolean {
   try {
     execSync(`command -v ${cmd}`, { stdio: 'ignore' });
     return true;
-  } catch {
+  } catch (error) {
+    // command not found — expected for optional tools
     return false;
   }
 }
@@ -90,7 +91,8 @@ function isSymlink(p: string): boolean {
   try {
     const lstat = lstatSync(p);
     return lstat.isSymbolicLink();
-  } catch {
+  } catch (error) {
+    // path does not exist or is not accessible — expected for missing files
     return false;
   }
 }

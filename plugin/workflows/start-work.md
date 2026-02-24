@@ -48,18 +48,17 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
    | ultrabrain | oracle | claude-opus-4-5-thinking |
    | visual-engineering | sisyphus-junior | claude-opus-4-6-thinking |
 
-   c. **Delegate the task** via `sessions_spawn`:
+   c. **Delegate the task** via `omoc_delegate`:
    ```
-   sessions_spawn(
-     task="7-element prompt (TASK/OUTCOME/SKILLS/TOOLS/MUST DO/MUST NOT/CONTEXT)",
-     agentId="omoc_sisyphus",  # or a suitable specialized agent
-     model="...",
-     label="task-N-name"
+   omoc_delegate(
+     task_description="7-element prompt (TASK/OUTCOME/SKILLS/TOOLS/MUST DO/MUST NOT/CONTEXT)",
+     category="deep"  # auto-selects agent + model
    )
+   # → Execute the returned sessions_spawn instruction immediately
    ```
 
    c-1. **Mandatory execution path for coding tasks**
-   - Use `sessions_spawn` with `agentId` for worker execution
+   - Use `omoc_delegate` for all delegation — it selects the right agent automatically
    - For implementation-heavy tasks, route to OmO via tmux orchestration stack
    - Require execution evidence (changed files, test/build outputs) before marking done
 
@@ -74,7 +73,7 @@ Execute an approved plan by delegating tasks to appropriate worker agents, track
 
 4. **Handle parallel tasks**
    - Tasks with no mutual dependencies can run in parallel
-   - Use multiple `sessions_spawn` simultaneously (identify each with a different `label`)
+   - Use multiple `omoc_delegate` calls simultaneously (with `background=true`)
    - Collect and verify results immediately upon each completion notification
    - After all parallel tasks complete, start dependent tasks immediately
 

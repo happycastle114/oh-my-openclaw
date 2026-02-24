@@ -1,7 +1,5 @@
-// Constants
-export const ABSOLUTE_MAX_RALPH_ITERATIONS = 100;
-export const TOOL_PREFIX = 'omoc_';
-export const PLUGIN_ID = 'oh-my-openclaw';
+// Re-export constants from constants.ts for backward compatibility
+export { PLUGIN_ID, TOOL_PREFIX, ABSOLUTE_MAX_RALPH_ITERATIONS, LOG_PREFIX, READ_ONLY_DENY } from './constants.js';
 
 // PluginConfig interface
 export interface PluginConfig {
@@ -42,38 +40,12 @@ export interface CheckpointData {
   timestamp: string;
 }
 
-// TodoItem interface
-export interface TodoItem {
-  id: string;
-  content: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  priority: string;
-}
-
 // CommentViolation interface
 export interface CommentViolation {
   file: string;
   line: number;
   content: string;
   reason: string;
-}
-
-// DelegationParams interface
-export interface DelegationParams {
-  task: string;
-  category: string;
-  agentId?: string;
-  skills?: string[];
-  context?: string;
-}
-
-// CategoryConfig interface
-export interface CategoryConfig {
-  model: string;
-  description: string;
-  agents?: string[];
-  alternatives?: string[];
-  tool?: string;
 }
 
 // Hook/Tool/Command/Service registration types

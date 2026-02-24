@@ -1,25 +1,16 @@
 import { OmocPluginApi } from '../types.js';
+import { LOG_PREFIX } from '../constants.js';
 import { getConfig } from '../utils/config.js';
 import { contextCollector } from '../features/context-collector.js';
+import { ORCHESTRATOR_IDS, WORKER_IDS } from '../agents/agent-ids.js';
 
-export type AgentRole = 'orchestrator' | 'worker' | 'lightweight';
-
-const ORCHESTRATOR_IDS = new Set([
-  'omoc_prometheus',
-  'omoc_atlas',
-]);
-
-const WORKER_IDS = new Set([
-  'omoc_sisyphus',
-  'omoc_hephaestus',
-  'omoc_frontend',
-]);
+export type AgentRole = 'orchestrator' | 'worker' | 'unknown';
 
 export function classifyAgentRole(agentId?: string): AgentRole {
   if (!agentId) return 'orchestrator';
   if (ORCHESTRATOR_IDS.has(agentId)) return 'orchestrator';
   if (WORKER_IDS.has(agentId)) return 'worker';
-  return 'lightweight';
+  return 'unknown';
 }
 
 const ORCHESTRATOR_DIRECTIVE = `[SYSTEM REMINDER - TODO CONTINUATION]
@@ -41,12 +32,14 @@ Complete your assigned task, return the result, then stop.
 const DIRECTIVES: Record<AgentRole, string | null> = {
   orchestrator: ORCHESTRATOR_DIRECTIVE,
   worker: WORKER_DIRECTIVE,
-  lightweight: null,
+  unknown: null,
 };
 
 interface AgentBootstrapEvent {
   context: {
     agentId?: string;
+    sessionKey?: string;
+    sessionId?: string;
   };
 }
 
@@ -70,7 +63,7 @@ export function registerTodoEnforcer(api: OmocPluginApi): void {
 
       const role = classifyAgentRole(event.context.agentId);
       const directive = DIRECTIVES[role];
-      const sessionKey = event.context.agentId || 'default';
+      const sessionKey = event.context.sessionKey ?? event.context.sessionId ?? event.context.agentId ?? 'default';
 
       if (!directive) {
         return;
@@ -82,10 +75,11 @@ export function registerTodoEnforcer(api: OmocPluginApi): void {
           content: directive,
           priority: 'normal',
           source: 'todo-enforcer',
+          oneShot: true,
         });
-        api.logger.info(`[omoc] Todo enforcer context registered (role: ${role})`);
-      } catch (err) {
-        api.logger.error('[omoc] Todo enforcer context registration failed:', err);
+         api.logger.info(`${LOG_PREFIX} Todo enforcer context registered (role: ${role})`);
+       } catch (err) {
+         api.logger.error(`${LOG_PREFIX} Todo enforcer context registration failed:`, err);
       }
     },
     {

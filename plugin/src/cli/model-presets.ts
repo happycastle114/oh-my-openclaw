@@ -1,3 +1,5 @@
+import { AGENT_TIER_MAP } from '../agents/agent-ids.js';
+
 export type ModelTier = 'planning' | 'worker' | 'orchestrator' | 'lightweight' | 'visual';
 
 export type ModelConfig = {
@@ -31,19 +33,7 @@ export const PROVIDER_PRESETS: Record<string, ProviderPreset> = {
   },
 };
 
-export const AGENT_TIER_MAP: Record<string, ModelTier> = {
-  omoc_prometheus: 'planning',
-  omoc_oracle: 'planning',
-  omoc_metis: 'planning',
-  omoc_momus: 'planning',
-  omoc_sisyphus: 'worker',
-  omoc_hephaestus: 'worker',
-  omoc_atlas: 'orchestrator',
-  omoc_explore: 'lightweight',
-  omoc_librarian: 'lightweight',
-  omoc_looker: 'visual',
-  omoc_frontend: 'visual',
-};
+export { AGENT_TIER_MAP };
 
 export const PROVIDER_LABELS: Record<string, string> = {
   anthropic: 'Anthropic (Claude)',

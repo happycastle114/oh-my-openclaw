@@ -1,4 +1,4 @@
-import { OmocPluginApi, RalphLoopState } from '../types.js';
+import { OmocPluginApi } from '../types.js';
 import { startLoop, stopLoop, getStatus } from '../services/ralph-loop.js';
 import { getMessageCount } from '../hooks/message-monitor.js';
 import { getConfig } from '../utils/config.js';

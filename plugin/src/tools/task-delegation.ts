@@ -1,8 +1,9 @@
 import { Type, Static } from '@sinclair/typebox';
 import { OmocPluginApi, TOOL_PREFIX } from '../types.js';
 import { isValidCategory } from '../utils/validation.js';
-import { type Category } from '../constants.js';
+import { type Category, LOG_PREFIX } from '../constants.js';
 import { getConfig } from '../utils/config.js';
+import { toolResponse, toolError } from '../utils/helpers.js';
 
 const DEFAULT_CATEGORY_MODELS: Record<Category, string> = {
   quick: 'claude-sonnet-4-6',
@@ -14,6 +15,19 @@ const DEFAULT_CATEGORY_MODELS: Record<Category, string> = {
   'unspecified-low': 'claude-sonnet-4-6',
   'unspecified-high': 'claude-opus-4-6-thinking',
   writing: 'claude-sonnet-4-6',
+};
+
+/** Maps each category to its best-fit sub-agent persona */
+const DEFAULT_CATEGORY_AGENTS: Record<Category, string> = {
+  quick: 'omoc_sisyphus',
+  deep: 'omoc_hephaestus',
+  ultrabrain: 'omoc_oracle',
+  'visual-engineering': 'omoc_frontend',
+  multimodal: 'omoc_looker',
+  artistry: 'omoc_hephaestus',
+  'unspecified-low': 'omoc_sisyphus',
+  'unspecified-high': 'omoc_hephaestus',
+  writing: 'omoc_sisyphus',
 };
 
 const DelegateParamsSchema = Type.Object({
@@ -44,57 +58,31 @@ export function registerDelegateTool(api: OmocPluginApi) {
       const validCategories = Object.keys(DEFAULT_CATEGORY_MODELS);
 
       if (!params.task_description?.trim()) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ error: 'Task description is required and cannot be empty' }, null, 2),
-            },
-          ],
-        };
-      }
+         return toolError('Task description is required and cannot be empty');
+       }
 
       if (params.task_description.length > 10000) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ error: 'Task description too long (max 10000 chars)' }, null, 2),
-            },
-          ],
-        };
-      }
+         return toolError('Task description too long (max 10000 chars)');
+       }
 
-      if (!isValidCategory(params.category)) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(
-                {
-                  error: `Invalid category: ${params.category}`,
-                  valid_categories: validCategories,
-                },
-                null,
-                2,
-              ),
-            },
-          ],
-        };
-      }
+       if (!isValidCategory(params.category)) {
+         return toolError(`Invalid category: ${params.category}. Valid: ${validCategories.join(', ')}`);
+       }
 
-      const { model, alternatives } = getModelForCategory(params.category as Category, api);
+      const category = params.category as Category;
+      const { model, alternatives } = getModelForCategory(category, api);
+      const agentId = params.agent_id || DEFAULT_CATEGORY_AGENTS[category];
 
-      api.logger.info('[omoc] Delegating task:', { category: params.category, model });
+       api.logger.info(`${LOG_PREFIX} Delegating task:`, { category, model, agentId });
 
       const instruction = [
-        `Category "${params.category}" → model "${model}"`,
+        `Category "${category}" → agent "${agentId}" → model "${model}"`,
         '',
         '⚡ NOW CALL sessions_spawn with these parameters:',
         `  task: "${params.task_description}"`,
         `  mode: "run"`,
         `  model: "${model}"`,
-        params.agent_id ? `  agentId: "${params.agent_id}"` : '',
+        `  agentId: "${agentId}"`,
         alternatives?.length ? `  fallback_models: ${JSON.stringify(alternatives)}` : '',
         alternatives?.length ? `  If "${model}" is unavailable, try: ${alternatives.join(', ')}` : '',
         params.background ? '  (background execution — results will arrive via push notification)' : '',
@@ -107,14 +95,7 @@ export function registerDelegateTool(api: OmocPluginApi) {
         '  3. Proceed to next task — do NOT stop',
       ].filter(Boolean).join('\n');
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: instruction,
-          },
-        ],
-      };
+       return toolResponse(instruction);
     },
     optional: true,
   });

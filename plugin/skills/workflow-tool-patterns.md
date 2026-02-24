@@ -31,7 +31,7 @@ Based on OmO's `src/tools/` structure, standardize tool patterns that are practi
 | `file-read/write/edit`    | File manipulation            | `read`, `write`, `edit`, `apply_patch` (`group:fs`)                |
 | `web-search`              | Web search              | `web_search`, `web_fetch` (`group:web`)                            |
 | `memory`                  | Knowledge accumulation            | `memory_search`, `memory_get` (`group:memory`)                     |
-| `delegation`              | Sub-agent delegation    | `sessions_spawn`(`task`, `agentId`, `model`)                       |
+| `delegation`              | Sub-agent delegation    | `omoc_delegate`(`task_description`, `category`) → `sessions_spawn` |
 
 ## OpenClaw Tool Groups Summary
 
@@ -56,7 +56,7 @@ Based on OmO's `src/tools/` structure, standardize tool patterns that are practi
 
 1. Before changes, assess impact with `read` + `exec`(grep)
 2. Make modifications in small units with `edit`/`apply_patch`
-3. When needed, delegate to specialist agents with `sessions_spawn`
+3. When needed, delegate to specialist agents with `omoc_delegate` (never call `sessions_spawn` directly)
 
 ### 3) Verification Phase
 
