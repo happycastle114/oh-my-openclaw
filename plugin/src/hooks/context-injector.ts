@@ -26,7 +26,8 @@ export function registerContextInjector(api: OmocPluginApi): void {
         return event;
       }
 
-      event.prependContext = collectedContext;
+      const existing = event.prependContext || '';
+      event.prependContext = existing ? `${existing}\n\n${collectedContext}` : collectedContext;
       api.logger.info(`[omoc] Context injected: ${entryCount} entries for ${sessionKey}`);
 
       return event;

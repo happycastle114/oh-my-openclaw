@@ -32,8 +32,8 @@ export function registerMessageMonitor(api: OmocPluginApi) {
         messageCount: nextCount
       });
 
-      // Return undefined to not modify the message
-      return undefined;
+      // Return context unchanged to allow event propagation
+      return context;
     },
     {
       name: 'oh-my-openclaw.message-monitor',
@@ -48,7 +48,7 @@ export function registerMessageMonitor(api: OmocPluginApi) {
       const preview = content.substring(0, 100);
       const channelId = context?.channelId || 'unknown';
       api.logger.info('[omoc] Message received:', { preview, channelId });
-      return undefined;
+      return context;
     },
     {
       name: 'oh-my-openclaw.message-received-monitor',
