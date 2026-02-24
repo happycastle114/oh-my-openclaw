@@ -31,8 +31,13 @@ import {
   DEFAULT_PERSONA_ID,
   clearPersonaCache,
 } from '../agents/persona-prompts.js';
-import { registerPersonaInjector, resetPersonaInjectorState } from '../hooks/persona-injector.js';
+import {
+  registerPersonaInjector,
+  resetPersonaContextEntries,
+  resetPersonaInjectorState,
+} from '../hooks/persona-injector.js';
 import { registerPersonaCommands } from '../commands/persona-commands.js';
+import { contextCollector } from '../features/context-collector.js';
 
 function createMockApi(): any {
   return {
@@ -219,6 +224,8 @@ describe('persona-injector hook', () => {
     clearPersonaCache();
     resetPersonaState();
     resetPersonaInjectorState();
+    resetPersonaContextEntries();
+    contextCollector.clearAll();
     vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
     vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
   });
@@ -231,7 +238,7 @@ describe('persona-injector hook', () => {
     expect(api.registerHook.mock.calls[0][0]).toBe('agent:bootstrap');
   });
 
-  it('does not inject when no persona is active', () => {
+  it('does not register context when no persona is active', () => {
     const api = createMockApi();
     registerPersonaInjector(api);
 
@@ -239,24 +246,25 @@ describe('persona-injector hook', () => {
     const event = { context: { bootstrapFiles: [] } };
     handler(event);
 
-    expect(event.context.bootstrapFiles).toHaveLength(0);
+    expect(contextCollector.getEntries('default')).toHaveLength(0);
   });
 
-  it('injects persona prompt when persona is active', () => {
+  it('registers persona context when persona is active', () => {
     setActivePersona('omoc_atlas');
     const api = createMockApi();
     registerPersonaInjector(api);
 
     const handler = api.registerHook.mock.calls[0][1];
-    const event = { context: { bootstrapFiles: [] } };
+    const event = { context: { agentId: 'omoc_atlas', bootstrapFiles: [] } };
     handler(event);
 
-    expect(event.context.bootstrapFiles).toHaveLength(1);
-    expect(event.context.bootstrapFiles[0].path).toBe('omoc://persona/omoc_atlas');
-    expect(event.context.bootstrapFiles[0].content).toContain('Mock Persona Content');
+    const entries = contextCollector.getEntries('omoc_atlas');
+    expect(entries).toHaveLength(1);
+    expect(entries[0].id).toBe('persona/omoc_atlas');
+    expect(entries[0].content).toContain('Mock Persona Content');
   });
 
-  it('creates bootstrapFiles array if missing', () => {
+  it('uses default session key when agentId is missing', () => {
     setActivePersona('omoc_atlas');
     const api = createMockApi();
     registerPersonaInjector(api);
@@ -265,10 +273,10 @@ describe('persona-injector hook', () => {
     const event = { context: {} } as any;
     handler(event);
 
-    expect(event.context.bootstrapFiles).toHaveLength(1);
+    expect(contextCollector.getEntries('default')).toHaveLength(1);
   });
 
-  it('preserves existing bootstrap files', () => {
+  it('preserves existing bootstrap files without direct mutation', () => {
     setActivePersona('omoc_oracle');
     const api = createMockApi();
     registerPersonaInjector(api);
@@ -281,11 +289,12 @@ describe('persona-injector hook', () => {
     };
     handler(event);
 
-    expect(event.context.bootstrapFiles).toHaveLength(2);
+    expect(event.context.bootstrapFiles).toHaveLength(1);
     expect(event.context.bootstrapFiles[0]).toEqual({ path: 'existing', content: 'keep me' });
+    expect(contextCollector.getEntries('default')).toHaveLength(1);
   });
 
-  it('skips second injection for same persona (once-per-change)', () => {
+  it('skips second registration for same persona (once-per-change)', () => {
     setActivePersona('omoc_atlas');
     const api = createMockApi();
     registerPersonaInjector(api);
@@ -294,14 +303,14 @@ describe('persona-injector hook', () => {
 
     const event1 = { context: { bootstrapFiles: [] as any[] } };
     handler(event1);
-    expect(event1.context.bootstrapFiles).toHaveLength(1);
+    expect(contextCollector.getEntries('default')).toHaveLength(1);
 
     const event2 = { context: { bootstrapFiles: [] as any[] } };
     handler(event2);
-    expect(event2.context.bootstrapFiles).toHaveLength(0);
+    expect(contextCollector.getEntries('default')).toHaveLength(1);
   });
 
-  it('re-injects when persona changes', () => {
+  it('re-registers when persona changes', () => {
     setActivePersona('omoc_atlas');
     const api = createMockApi();
     registerPersonaInjector(api);
@@ -310,14 +319,14 @@ describe('persona-injector hook', () => {
 
     const event1 = { context: { bootstrapFiles: [] as any[] } };
     handler(event1);
-    expect(event1.context.bootstrapFiles).toHaveLength(1);
-    expect(event1.context.bootstrapFiles[0].path).toBe('omoc://persona/omoc_atlas');
+    expect(contextCollector.getEntries('default')).toHaveLength(1);
+    expect(contextCollector.getEntries('default')[0].id).toBe('persona/omoc_atlas');
 
     setActivePersona('omoc_oracle');
     const event2 = { context: { bootstrapFiles: [] as any[] } };
     handler(event2);
-    expect(event2.context.bootstrapFiles).toHaveLength(1);
-    expect(event2.context.bootstrapFiles[0].path).toBe('omoc://persona/omoc_oracle');
+    expect(contextCollector.getEntries('default')).toHaveLength(1);
+    expect(contextCollector.getEntries('default')[0].id).toBe('persona/omoc_oracle');
   });
 });
 
