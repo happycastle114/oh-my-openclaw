@@ -284,6 +284,41 @@ describe('persona-injector hook', () => {
     expect(event.context.bootstrapFiles).toHaveLength(2);
     expect(event.context.bootstrapFiles[0]).toEqual({ path: 'existing', content: 'keep me' });
   });
+
+  it('skips second injection for same persona (once-per-change)', () => {
+    setActivePersona('omoc_atlas');
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.registerHook.mock.calls[0][1];
+
+    const event1 = { context: { bootstrapFiles: [] as any[] } };
+    handler(event1);
+    expect(event1.context.bootstrapFiles).toHaveLength(1);
+
+    const event2 = { context: { bootstrapFiles: [] as any[] } };
+    handler(event2);
+    expect(event2.context.bootstrapFiles).toHaveLength(0);
+  });
+
+  it('re-injects when persona changes', () => {
+    setActivePersona('omoc_atlas');
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.registerHook.mock.calls[0][1];
+
+    const event1 = { context: { bootstrapFiles: [] as any[] } };
+    handler(event1);
+    expect(event1.context.bootstrapFiles).toHaveLength(1);
+    expect(event1.context.bootstrapFiles[0].path).toBe('omoc://persona/omoc_atlas');
+
+    setActivePersona('omoc_oracle');
+    const event2 = { context: { bootstrapFiles: [] as any[] } };
+    handler(event2);
+    expect(event2.context.bootstrapFiles).toHaveLength(1);
+    expect(event2.context.bootstrapFiles[0].path).toBe('omoc://persona/omoc_oracle');
+  });
 });
 
 describe('persona-commands (/omoc)', () => {

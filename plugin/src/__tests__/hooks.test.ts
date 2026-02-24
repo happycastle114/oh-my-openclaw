@@ -78,7 +78,7 @@ describe('todo-enforcer hook', () => {
 
     expect(event.context.bootstrapFiles).toHaveLength(1);
     expect(event.context.bootstrapFiles?.[0].path).toBe('omoc://todo-enforcer');
-    expect(api.logger.info).toHaveBeenCalledWith('[omoc] Todo enforcer directive injected');
+    expect(api.logger.info).toHaveBeenCalledWith('[omoc] Todo enforcer injected (role: orchestrator)');
   });
 
   it('does not inject when todo_enforcer_enabled=false', () => {
@@ -121,45 +121,76 @@ describe('todo-enforcer hook', () => {
     expect(event.context.bootstrapFiles?.[1].path).toBe('omoc://todo-enforcer');
   });
 
-  it('skips injection during cooldown period', () => {
-    const api = createMockApi({ todo_enforcer_enabled: true, todo_enforcer_cooldown_ms: 60000 });
-    resetEnforcerState();
+  it('skips injection for lightweight agents (explore, librarian, oracle)', () => {
+    const api = createMockApi({ todo_enforcer_enabled: true });
+    registerTodoEnforcer(api);
+
+    const handler = api.registerHook.mock.calls[0][1] as (event: { context: { agentId?: string; bootstrapFiles?: BootstrapFile[] } }) => void;
+
+    for (const agentId of ['omoc_explore', 'omoc_librarian', 'omoc_oracle', 'omoc_metis', 'omoc_momus', 'omoc_looker']) {
+      const event = { context: { agentId, bootstrapFiles: [] as BootstrapFile[] } };
+      handler(event);
+      expect(event.context.bootstrapFiles).toHaveLength(0);
+    }
+  });
+
+  it('injects orchestrator directive for atlas/prometheus', () => {
+    const api = createMockApi({ todo_enforcer_enabled: true });
+    registerTodoEnforcer(api);
+
+    const handler = api.registerHook.mock.calls[0][1] as (event: { context: { agentId?: string; bootstrapFiles?: BootstrapFile[] } }) => void;
+
+    const event = { context: { agentId: 'omoc_atlas', bootstrapFiles: [] as BootstrapFile[] } };
+    handler(event);
+    expect(event.context.bootstrapFiles).toHaveLength(1);
+    expect(event.context.bootstrapFiles[0].content).toContain('TODO CONTINUATION');
+    expect(event.context.bootstrapFiles[0].content).toContain('subagent completion');
+  });
+
+  it('injects worker directive for sisyphus/hephaestus', () => {
+    const api = createMockApi({ todo_enforcer_enabled: true });
+    registerTodoEnforcer(api);
+
+    const handler = api.registerHook.mock.calls[0][1] as (event: { context: { agentId?: string; bootstrapFiles?: BootstrapFile[] } }) => void;
+
+    const event = { context: { agentId: 'omoc_sisyphus', bootstrapFiles: [] as BootstrapFile[] } };
+    handler(event);
+    expect(event.context.bootstrapFiles).toHaveLength(1);
+    expect(event.context.bootstrapFiles[0].content).toContain('TASK COMPLETION');
+    expect(event.context.bootstrapFiles[0].content).not.toContain('subagent completion');
+  });
+
+  it('defaults to orchestrator when agentId is missing', () => {
+    const api = createMockApi({ todo_enforcer_enabled: true });
     registerTodoEnforcer(api);
 
     const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
+    const event: AgentBootstrapEvent = { context: { bootstrapFiles: [] } };
+    handler(event);
 
-    const event1: AgentBootstrapEvent = { context: { bootstrapFiles: [] } };
-    handler(event1);
-    expect(event1.context.bootstrapFiles).toHaveLength(1);
-
-    const event2: AgentBootstrapEvent = { context: { bootstrapFiles: [] } };
-    handler(event2);
-    expect(event2.context.bootstrapFiles).toHaveLength(0);
-    expect(api.logger.info).toHaveBeenCalledWith('[omoc] Todo enforcer skipped (cooldown)');
+    expect(event.context.bootstrapFiles).toHaveLength(1);
+    expect(event.context.bootstrapFiles?.[0].content).toContain('TODO CONTINUATION');
   });
 
-  it('allows injection when cooldown is 0', () => {
-    const api = createMockApi({ todo_enforcer_enabled: true, todo_enforcer_cooldown_ms: 0 });
-    resetEnforcerState();
+  it('anti-regurgitation clause is present in all directives', () => {
+    const api = createMockApi({ todo_enforcer_enabled: true });
     registerTodoEnforcer(api);
 
-    const handler = api.registerHook.mock.calls[0][1] as (event: AgentBootstrapEvent) => void;
+    const handler = api.registerHook.mock.calls[0][1] as (event: { context: { agentId?: string; bootstrapFiles?: BootstrapFile[] } }) => void;
 
-    const event1: AgentBootstrapEvent = { context: { bootstrapFiles: [] } };
-    handler(event1);
-    expect(event1.context.bootstrapFiles).toHaveLength(1);
+    const orchestratorEvent = { context: { agentId: 'omoc_atlas', bootstrapFiles: [] as BootstrapFile[] } };
+    handler(orchestratorEvent);
+    expect(orchestratorEvent.context.bootstrapFiles[0].content).toContain('Do NOT restate prior messages');
 
-    const event2: AgentBootstrapEvent = { context: { bootstrapFiles: [] } };
-    handler(event2);
-    expect(event2.context.bootstrapFiles).toHaveLength(1);
+    const workerEvent = { context: { agentId: 'omoc_sisyphus', bootstrapFiles: [] as BootstrapFile[] } };
+    handler(workerEvent);
+    expect(workerEvent.context.bootstrapFiles[0].content).toContain('Do NOT restate prior messages');
   });
 
-  it('resets state correctly', () => {
+  it('resetEnforcerState and getEnforcerState remain callable (API compat)', () => {
     resetEnforcerState();
     const state = getEnforcerState();
-    expect(state.lastInjectionTime).toBe(0);
-    expect(state.consecutiveFailures).toBe(0);
-    expect(state.disabledByFailures).toBe(false);
+    expect(state).toBeDefined();
   });
 });
 
