@@ -40,8 +40,11 @@ async function loadFromDisk(): Promise<void> {
   try {
     const content = (await readFile(stateFilePath, 'utf-8')).trim();
     activePersonaId = content || null;
-  } catch (error) {
-    console.warn('[omoc] Failed to load persona state from disk:', error);
+  } catch (error: any) {
+    // ENOENT is expected on first boot — no state file yet
+    if (error?.code !== 'ENOENT') {
+      console.warn('[omoc] Failed to load persona state from disk:', error);
+    }
     activePersonaId = null;
   }
   loaded = true;

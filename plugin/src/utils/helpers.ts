@@ -18,7 +18,6 @@ export function safeRegister(
 ): void {
   try {
      fn();
-     api.logger.info(`${LOG_PREFIX} ${category} registered: ${name}`);
    } catch (err) {
      api.logger.error(`${LOG_PREFIX} Failed to register ${category} ${name}:`, err);
    }

@@ -58,22 +58,15 @@ export function registerDelegateTool(api: OmocPluginApi) {
       const validCategories = Object.keys(DEFAULT_CATEGORY_MODELS);
 
       if (!params.task_description?.trim()) {
-         return toolResponse(JSON.stringify({ error: 'Task description is required and cannot be empty' }, null, 2));
+         return toolError('Task description is required and cannot be empty');
        }
 
       if (params.task_description.length > 10000) {
-         return toolResponse(JSON.stringify({ error: 'Task description too long (max 10000 chars)' }, null, 2));
+         return toolError('Task description too long (max 10000 chars)');
        }
 
        if (!isValidCategory(params.category)) {
-         return toolResponse(JSON.stringify(
-           {
-             error: `Invalid category: ${params.category}`,
-             valid_categories: validCategories,
-           },
-           null,
-           2,
-         ));
+         return toolError(`Invalid category: ${params.category}. Valid: ${validCategories.join(', ')}`);
        }
 
       const category = params.category as Category;
