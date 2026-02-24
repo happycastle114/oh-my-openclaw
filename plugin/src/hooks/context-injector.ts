@@ -1,5 +1,6 @@
 import { contextCollector } from '../features/context-collector.js';
 import { OmocPluginApi, TypedHookContext, BeforePromptBuildEvent, BeforePromptBuildResult } from '../types.js';
+import { LOG_PREFIX } from '../constants.js';
 
 export function registerContextInjector(api: OmocPluginApi): void {
   // Use the typed hook system (api.on) instead of api.registerHook.
@@ -21,7 +22,7 @@ export function registerContextInjector(api: OmocPluginApi): void {
         return;
       }
 
-      api.logger.info(`[omoc] Context injected via before_prompt_build: ${entryCount} entries for ${sessionKey}`);
+       api.logger.info(`${LOG_PREFIX} Context injected via before_prompt_build: ${entryCount} entries for ${sessionKey}`);
 
       return {
         prependContext: collectedContext,

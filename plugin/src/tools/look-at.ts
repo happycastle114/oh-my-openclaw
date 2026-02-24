@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 
 import { OmocPluginApi, TOOL_PREFIX } from '../types.js';
+import { LOG_PREFIX } from '../constants.js';
 import { getConfig } from '../utils/config.js';
 import { toolResponse, toolError } from '../utils/helpers.js';
 
@@ -86,38 +87,38 @@ export function registerLookAtTool(api: OmocPluginApi) {
             TMUX_SEND_TIMEOUT_MS,
           );
 
-          const startTime = Date.now();
-          while (Date.now() - startTime < GEMINI_TIMEOUT_MS) {
-            try {
-              const stat = await fs.stat(tempFile);
-              if (stat.size > 0) {
-               const result = await fs.readFile(tempFile, 'utf-8');
-                 await fs.unlink(tempFile);
-                 return toolResponse(result);
-              }
-            } catch {
-              /* file not ready yet, continue polling */
-            }
+           const startTime = Date.now();
+           while (Date.now() - startTime < GEMINI_TIMEOUT_MS) {
+             try {
+               const stat = await fs.stat(tempFile);
+               if (stat.size > 0) {
+                const result = await fs.readFile(tempFile, 'utf-8');
+                  await fs.unlink(tempFile);
+                  return toolResponse(result);
+               }
+             } catch {
+               /* file not yet written by Gemini CLI — continue polling */
+             }
 
             await new Promise((resolve) => setTimeout(resolve, 2000));
           }
 
-          try {
-            await fs.unlink(tempFile);
-          } catch (cleanupErr) {
-            api.logger.warn('[omoc] Failed to clean up temp file:', tempFile, cleanupErr);
-          }
+           try {
+             await fs.unlink(tempFile);
+           } catch (cleanupErr) {
+             api.logger.warn(`${LOG_PREFIX} Failed to clean up temp file:`, tempFile, cleanupErr);
+           }
 
-           return toolError(`Gemini CLI timed out after ${GEMINI_TIMEOUT_MS / 1000} seconds`);
-        } catch (error) {
-          try {
-            await fs.unlink(tempFile);
-          } catch (cleanupErr) {
-            api.logger.warn('[omoc] Failed to clean up temp file:', tempFile, cleanupErr);
-          }
+            return toolError(`Gemini CLI timed out after ${GEMINI_TIMEOUT_MS / 1000} seconds`);
+         } catch (error) {
+           try {
+             await fs.unlink(tempFile);
+           } catch (cleanupErr) {
+             api.logger.warn(`${LOG_PREFIX} Failed to clean up temp file:`, tempFile, cleanupErr);
+           }
 
-           const message = error instanceof Error ? error.message : String(error);
-           return toolError(message);
+            const message = error instanceof Error ? error.message : String(error);
+            return toolError(message);
         }
       });
     },

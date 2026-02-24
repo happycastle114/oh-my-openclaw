@@ -1,4 +1,5 @@
 import { OmocPluginApi, ToolResult } from '../types.js';
+import { LOG_PREFIX } from '../constants.js';
 
 /**
  * Wraps a registration function in try/catch with logging.
@@ -16,11 +17,11 @@ export function safeRegister(
   fn: () => void,
 ): void {
   try {
-    fn();
-    api.logger.info(`[omoc] ${category} registered: ${name}`);
-  } catch (err) {
-    api.logger.error(`[omoc] Failed to register ${category} ${name}:`, err);
-  }
+     fn();
+     api.logger.info(`${LOG_PREFIX} ${category} registered: ${name}`);
+   } catch (err) {
+     api.logger.error(`${LOG_PREFIX} Failed to register ${category} ${name}:`, err);
+   }
 }
 
 /**

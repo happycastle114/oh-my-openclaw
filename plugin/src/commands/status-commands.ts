@@ -1,4 +1,5 @@
 import { OmocPluginApi, PLUGIN_ID } from '../types.js';
+import { LOG_PREFIX } from '../constants.js';
 import { VERSION } from '../version.js';
 import { getConfig } from '../utils/config.js';
 import { getStatus as getRalphStatus } from '../services/ralph-loop.js';
@@ -32,14 +33,17 @@ export function registerStatusCommands(api: OmocPluginApi) {
     handler: () => {
       const config = getConfig(api);
 
-      const safeConfig: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(config)) {
-        if (typeof value === 'string' && (key.includes('token') || key.includes('secret') || key.includes('key'))) {
-          safeConfig[key] = '***';
-        } else {
-          safeConfig[key] = value;
-        }
-      }
+       const safeConfig: Record<string, unknown> = {};
+       for (const [key, value] of Object.entries(config)) {
+         if (typeof value === 'string') {
+           const lowerKey = key.toLowerCase();
+           const isSensitive = lowerKey.includes('token') || lowerKey.includes('key') || 
+                               lowerKey.includes('secret') || lowerKey.includes('password');
+           safeConfig[key] = isSensitive ? '***' : value;
+         } else {
+           safeConfig[key] = value;
+         }
+       }
 
       return {
         text: `# ${PLUGIN_ID} Configuration\n\`\`\`json\n${JSON.stringify(safeConfig, null, 2)}\n\`\`\``,

@@ -1,7 +1,7 @@
 import { Type, Static } from '@sinclair/typebox';
 import { OmocPluginApi, TOOL_PREFIX } from '../types.js';
 import { isValidCategory } from '../utils/validation.js';
-import { type Category } from '../constants.js';
+import { type Category, LOG_PREFIX } from '../constants.js';
 import { getConfig } from '../utils/config.js';
 import { toolResponse, toolError } from '../utils/helpers.js';
 
@@ -65,7 +65,7 @@ export function registerDelegateTool(api: OmocPluginApi) {
 
       const { model, alternatives } = getModelForCategory(params.category as Category, api);
 
-      api.logger.info('[omoc] Delegating task:', { category: params.category, model });
+       api.logger.info(`${LOG_PREFIX} Delegating task:`, { category: params.category, model });
 
       const instruction = [
         `Category "${params.category}" → model "${model}"`,

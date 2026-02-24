@@ -1,4 +1,5 @@
 import { OmocPluginApi } from '../types.js';
+import { LOG_PREFIX } from '../constants.js';
 import { getActivePersona, setActivePersonaId, resetPersonaState } from '../utils/persona-state.js';
 import { resolvePersonaId, listPersonas, DEFAULT_PERSONA_ID } from '../agents/persona-prompts.js';
 
@@ -13,9 +14,9 @@ export function registerPersonaCommands(api: OmocPluginApi) {
     description: 'OmOC mode — activate, switch, or list personas',
     acceptsArgs: true,
     handler: async (ctx: { args?: string }) => {
-      api.logger.info(`[omoc] /omoc command received — raw ctx.args: ${JSON.stringify(ctx.args)}, ctx keys: ${JSON.stringify(Object.keys(ctx))}`);
-      const args = (ctx.args ?? '').trim().toLowerCase();
-      api.logger.info(`[omoc] Parsed args: "${args}" (length: ${args.length})`);
+       api.logger.info(`${LOG_PREFIX} /omoc command received — raw ctx.args: ${JSON.stringify(ctx.args)}, ctx keys: ${JSON.stringify(Object.keys(ctx))}`);
+       const args = (ctx.args ?? '').trim().toLowerCase();
+       api.logger.info(`${LOG_PREFIX} Parsed args: "${args}" (length: ${args.length})`);
 
       if (!args) {
         const previousId = await getActivePersona();

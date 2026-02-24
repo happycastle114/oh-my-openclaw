@@ -1,4 +1,5 @@
 import { OmocPluginApi } from '../types.js';
+import { LOG_PREFIX } from '../constants.js';
 import { getConfig } from '../utils/config.js';
 import { contextCollector } from '../features/context-collector.js';
 import { ORCHESTRATOR_IDS, WORKER_IDS } from '../agents/agent-ids.js';
@@ -76,9 +77,9 @@ export function registerTodoEnforcer(api: OmocPluginApi): void {
           source: 'todo-enforcer',
           oneShot: true,
         });
-        api.logger.info(`[omoc] Todo enforcer context registered (role: ${role})`);
-      } catch (err) {
-        api.logger.error('[omoc] Todo enforcer context registration failed:', err);
+         api.logger.info(`${LOG_PREFIX} Todo enforcer context registered (role: ${role})`);
+       } catch (err) {
+         api.logger.error(`${LOG_PREFIX} Todo enforcer context registration failed:`, err);
       }
     },
     {

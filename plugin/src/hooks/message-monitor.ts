@@ -1,10 +1,12 @@
 import { OmocPluginApi } from '../types.js';
+import { LOG_PREFIX } from '../constants.js';
 
 interface MessageContext {
   content?: string;
   channelId?: string;
 }
 
+const MAX_MESSAGE_COUNTS = 1000;
 const messageCounts = new Map<string, number>();
 
 /**
@@ -24,13 +26,21 @@ export function registerMessageMonitor(api: OmocPluginApi) {
       const nextCount = currentCount + 1;
       messageCounts.set(channelId, nextCount);
 
-      // Log the message event
-      api.logger.info('[omoc] Message sent:', {
-        preview,
-        channelId,
-        timestamp,
-        messageCount: nextCount
-      });
+      // Enforce max size limit with LRU eviction
+      if (messageCounts.size > MAX_MESSAGE_COUNTS) {
+        const oldestKey = messageCounts.keys().next().value;
+        if (oldestKey !== undefined) {
+          messageCounts.delete(oldestKey);
+        }
+      }
+
+       // Log the message event
+       api.logger.info(`${LOG_PREFIX} Message sent:`, {
+         preview,
+         channelId,
+         timestamp,
+         messageCount: nextCount
+       });
 
       // Return context unchanged to allow event propagation
       return context;
@@ -44,10 +54,10 @@ export function registerMessageMonitor(api: OmocPluginApi) {
   api.registerHook(
     'message:received',
     (context: MessageContext) => {
-      const content = context?.content || '';
-      const preview = content.substring(0, 100);
-      const channelId = context?.channelId || 'unknown';
-      api.logger.info('[omoc] Message received:', { preview, channelId });
+       const content = context?.content || '';
+       const preview = content.substring(0, 100);
+       const channelId = context?.channelId || 'unknown';
+       api.logger.info(`${LOG_PREFIX} Message received:`, { preview, channelId });
       return context;
     },
     {

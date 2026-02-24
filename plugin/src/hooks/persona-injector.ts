@@ -1,4 +1,5 @@
 import { OmocPluginApi, TypedHookContext, BeforePromptBuildEvent, BeforePromptBuildResult } from '../types.js';
+import { LOG_PREFIX } from '../constants.js';
 import { getActivePersona } from '../utils/persona-state.js';
 import { readPersonaPromptSync, resolvePersonaId } from '../agents/persona-prompts.js';
 
@@ -39,25 +40,25 @@ export function registerPersonaInjector(api: OmocPluginApi): void {
     async (_event: BeforePromptBuildEvent, ctx: TypedHookContext): Promise<BeforePromptBuildResult | void> => {
       const result = await resolveEffectivePersona(ctx);
 
-      if (!result) {
-        const manual = await getActivePersona();
-        api.logger.info(
-          `[omoc] Persona injector: no persona resolved (agentId=${ctx.agentId ?? 'none'}, manual=${manual ?? 'none'})`
-        );
-        return;
-      }
+       if (!result) {
+         const manual = await getActivePersona();
+         api.logger.info(
+           `${LOG_PREFIX} Persona injector: no persona resolved (agentId=${ctx.agentId ?? 'none'}, manual=${manual ?? 'none'})`
+         );
+         return;
+       }
 
-      const { personaId, source } = result;
+       const { personaId, source } = result;
 
-      try {
-        const content = readPersonaPromptSync(personaId);
-        api.logger.info(`[omoc] Persona injected via before_prompt_build: ${personaId} (${source}, agentId=${ctx.agentId ?? 'none'})`);
+       try {
+         const content = readPersonaPromptSync(personaId);
+         api.logger.info(`${LOG_PREFIX} Persona injected via before_prompt_build: ${personaId} (${source}, agentId=${ctx.agentId ?? 'none'})`);
 
-        return {
-          prependContext: content,
-        };
-      } catch (err) {
-        api.logger.error(`[omoc] Failed to inject persona ${personaId}:`, err);
+         return {
+           prependContext: content,
+         };
+       } catch (err) {
+         api.logger.error(`${LOG_PREFIX} Failed to inject persona ${personaId}:`, err);
         return;
       }
     },

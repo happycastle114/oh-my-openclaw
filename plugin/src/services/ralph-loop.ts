@@ -7,6 +7,7 @@ import {
   PLUGIN_ID,
   RalphLoopState,
 } from '../types.js';
+import { LOG_PREFIX } from '../constants.js';
 import { readState, writeState } from '../utils/state.js';
 import { clampIterations } from '../utils/validation.js';
 
@@ -113,27 +114,27 @@ export async function startLoop(
     startedAt: new Date().toISOString(),
   };
 
-  await saveStateToFile();
-  api.logger.info('[omoc] Ralph Loop started');
+   await saveStateToFile();
+   api.logger.info(`${LOG_PREFIX} Ralph Loop started`);
 
-  return {
-    success: true,
-    message: 'Ralph Loop started',
-    state: currentState,
-  };
-}
+   return {
+     success: true,
+     message: 'Ralph Loop started',
+     state: currentState,
+   };
+ }
 
-export async function stopLoop(): Promise<{ success: boolean; message: string; state: RalphLoopState }> {
-  return withStateLock(async () => {
-    const api = getApi();
+ export async function stopLoop(): Promise<{ success: boolean; message: string; state: RalphLoopState }> {
+   return withStateLock(async () => {
+     const api = getApi();
 
-    currentState = {
-      ...currentState,
-      active: false,
-    };
+     currentState = {
+       ...currentState,
+       active: false,
+     };
 
-    await saveStateToFile();
-    api.logger.info('[omoc] Ralph Loop stopped');
+     await saveStateToFile();
+     api.logger.info(`${LOG_PREFIX} Ralph Loop stopped`);
 
     return {
       success: true,
