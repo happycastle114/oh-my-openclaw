@@ -66,6 +66,14 @@ export function registerTodoEnforcer(api: OmocPluginApi): void {
         event.context.bootstrapFiles = [];
       }
 
+      const alreadyInjected = event.context.bootstrapFiles.some(
+        (f) => f.path === 'omoc://todo-enforcer'
+      );
+      if (alreadyInjected) {
+        api.logger.info('[omoc] Todo enforcer skipped (already present in bootstrapFiles)');
+        return;
+      }
+
       try {
         event.context.bootstrapFiles.push({
           path: 'omoc://todo-enforcer',

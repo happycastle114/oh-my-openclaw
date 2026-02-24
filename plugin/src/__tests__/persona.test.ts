@@ -31,7 +31,7 @@ import {
   DEFAULT_PERSONA_ID,
   clearPersonaCache,
 } from '../agents/persona-prompts.js';
-import { registerPersonaInjector } from '../hooks/persona-injector.js';
+import { registerPersonaInjector, resetPersonaInjectorState } from '../hooks/persona-injector.js';
 import { registerPersonaCommands } from '../commands/persona-commands.js';
 
 function createMockApi(): any {
@@ -218,6 +218,7 @@ describe('persona-injector hook', () => {
     vi.clearAllMocks();
     clearPersonaCache();
     resetPersonaState();
+    resetPersonaInjectorState();
     vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
     vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
   });
