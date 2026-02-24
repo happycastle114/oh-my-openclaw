@@ -3,7 +3,7 @@ import { PluginConfig, OmocPluginApi, ABSOLUTE_MAX_RALPH_ITERATIONS } from '../t
 export function getConfig(api: OmocPluginApi): PluginConfig {
   const defaults: PluginConfig = {
     max_ralph_iterations: 10,
-    todo_enforcer_enabled: true,
+    todo_enforcer_enabled: false,
     todo_enforcer_cooldown_ms: 2000,
     todo_enforcer_max_failures: 5,
     comment_checker_enabled: true,
