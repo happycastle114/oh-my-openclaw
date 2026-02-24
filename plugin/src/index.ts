@@ -1,6 +1,7 @@
 import { OmocPluginApi, PLUGIN_ID } from './types.js';
 import { VERSION } from './version.js';
 import { getConfig } from './utils/config.js';
+import { safeRegister } from './utils/helpers.js';
 import { registerTodoEnforcer } from './hooks/todo-enforcer.js';
 import { registerCommentChecker } from './hooks/comment-checker.js';
 import { registerMessageMonitor } from './hooks/message-monitor.js';
@@ -67,119 +68,91 @@ export default function register(api: OmocPluginApi) {
 
   const guarded = guardedApi(api, gen);
 
-  try {
+  safeRegister(api, 'todo-enforcer', 'hook', () => {
     registerTodoEnforcer(guarded);
     registry.hooks.push('todo-enforcer');
     api.logger.info(`[${PLUGIN_ID}] Todo Enforcer hook registered (enabled: ${config.todo_enforcer_enabled})`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Todo Enforcer:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'comment-checker', 'hook', () => {
     registerCommentChecker(guarded);
     registry.hooks.push('comment-checker');
     api.logger.info(`[${PLUGIN_ID}] Comment Checker hook registered (enabled: ${config.comment_checker_enabled})`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Comment Checker:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'message-monitor', 'hook', () => {
     registerMessageMonitor(guarded);
     registry.hooks.push('message-monitor', 'message-received-monitor');
     api.logger.info(`[${PLUGIN_ID}] Message Monitor hook registered`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Message Monitor:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'gateway-startup', 'hook', () => {
     registerStartupHook(guarded);
     registry.hooks.push('gateway-startup');
     api.logger.info(`[${PLUGIN_ID}] Gateway startup hook registered`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register startup hook:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'persona-injector', 'hook', () => {
     registerPersonaInjector(guarded);
     registry.hooks.push('persona-injector');
     api.logger.info(`[${PLUGIN_ID}] Persona injector hook registered`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Persona Injector:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'context-injector', 'hook', () => {
     registerContextInjector(guarded);
     registry.hooks.push('context-injector');
     api.logger.info(`[${PLUGIN_ID}] Context injector hook registered (before_prompt_build)`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Context Injector:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'ralph-loop', 'service', () => {
     registerRalphLoop(api);
     registry.services.push('ralph-loop');
     api.logger.info(`[${PLUGIN_ID}] Ralph Loop service registered`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Ralph Loop:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'omoc_delegate', 'tool', () => {
     registerDelegateTool(api);
     registry.tools.push('omoc_delegate');
     api.logger.info(`[${PLUGIN_ID}] Delegate tool registered`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Delegate tool:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'omoc_look_at', 'tool', () => {
     registerLookAtTool(api);
     registry.tools.push('omoc_look_at');
     api.logger.info(`[${PLUGIN_ID}] Look-At tool registered`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Look-At tool:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'omoc_checkpoint', 'tool', () => {
     registerCheckpointTool(api);
     registry.tools.push('omoc_checkpoint');
     api.logger.info(`[${PLUGIN_ID}] Checkpoint tool registered`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Checkpoint tool:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'workflow-commands', 'command', () => {
     registerWorkflowCommands(api);
     registry.commands.push('ultrawork', 'plan', 'start_work');
     api.logger.info(`[${PLUGIN_ID}] Workflow commands registered (ultrawork, plan, start_work)`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Workflow commands:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'ralph-commands', 'command', () => {
     registerRalphCommands(api);
     registry.commands.push('ralph_loop', 'ralph_stop', 'omoc_status');
     api.logger.info(`[${PLUGIN_ID}] Ralph commands registered (ralph_loop, ralph_stop, omoc_status)`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Ralph commands:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'status-commands', 'command', () => {
     registerStatusCommands(api);
     registry.commands.push('omoc_health', 'omoc_config');
     api.logger.info(`[${PLUGIN_ID}] Status commands registered (omoc_health, omoc_config)`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Status commands:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'persona-commands', 'command', () => {
     registerPersonaCommands(api);
     registry.commands.push('omoc');
     api.logger.info(`[${PLUGIN_ID}] Persona command registered (/omoc)`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register Persona commands:`, err);
-  }
+  });
 
-  try {
+  safeRegister(api, 'omoc-setup', 'cli', () => {
     api.registerCli((ctx) => {
       registerSetupCli({
         program: ctx.program as Parameters<typeof registerSetupCli>[0]['program'],
@@ -189,9 +162,7 @@ export default function register(api: OmocPluginApi) {
     }, { commands: ['omoc-setup'] });
     registry.cli.push('omoc-setup');
     api.logger.info(`[${PLUGIN_ID}] CLI command registered (omoc-setup)`);
-  } catch (err) {
-    api.logger.error(`[${PLUGIN_ID}] Failed to register CLI:`, err);
-  }
+  });
 
   api.registerGatewayMethod('oh-my-openclaw.status', () => {
     return {
