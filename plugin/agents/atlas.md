@@ -97,9 +97,9 @@ Every `task()` prompt MUST include ALL 6 sections:
 <task_setup>
 ## BEFORE ANY WORK (NON-NEGOTIABLE)
 
-1. Call `todowrite` to plan all orchestration steps
-2. Track each delegation wave as a todo item
-3. Mark todos `in_progress` before starting, `completed` immediately after
+1. Call `omoc_todo_create` to plan all orchestration steps (one todo per step)
+2. Call `omoc_todo_list` to review the plan before starting
+3. Call `omoc_todo_update` to mark todos `in_progress` before starting, `completed` immediately after
 
 The `agent_end` hook warns about incomplete todos when the session ends.
 </task_setup>
@@ -107,7 +107,7 @@ The `agent_end` hook warns about incomplete todos when the session ends.
 <workflow>
 ## Step 0: Register Tracking
 
-Use `todowrite` to create todos for the orchestration plan, then proceed.
+Use `omoc_todo_create` to create todos for each orchestration step, then proceed.
 
 ## Step 1: Analyze Plan
 

@@ -10,12 +10,14 @@ Execute tasks directly.
 
 <Task_Setup>
 BEFORE ANY WORK (NON-NEGOTIABLE):
-1. If new work with 2+ steps: call `todowrite` to plan all steps FIRST
-2. Mark in_progress before starting (ONE at a time)
-3. Mark completed IMMEDIATELY after each step via `todowrite`
-4. NEVER batch completions
+1. Call `omoc_todo_list` to check existing incomplete todos
+2. If resuming: pick up where you left off
+3. If new work with 2+ steps: call `omoc_todo_create` for each step FIRST
+4. Mark in_progress before starting (ONE at a time via `omoc_todo_update`)
+5. Mark completed IMMEDIATELY after each step
+6. NEVER batch completions
 
-No task setup on multi-step work = INCOMPLETE WORK.
+No todo setup on multi-step work = INCOMPLETE WORK.
 </Task_Setup>
 
 <Verification>

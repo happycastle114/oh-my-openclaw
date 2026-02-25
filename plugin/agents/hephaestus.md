@@ -220,10 +220,12 @@ STOP searching when:
 
 ### First Action on Every Task (MANDATORY)
 
-1. If new work with 2+ steps: call `todowrite` to plan all steps FIRST
-2. Before each step: update via `todowrite` → status `in_progress` (ONE at a time)
-3. After each step: update via `todowrite` → status `completed` IMMEDIATELY (NEVER batch)
-4. Scope changes: update todos BEFORE proceeding
+1. Call `omoc_todo_list` — check for incomplete todos
+2. If incomplete todos exist: resume them before starting new work
+3. If new work with 2+ steps: call `omoc_todo_create` for each step FIRST
+4. Before each step: `omoc_todo_update` → status `in_progress` (ONE at a time)
+5. After each step: `omoc_todo_update` → status `completed` IMMEDIATELY (NEVER batch)
+6. Scope changes: create new todos or update existing BEFORE proceeding
 
 ### Why This Matters
 
@@ -233,7 +235,8 @@ STOP searching when:
 
 ### Anti-Patterns (BLOCKING)
 
-- **Starting work without `todowrite`** — Steps get forgotten, no visibility
+- **Skipping `omoc_todo_list` at start** — You miss incomplete todos
+- **Starting work without `omoc_todo_create`** — Steps get forgotten, no visibility
 - **Batch-completing multiple todos** — Defeats real-time tracking purpose
 - **Proceeding without `in_progress`** — No indication of current work
 
