@@ -31,7 +31,7 @@ import {
   DEFAULT_PERSONA_ID,
   clearPersonaCache,
 } from '../agents/persona-prompts.js';
-import { registerPersonaInjector, isPersonaAlreadyInHistory } from '../hooks/persona-injector.js';
+import { registerPersonaInjector } from '../hooks/persona-injector.js';
 import { registerPersonaCommands } from '../commands/persona-commands.js';
 import { createMockApi } from './helpers/mock-factory.js';
 
@@ -327,7 +327,7 @@ describe('persona-injector hook (before_prompt_build)', () => {
     );
   });
 
-  it('returns prependContext (not bootstrapFiles)', async () => {
+  it('falls back to prependContext when no system message in event', async () => {
     const api = createMockApi();
     registerPersonaInjector(api);
 
@@ -341,7 +341,25 @@ describe('persona-injector hook (before_prompt_build)', () => {
     expect(result).not.toHaveProperty('systemPrompt');
   });
 
-  it('logs with source=auto for agentId detection', async () => {
+  it('returns systemPrompt (not prependContext) when event.systemPrompt exists', async () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.on.mock.calls[0][1];
+    const event = {
+      prompt: 'hello',
+      systemPrompt: 'You are a helpful assistant.',
+    };
+    const ctx = { agentId: 'omoc_atlas' };
+    const result = await handler(event, ctx);
+
+    expect(result).toHaveProperty('systemPrompt');
+    expect(result).not.toHaveProperty('prependContext');
+    expect(result.systemPrompt).toContain('You are a helpful assistant.');
+    expect(result.systemPrompt).toContain('Mock Persona Content');
+  });
+
+  it('logs with source=auto and prependContext fallback for agentId detection', async () => {
     const api = createMockApi();
     registerPersonaInjector(api);
 
@@ -349,76 +367,30 @@ describe('persona-injector hook (before_prompt_build)', () => {
     await handler({ prompt: 'hello' }, { agentId: 'omoc_prometheus' });
 
     expect(api.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('before_prompt_build')
+      expect.stringContaining('prependContext fallback')
     );
     expect(api.logger.info).toHaveBeenCalledWith(
       expect.stringContaining('auto')
     );
   });
-});
 
-describe('isPersonaAlreadyInHistory', () => {
-  const personaContent = '# Mock Persona Content\nYou are Atlas. The conductor.';
+  it('logs systemPrompt append when event.systemPrompt exists', async () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
 
-  it('returns false for undefined messages', () => {
-    expect(isPersonaAlreadyInHistory(undefined, personaContent)).toBe(false);
-  });
+    const handler = api.on.mock.calls[0][1];
+    await handler(
+      { prompt: 'hello', systemPrompt: 'base prompt' },
+      { agentId: 'omoc_prometheus' },
+    );
 
-  it('returns false for empty messages', () => {
-    expect(isPersonaAlreadyInHistory([], personaContent)).toBe(false);
-  });
-
-  it('returns false when no user message contains persona', () => {
-    const messages = [
-      { role: 'user', content: 'Hello world' },
-      { role: 'assistant', content: 'Hi there' },
-    ];
-    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(false);
-  });
-
-  it('returns true when a user message contains persona fingerprint', () => {
-    const messages = [
-      { role: 'user', content: `${personaContent}\n\nHello world` },
-      { role: 'assistant', content: 'Hi there' },
-    ];
-    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(true);
-  });
-
-  it('ignores assistant messages even if they contain persona text', () => {
-    const messages = [
-      { role: 'user', content: 'Hello' },
-      { role: 'assistant', content: personaContent },
-    ];
-    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(false);
-  });
-
-  it('handles non-object messages gracefully', () => {
-    const messages = [null, undefined, 42, 'string', { role: 'user', content: 'hi' }];
-    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(false);
-  });
-
-  it('handles messages with missing content field', () => {
-    const messages = [{ role: 'user' }, { role: 'user', content: 123 }];
-    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(false);
-  });
-
-  it('returns false for empty persona content', () => {
-    const messages = [{ role: 'user', content: 'anything' }];
-    expect(isPersonaAlreadyInHistory(messages, '')).toBe(false);
-    expect(isPersonaAlreadyInHistory(messages, '   ')).toBe(false);
-  });
-
-  it('detects persona in second-turn history (realistic scenario)', () => {
-    const messages = [
-      { role: 'user', content: `${personaContent}\n\nFirst question` },
-      { role: 'assistant', content: 'First response' },
-      { role: 'user', content: 'Second question' },
-    ];
-    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(true);
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('appended to system prompt')
+    );
   });
 });
 
-describe('persona-injector dedup integration', () => {
+describe('persona-injector systemPrompt append integration', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     clearPersonaCache();
@@ -427,70 +399,95 @@ describe('persona-injector dedup integration', () => {
     vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
   });
 
-  it('skips injection when persona already in history messages', async () => {
+  it('appends persona to event.systemPrompt', async () => {
     const api = createMockApi();
     registerPersonaInjector(api);
 
     const handler = api.on.mock.calls[0][1];
     const event = {
       prompt: 'new question',
-      messages: [
-        { role: 'user', content: '# Mock Persona Content\nYou are Atlas.\n\nprevious question' },
-        { role: 'assistant', content: 'previous answer' },
-      ],
+      systemPrompt: 'You are a helpful assistant.',
     };
     const ctx = { agentId: 'omoc_atlas' };
     const result = await handler(event, ctx);
 
-    expect(result).toBeUndefined();
-    expect(api.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('already in history'),
+    expect(result).toBeDefined();
+    expect(result.systemPrompt).toBe('You are a helpful assistant.\n\n# Mock Persona Content\nYou are Atlas.');
+    expect(result).not.toHaveProperty('prependContext');
+  });
+
+  it('falls back to prependContext when event.systemPrompt is missing', async () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'first question' };
+    const ctx = { agentId: 'omoc_atlas' };
+    const result = await handler(event, ctx);
+
+    expect(result).toBeDefined();
+    expect(result.prependContext).toContain('Mock Persona Content');
+    expect(result).not.toHaveProperty('systemPrompt');
+  });
+
+  it('falls back to prependContext when event.systemPrompt is empty string', async () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello', systemPrompt: '' };
+    const ctx = { agentId: 'omoc_atlas' };
+    const result = await handler(event, ctx);
+
+    expect(result).toBeDefined();
+    expect(result.prependContext).toContain('Mock Persona Content');
+    expect(result).not.toHaveProperty('systemPrompt');
+  });
+
+  it('does not accumulate persona across simulated turns', async () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.on.mock.calls[0][1];
+    const baseSystemPrompt = 'You are a helpful assistant.';
+
+    const turn1 = await handler(
+      { prompt: 'turn 1', systemPrompt: baseSystemPrompt },
+      { agentId: 'omoc_atlas' },
     );
+    expect(turn1.systemPrompt).toBe(`${baseSystemPrompt}\n\n# Mock Persona Content\nYou are Atlas.`);
+
+    // On next turn, OpenClaw rebuilds systemPromptText fresh — event.systemPrompt
+    // is the ORIGINAL base prompt, not the previously returned override.
+    vi.clearAllMocks();
+    vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
+    vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
+
+    const turn2 = await handler(
+      { prompt: 'turn 2', systemPrompt: baseSystemPrompt },
+      { agentId: 'omoc_atlas' },
+    );
+    expect(turn2.systemPrompt).toBe(turn1.systemPrompt);
   });
 
-  it('injects on first turn (no history)', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const event = { prompt: 'first question', messages: [] };
-    const ctx = { agentId: 'omoc_atlas' };
-    const result = await handler(event, ctx);
-
-    expect(result).toBeDefined();
-    expect(result.prependContext).toContain('Mock Persona Content');
-  });
-
-  it('injects when history has no matching persona', async () => {
+  it('works with manual persona + event.systemPrompt', async () => {
+    await setActivePersona('omoc_oracle');
     const api = createMockApi();
     registerPersonaInjector(api);
 
     const handler = api.on.mock.calls[0][1];
     const event = {
-      prompt: 'new question',
-      messages: [
-        { role: 'user', content: 'unrelated previous question' },
-        { role: 'assistant', content: 'answer' },
-      ],
+      prompt: 'question',
+      systemPrompt: 'Base prompt.',
     };
-    const ctx = { agentId: 'omoc_atlas' };
+    const ctx = {};
     const result = await handler(event, ctx);
 
-    expect(result).toBeDefined();
-    expect(result.prependContext).toContain('Mock Persona Content');
-  });
-
-  it('injects when event.messages is undefined', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const event = { prompt: 'hello' };
-    const ctx = { agentId: 'omoc_atlas' };
-    const result = await handler(event, ctx);
-
-    expect(result).toBeDefined();
-    expect(result.prependContext).toContain('Mock Persona Content');
+    expect(result.systemPrompt).toContain('Base prompt.');
+    expect(result.systemPrompt).toContain('Mock Persona Content');
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('manual'),
+    );
   });
 });
 

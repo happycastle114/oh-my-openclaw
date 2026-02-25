@@ -119,7 +119,10 @@ export interface BeforePromptBuildResult {
 }
 
 // Event shape for before_prompt_build / before_agent_start hooks
+// OpenClaw passes the current system prompt text so plugins can read/modify it
+// without parsing the messages array (see attempt.ts resolvePromptBuildHookResult).
 export interface BeforePromptBuildEvent {
   prompt?: string;
   messages?: unknown[];
+  systemPrompt?: string;
 }
