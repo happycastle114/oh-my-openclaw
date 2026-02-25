@@ -609,8 +609,8 @@ describe('model-presets', () => {
     });
   });
 
-  it('each preset should cover all 5 tiers', () => {
-    const tiers = ['planning', 'worker', 'orchestrator', 'lightweight', 'visual'];
+  it('each preset should cover all 8 tiers', () => {
+    const tiers = ['strategic', 'reasoning', 'analysis', 'worker', 'deep-worker', 'search', 'research', 'visual'];
     for (const provider of getProviderNames()) {
       const preset = PROVIDER_PRESETS[provider]!;
       tiers.forEach((tier) => {
@@ -651,9 +651,11 @@ describe('applyProviderToConfigs', () => {
     expect(oracle?.tools?.deny).toContain('write');
   });
 
-  it('lightweight agents get string model (no fallbacks)', () => {
+  it('search/research agents get string model (no fallbacks)', () => {
     const modified = applyProviderToConfigs(OMOC_AGENT_CONFIGS, 'anthropic');
     const explore = modified.find((a) => a.id === 'omoc_explore');
     expect(explore?.model).toBe('anthropic/claude-sonnet-4-6');
+    const librarian = modified.find((a) => a.id === 'omoc_librarian');
+    expect(librarian?.model).toBe('anthropic/claude-sonnet-4-6');
   });
 });
