@@ -31,7 +31,7 @@ import {
   DEFAULT_PERSONA_ID,
   clearPersonaCache,
 } from '../agents/persona-prompts.js';
-import { registerPersonaInjector } from '../hooks/persona-injector.js';
+import { registerPersonaInjector, isPersonaAlreadyInHistory } from '../hooks/persona-injector.js';
 import { registerPersonaCommands } from '../commands/persona-commands.js';
 import { createMockApi } from './helpers/mock-factory.js';
 
@@ -354,6 +354,143 @@ describe('persona-injector hook (before_prompt_build)', () => {
     expect(api.logger.info).toHaveBeenCalledWith(
       expect.stringContaining('auto')
     );
+  });
+});
+
+describe('isPersonaAlreadyInHistory', () => {
+  const personaContent = '# Mock Persona Content\nYou are Atlas. The conductor.';
+
+  it('returns false for undefined messages', () => {
+    expect(isPersonaAlreadyInHistory(undefined, personaContent)).toBe(false);
+  });
+
+  it('returns false for empty messages', () => {
+    expect(isPersonaAlreadyInHistory([], personaContent)).toBe(false);
+  });
+
+  it('returns false when no user message contains persona', () => {
+    const messages = [
+      { role: 'user', content: 'Hello world' },
+      { role: 'assistant', content: 'Hi there' },
+    ];
+    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(false);
+  });
+
+  it('returns true when a user message contains persona fingerprint', () => {
+    const messages = [
+      { role: 'user', content: `${personaContent}\n\nHello world` },
+      { role: 'assistant', content: 'Hi there' },
+    ];
+    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(true);
+  });
+
+  it('ignores assistant messages even if they contain persona text', () => {
+    const messages = [
+      { role: 'user', content: 'Hello' },
+      { role: 'assistant', content: personaContent },
+    ];
+    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(false);
+  });
+
+  it('handles non-object messages gracefully', () => {
+    const messages = [null, undefined, 42, 'string', { role: 'user', content: 'hi' }];
+    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(false);
+  });
+
+  it('handles messages with missing content field', () => {
+    const messages = [{ role: 'user' }, { role: 'user', content: 123 }];
+    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(false);
+  });
+
+  it('returns false for empty persona content', () => {
+    const messages = [{ role: 'user', content: 'anything' }];
+    expect(isPersonaAlreadyInHistory(messages, '')).toBe(false);
+    expect(isPersonaAlreadyInHistory(messages, '   ')).toBe(false);
+  });
+
+  it('detects persona in second-turn history (realistic scenario)', () => {
+    const messages = [
+      { role: 'user', content: `${personaContent}\n\nFirst question` },
+      { role: 'assistant', content: 'First response' },
+      { role: 'user', content: 'Second question' },
+    ];
+    expect(isPersonaAlreadyInHistory(messages, personaContent)).toBe(true);
+  });
+});
+
+describe('persona-injector dedup integration', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    clearPersonaCache();
+    await resetPersonaState();
+    vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
+    vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
+  });
+
+  it('skips injection when persona already in history messages', async () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.on.mock.calls[0][1];
+    const event = {
+      prompt: 'new question',
+      messages: [
+        { role: 'user', content: '# Mock Persona Content\nYou are Atlas.\n\nprevious question' },
+        { role: 'assistant', content: 'previous answer' },
+      ],
+    };
+    const ctx = { agentId: 'omoc_atlas' };
+    const result = await handler(event, ctx);
+
+    expect(result).toBeUndefined();
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('already in history'),
+    );
+  });
+
+  it('injects on first turn (no history)', async () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'first question', messages: [] };
+    const ctx = { agentId: 'omoc_atlas' };
+    const result = await handler(event, ctx);
+
+    expect(result).toBeDefined();
+    expect(result.prependContext).toContain('Mock Persona Content');
+  });
+
+  it('injects when history has no matching persona', async () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.on.mock.calls[0][1];
+    const event = {
+      prompt: 'new question',
+      messages: [
+        { role: 'user', content: 'unrelated previous question' },
+        { role: 'assistant', content: 'answer' },
+      ],
+    };
+    const ctx = { agentId: 'omoc_atlas' };
+    const result = await handler(event, ctx);
+
+    expect(result).toBeDefined();
+    expect(result.prependContext).toContain('Mock Persona Content');
+  });
+
+  it('injects when event.messages is undefined', async () => {
+    const api = createMockApi();
+    registerPersonaInjector(api);
+
+    const handler = api.on.mock.calls[0][1];
+    const event = { prompt: 'hello' };
+    const ctx = { agentId: 'omoc_atlas' };
+    const result = await handler(event, ctx);
+
+    expect(result).toBeDefined();
+    expect(result.prependContext).toContain('Mock Persona Content');
   });
 });
 

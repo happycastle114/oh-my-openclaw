@@ -51,6 +51,16 @@ function guardedApi(api: OmocPluginApi, gen: number): OmocPluginApi {
         return handler(evt);
       }, meta);
     },
+    on: <TEvent = unknown, TResult = unknown>(
+      hookName: string,
+      handler: (event: TEvent, ctx: import('./types.js').TypedHookContext) => TResult | Promise<TResult> | void,
+      opts?: { priority?: number },
+    ) => {
+      api.on<TEvent, TResult | void>(hookName, (event, ctx) => {
+        if (gen !== generation) return;
+        return handler(event, ctx);
+      }, opts);
+    },
   };
 }
 
