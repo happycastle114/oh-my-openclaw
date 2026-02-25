@@ -1,15 +1,22 @@
 import { OmocPluginApi, TypedHookContext } from '../types.js';
-import { LOG_PREFIX } from '../constants.js';
+import { TOOL_PREFIX, LOG_PREFIX } from '../constants.js';
+import { getIncompleteTodos, resetStore } from '../tools/todo/store.js';
+
+const TODO_TOOL_NAMES = new Set([
+  `${TOOL_PREFIX}todo_create`,
+  `${TOOL_PREFIX}todo_list`,
+  `${TOOL_PREFIX}todo_update`,
+]);
 
 const TURN_THRESHOLD = 10;
 
 const REMINDER_MESSAGE = `
 
 ---
-⚠️ [OMOC Todo Reminder] You have used ${TURN_THRESHOLD}+ tool calls without updating your todos.
+⚠️ [OMOC Todo Reminder] You have used ${TURN_THRESHOLD}+ tool calls without checking your todo list.
 
-**Action required:** Call \`todowrite\` to review and update your task progress.
-Ensure you are not drifting from the plan.`;
+**Action required:** Call \`${TOOL_PREFIX}todo_list\` to review pending todos before continuing.
+Ensure you are not drifting from the plan. Mark completed todos, update in-progress ones.`;
 
 interface ToolResultPayload {
   tool?: string;
@@ -24,51 +31,13 @@ interface AgentEndEvent {
   durationMs?: number;
 }
 
-export interface TodoItem {
-  content: string;
-  status: string;
-  priority?: string;
-}
-
-// Session-scoped in-memory state
 const sessionCounters = new Map<string, number>();
-let lastTodoSnapshot: TodoItem[] = [];
 
 function getSessionKey(payload: ToolResultPayload): string {
   const sessionId = (payload as Record<string, unknown>).sessionId;
   return typeof sessionId === 'string' ? sessionId : '__default__';
 }
 
-/**
- * Parse todowrite result content into a TodoItem array.
- * Handles both raw array and { todos: [...] } shapes.
- */
-function parseTodoSnapshot(content: string): TodoItem[] {
-  try {
-    const parsed = JSON.parse(content);
-    const items = Array.isArray(parsed)
-      ? parsed
-      : Array.isArray(parsed?.todos)
-        ? parsed.todos
-        : null;
-    if (!items) return [];
-    return items.filter(
-      (item: unknown): item is TodoItem =>
-        typeof item === 'object' &&
-        item !== null &&
-        typeof (item as TodoItem).content === 'string' &&
-        typeof (item as TodoItem).status === 'string',
-    );
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Registers a tool_result_persist hook that:
- * 1. Intercepts `todowrite` calls to capture an in-memory todo snapshot
- * 2. Counts non-todowrite tool calls, appending a reminder every TURN_THRESHOLD calls
- */
 export function registerTodoReminder(api: OmocPluginApi): void {
   api.registerHook(
     'tool_result_persist',
@@ -78,15 +47,8 @@ export function registerTodoReminder(api: OmocPluginApi): void {
 
       const sessionKey = getSessionKey(payload);
 
-      // Intercept todowrite to capture todo state
-      if (toolName === 'todowrite') {
+      if (TODO_TOOL_NAMES.has(toolName)) {
         sessionCounters.set(sessionKey, 0);
-        if (typeof payload.content === 'string') {
-          const snapshot = parseTodoSnapshot(payload.content);
-          if (snapshot.length > 0) {
-            lastTodoSnapshot = snapshot;
-          }
-        }
         return undefined;
       }
 
@@ -106,35 +68,28 @@ export function registerTodoReminder(api: OmocPluginApi): void {
     },
     {
       name: 'oh-my-openclaw.todo-reminder',
-      description: 'Captures todowrite state and reminds agent to check todos after prolonged tool usage',
+      description: 'Reminds agent to check todo list after prolonged non-todo tool usage',
     },
   );
 }
 
-/**
- * Registers an agent_end hook that checks the captured todo snapshot
- * for incomplete items and fires enqueueSystemEvent if any exist.
- */
 export function registerAgentEndReminder(api: OmocPluginApi): void {
   api.on<AgentEndEvent, void>(
     'agent_end',
     async (_event: AgentEndEvent, ctx: TypedHookContext): Promise<void> => {
       try {
-        const incomplete = lastTodoSnapshot.filter(
-          (t) => t.status === 'pending' || t.status === 'in_progress',
-        );
-
+        const sessionKey = ctx.sessionKey ?? ctx.sessionId;
+        const incomplete = getIncompleteTodos(sessionKey);
         if (incomplete.length === 0) return;
 
         const summary = incomplete
-          .map((t) => `  - [${t.status}] ${t.content}`)
+          .map((t) => `  - [${t.status}] ${t.id}: ${t.content}`)
           .join('\n');
 
         const warning =
           `⚠️ [OMOC] ${incomplete.length} incomplete todo(s):\n${summary}\n\n` +
-          `Review your todos with \`todowrite\` when resuming work.`;
+          `Call \`${TOOL_PREFIX}todo_list\` to review and resume work.`;
 
-        const sessionKey = ctx.sessionKey ?? ctx.sessionId;
         if (sessionKey) {
           api.runtime.system.enqueueSystemEvent(warning, { sessionKey });
         }
@@ -143,21 +98,37 @@ export function registerAgentEndReminder(api: OmocPluginApi): void {
           `${LOG_PREFIX} Agent ended with ${incomplete.length} incomplete todo(s)`,
         );
       } catch {
-        // graceful degradation — don't break agent lifecycle
+        // graceful degradation
       }
     },
     { priority: 50 },
   );
 }
 
+interface SessionStartEvent {
+  sessionId: string;
+  resumedFrom?: string;
+}
+
+export function registerSessionCleanup(api: OmocPluginApi): void {
+  api.on<SessionStartEvent, void>(
+    'session_start',
+    async (event: SessionStartEvent, ctx: TypedHookContext): Promise<void> => {
+      if (event.resumedFrom) return;
+
+      const sessionKey = ctx.sessionKey ?? ctx.sessionId ?? event.sessionId;
+      if (!sessionKey) return;
+
+      resetStore(sessionKey);
+      sessionCounters.delete(sessionKey);
+      api.logger.info(`${LOG_PREFIX} Todo store cleared for new session (${sessionKey})`);
+    },
+    { priority: 190 },
+  );
+}
+
 export function resetTodoReminderCounters(): void {
   sessionCounters.clear();
-  lastTodoSnapshot = [];
 }
 
-export function getLastTodoSnapshot(): ReadonlyArray<TodoItem> {
-  return lastTodoSnapshot;
-}
-
-// Exposed for testing only
 export { sessionCounters as _sessionCounters };

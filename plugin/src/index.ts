@@ -18,7 +18,8 @@ import { registerContextInjector } from './hooks/context-injector.js';
 import { registerSessionSync } from './hooks/session-sync.js';
 import { registerSpawnGuard } from './hooks/spawn-guard.js';
 import { registerKeywordDetector } from './hooks/keyword-detector/hook.js';
-import { registerTodoReminder, registerAgentEndReminder } from './hooks/todo-reminder.js';
+import { registerTodoReminder, registerAgentEndReminder, registerSessionCleanup } from './hooks/todo-reminder.js';
+import { registerTodoTools } from './tools/todo/index.js';
 import { registerSetupCli } from './cli/setup.js';
 
 /**
@@ -131,7 +132,17 @@ export default function register(api: OmocPluginApi) {
     api.logger.info(`[${PLUGIN_ID}] Agent-end reminder hook registered (agent_end)`);
   });
 
+  safeRegister(api, 'session-cleanup', 'hook', () => {
+    registerSessionCleanup(api);
+    registry.hooks.push('session-cleanup');
+    api.logger.info(`[${PLUGIN_ID}] Session cleanup hook registered (session_start)`);
+  });
 
+  safeRegister(api, 'todo-tools', 'tool', () => {
+    registerTodoTools(api);
+    registry.tools.push('omoc_todo_create', 'omoc_todo_list', 'omoc_todo_update');
+    api.logger.info(`[${PLUGIN_ID}] Todo tools registered (3 tools)`);
+  });
 
   safeRegister(api, 'ralph-loop', 'service', () => {
     registerRalphLoop(api);
