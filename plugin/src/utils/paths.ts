@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
+import { homedir } from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,4 +15,17 @@ export function resolvePluginPath(...segments: string[]): string {
 
 export function resolveWorkspacePath(workspaceDir: string, ...segments: string[]): string {
   return join(workspaceDir, ...segments);
+}
+
+/**
+ * Resolve the OpenClaw workspace directory (absolute path).
+ * Uses explicit workspaceDir when provided (e.g. from hook context),
+ * otherwise falls back to ~/.openclaw/workspace with OPENCLAW_PROFILE support.
+ */
+export function resolveOpenClawWorkspaceDir(workspaceDir?: string): string {
+  if (workspaceDir) return workspaceDir;
+  const profile = process.env.OPENCLAW_PROFILE?.trim();
+  return (profile && profile.toLowerCase() !== 'default')
+    ? join(homedir(), '.openclaw', `workspace-${profile}`)
+    : join(homedir(), '.openclaw', 'workspace');
 }

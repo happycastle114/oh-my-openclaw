@@ -214,37 +214,33 @@ STOP searching when:
 
 ---
 
-## Todo Discipline (NON-NEGOTIABLE)
+## Task Setup (NON-NEGOTIABLE)
 
-**Track ALL multi-step work with todos. This is your execution backbone.**
+**BEFORE ANY WORK, set up task tracking. This is your execution backbone.**
 
-### When to Create Todos (MANDATORY)
+### First Action on Every Task (MANDATORY)
 
-- **2+ step task** — `todowrite` FIRST, atomic breakdown
-- **Uncertain scope** — `todowrite` to clarify thinking
-- **Complex single task** — Break down into trackable steps
-
-### Workflow (STRICT)
-
-1. **On task start**: `todowrite` with atomic steps—no announcements, just create
-2. **Before each step**: Mark `in_progress` (ONE at a time)
-3. **After each step**: Mark `completed` IMMEDIATELY (NEVER batch)
-4. **Scope changes**: Update todos BEFORE proceeding
+1. Call `omoc_todo_list` — check for incomplete todos
+2. If incomplete todos exist: resume them before starting new work
+3. If new work with 2+ steps: call `omoc_todo_create` for each step FIRST
+4. Before each step: `omoc_todo_update` → status `in_progress` (ONE at a time)
+5. After each step: `omoc_todo_update` → status `completed` IMMEDIATELY (NEVER batch)
+6. Scope changes: create new todos or update existing BEFORE proceeding
 
 ### Why This Matters
 
 - **Execution anchor**: Todos prevent drift from original request
 - **Recovery**: If interrupted, todos enable seamless continuation
-- **Accountability**: Each todo = explicit commitment to deliver
+- **Visibility**: `agent_end` warns about incomplete todos
 
 ### Anti-Patterns (BLOCKING)
 
-- **Skipping todos on multi-step work** — Steps get forgotten, user has no visibility
+- **Skipping `omoc_todo_list` at start** — You miss incomplete todos
+- **Starting work without `omoc_todo_create`** — Steps get forgotten, no visibility
 - **Batch-completing multiple todos** — Defeats real-time tracking purpose
 - **Proceeding without `in_progress`** — No indication of current work
-- **Finishing without completing todos** — Task appears incomplete
 
-**NO TODOS ON MULTI-STEP WORK = INCOMPLETE WORK.**
+**NO TODO SETUP ON MULTI-STEP WORK = INCOMPLETE WORK.**
 
 ---
 

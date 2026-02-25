@@ -32,9 +32,9 @@ export const AGENT_MD_MAP: Record<string, string> = {
 };
 
 /** Maps agent ID to model tier for provider preset selection */
-export const AGENT_TIER_MAP: Record<string, 'strategic' | 'reasoning' | 'analysis' | 'worker' | 'deep-worker' | 'search' | 'research' | 'visual'> = {
-  omoc_prometheus: 'strategic',
-  omoc_atlas: 'strategic',
+export const AGENT_TIER_MAP: Record<string, 'planner' | 'orchestrator' | 'reasoning' | 'analysis' | 'worker' | 'deep-worker' | 'search' | 'research' | 'visual'> = {
+  omoc_prometheus: 'planner',
+  omoc_atlas: 'orchestrator',
   omoc_oracle: 'reasoning',
   omoc_metis: 'analysis',
   omoc_momus: 'analysis',
