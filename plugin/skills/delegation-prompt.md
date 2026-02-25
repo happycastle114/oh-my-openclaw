@@ -49,7 +49,7 @@ Each category automatically selects the best-fit agent. You can override with `a
 | deep | `omoc_hephaestus` | claude-opus-4-6-thinking | Complex refactoring, analysis |
 | ultrabrain | `omoc_oracle` | gpt-5.3-codex | Architecture, deep reasoning |
 | visual-engineering | `omoc_frontend` | gemini-3.1-pro | Frontend, UI/UX, design |
-| multimodal | `omoc_looker` | gemini-2.5-flash | PDF, image, video analysis |
+| multimodal | `omoc_looker` | gemini-3-flash | PDF, image, video analysis |
 | artistry | `omoc_hephaestus` | claude-opus-4-6-thinking | Creative complex problems |
 | unspecified-low | `omoc_sisyphus` | claude-sonnet-4-6 | General low-effort tasks |
 | unspecified-high | `omoc_hephaestus` | claude-opus-4-6-thinking | General high-effort tasks |

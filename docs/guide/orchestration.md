@@ -282,7 +282,7 @@ Every task is assigned a **category** that determines which model processes it. 
 | `deep` | `claude-opus-4-6-thinking` | Complex refactoring, analysis, gap detection |
 | `ultrabrain` | `gpt-5.3-codex` | Deep reasoning, architecture decisions, novel problems |
 | `visual-engineering` | `gemini-3.1-pro` | Frontend, UI/UX, design, styling, animation |
-| `multimodal` | `gemini-2.5-flash` | PDF/image/video analysis via Gemini CLI |
+| `multimodal` | `gemini-3-flash` | PDF/image/video analysis via Gemini CLI |
 | `artistry` | `claude-opus-4-6-thinking` | Creative tasks, novel ideas, design exploration |
 | `writing` | `claude-sonnet-4-6` | Documentation, prose, technical writing |
 | `unspecified-low` | `claude-sonnet-4-6` | Uncategorized tasks, low effort |
