@@ -10,7 +10,7 @@ const DEFAULT_CATEGORY_MODELS: Record<Category, string> = {
   deep: 'claude-opus-4-6-thinking',
   ultrabrain: 'gpt-5.3-codex',
   'visual-engineering': 'gemini-3.1-pro',
-  multimodal: 'gemini-2.5-flash',
+  multimodal: 'gemini-3-flash',
   artistry: 'claude-opus-4-6-thinking',
   'unspecified-low': 'claude-sonnet-4-6',
   'unspecified-high': 'claude-opus-4-6-thinking',
