@@ -5,15 +5,9 @@ type McpServerEntry = {
   url: string;
   description: string;
 };
-export const OMOC_MCP_SERVERS: Record<string, McpServerEntry> = {
-  'web-search-prime': {
-    url: 'https://api.z.ai/api/mcp/web_search_prime/mcp',
-    description: 'Keyword-based web search (news, blogs, general)',
-  },
-  'web-reader': {
-    url: 'https://api.z.ai/api/mcp/web_reader/mcp',
-    description: 'Clean full-page content extraction',
-  },
+
+/** Core MCP servers — always included in setup */
+export const CORE_MCP_SERVERS: Record<string, McpServerEntry> = {
   exa: {
     url: 'https://mcp.exa.ai/mcp?tools=web_search_exa',
     description: 'Semantic web search (Exa)',
@@ -26,10 +20,28 @@ export const OMOC_MCP_SERVERS: Record<string, McpServerEntry> = {
     url: 'https://mcp.grep.app',
     description: 'Open-source code search on GitHub',
   },
+};
+
+/** Optional MCP servers — user can toggle during setup */
+export const OPTIONAL_MCP_SERVERS: Record<string, McpServerEntry> = {
+  'web-search-prime': {
+    url: 'https://api.z.ai/api/mcp/web_search_prime/mcp',
+    description: 'Keyword-based web search (news, blogs, general)',
+  },
+  'web-reader': {
+    url: 'https://api.z.ai/api/mcp/web_reader/mcp',
+    description: 'Clean full-page content extraction',
+  },
   zread: {
     url: 'https://api.z.ai/api/mcp/zread/mcp',
     description: 'Direct GitHub repository exploration',
   },
+};
+
+/** All MCP servers (core + optional) — backward-compatible union */
+export const OMOC_MCP_SERVERS: Record<string, McpServerEntry> = {
+  ...CORE_MCP_SERVERS,
+  ...OPTIONAL_MCP_SERVERS,
 };
 
 type McporterConfig = {
@@ -112,18 +124,27 @@ type Logger = {
 
 export interface McporterSetupOptions {
   configPath?: string;
+  excludeServers?: string[];
   dryRun?: boolean;
   logger: Logger;
 }
 
 export function runMcporterSetup(options: McporterSetupOptions): McporterMergeResult {
-  const { logger, dryRun = false } = options;
+  const { logger, dryRun = false, excludeServers = [] } = options;
   const configPath = options.configPath ?? resolveMcporterConfigPath();
 
   logger.info(`mcporter config: ${configPath}`);
 
+  const excludeSet = new Set(excludeServers);
+  const servers: Record<string, McpServerEntry> = {};
+  for (const [name, entry] of Object.entries(OMOC_MCP_SERVERS)) {
+    if (!excludeSet.has(name)) {
+      servers[name] = entry;
+    }
+  }
+
   const existing = readMcporterConfig(configPath);
-  const { config: merged, result } = mergeMcpServers(existing, OMOC_MCP_SERVERS);
+  const { config: merged, result } = mergeMcpServers(existing, servers);
 
   if (result.added.length === 0) {
     logger.info('No changes needed — all MCP servers already configured.');

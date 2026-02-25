@@ -22,11 +22,15 @@ import {
 } from '../cli/model-presets.js';
 import {
   OMOC_MCP_SERVERS,
+  CORE_MCP_SERVERS,
+  OPTIONAL_MCP_SERVERS,
   mergeMcpServers,
   readMcporterConfig,
   writeMcporterConfig,
   runMcporterSetup,
 } from '../cli/mcporter-setup.js';
+import { applyPlannerGuard } from '../cli/setup.js';
+import { PLANNER_DENY } from '../constants.js';
 
 describe('Agent Configs', () => {
   describe('OMOC_AGENT_CONFIGS structure', () => {
@@ -616,8 +620,8 @@ describe('model-presets', () => {
     });
   });
 
-  it('each preset should cover all 8 tiers', () => {
-    const tiers = ['strategic', 'reasoning', 'analysis', 'worker', 'deep-worker', 'search', 'research', 'visual'];
+  it('each preset should cover all 9 tiers', () => {
+    const tiers = ['planner', 'orchestrator', 'reasoning', 'analysis', 'worker', 'deep-worker', 'search', 'research', 'visual'];
     for (const provider of getProviderNames()) {
       const preset = PROVIDER_PRESETS[provider]!;
       tiers.forEach((tier) => {
@@ -880,5 +884,223 @@ describe('mcporter-setup', () => {
         fs.rmSync(dir, { recursive: true });
       }
     });
+  });
+
+  describe('runSetup with enablePlannerGuard', () => {
+    it('should add deny list to prometheus when enablePlannerGuard=true', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-guard-test-'));
+      const configPath = path.join(dir, 'openclaw.json');
+      fs.writeFileSync(configPath, '{"agents": {"list": []}}');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        runSetup({ configPath, logger, enablePlannerGuard: true });
+
+        const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+        const prometheus = (config.agents?.list as Array<{ id: string; tools?: { deny?: string[] } }>)
+          .find((a) => a.id === 'omoc_prometheus');
+        expect(prometheus?.tools?.deny).toContain('write');
+        expect(prometheus?.tools?.deny).toContain('edit');
+        expect(prometheus?.tools?.deny).toContain('apply_patch');
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+
+    it('should not affect atlas when enablePlannerGuard=true', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-guard-test-'));
+      const configPath = path.join(dir, 'openclaw.json');
+      fs.writeFileSync(configPath, '{"agents": {"list": []}}');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        runSetup({ configPath, logger, enablePlannerGuard: true });
+
+        const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+        const atlas = (config.agents?.list as Array<{ id: string; tools?: { deny?: string[] } }>)
+          .find((a) => a.id === 'omoc_atlas');
+        const deny = atlas?.tools?.deny ?? [];
+        expect(deny).not.toContain('write');
+        expect(deny).not.toContain('edit');
+        expect(deny).not.toContain('apply_patch');
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+  });
+
+  describe('runSetup with enableTodoEnforcer', () => {
+    it('should write todo_enforcer_enabled=true to pluginSettings', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-todo-test-'));
+      const configPath = path.join(dir, 'openclaw.json');
+      fs.writeFileSync(configPath, '{"agents": {"list": []}}');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        runSetup({ configPath, logger, enableTodoEnforcer: true });
+
+        const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+        const ps = (config as any).pluginSettings?.['oh-my-openclaw'];
+        expect(ps?.todo_enforcer_enabled).toBe(true);
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+
+    it('should write todo_enforcer_enabled=false to pluginSettings', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-todo-test-'));
+      const configPath = path.join(dir, 'openclaw.json');
+      fs.writeFileSync(configPath, '{"agents": {"list": []}}');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        runSetup({ configPath, logger, enableTodoEnforcer: false });
+
+        const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+        const ps = (config as any).pluginSettings?.['oh-my-openclaw'];
+        expect(ps?.todo_enforcer_enabled).toBe(false);
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+
+    it('should not write pluginSettings when enableTodoEnforcer is undefined', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-todo-test-'));
+      const configPath = path.join(dir, 'openclaw.json');
+      fs.writeFileSync(configPath, '{"agents": {"list": []}}');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        runSetup({ configPath, logger });
+
+        const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+        expect((config as any).pluginSettings).toBeUndefined();
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+
+    it('should preserve existing pluginSettings', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-todo-test-'));
+      const configPath = path.join(dir, 'openclaw.json');
+      fs.writeFileSync(configPath, '{"agents": {"list": []}, "pluginSettings": {"other-plugin": {"key": "val"}}}');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        runSetup({ configPath, logger, enableTodoEnforcer: true });
+
+        const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+        const ps = (config as any).pluginSettings;
+        expect(ps?.['other-plugin']?.key).toBe('val');
+        expect(ps?.['oh-my-openclaw']?.todo_enforcer_enabled).toBe(true);
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+  });
+});
+
+describe('CORE_MCP_SERVERS and OPTIONAL_MCP_SERVERS', () => {
+  it('CORE_MCP_SERVERS should have exa, context7, grep_app', () => {
+    const names = Object.keys(CORE_MCP_SERVERS);
+    expect(names).toContain('exa');
+    expect(names).toContain('context7');
+    expect(names).toContain('grep_app');
+    expect(names).toHaveLength(3);
+  });
+
+  it('OPTIONAL_MCP_SERVERS should have web-search-prime, web-reader, zread', () => {
+    const names = Object.keys(OPTIONAL_MCP_SERVERS);
+    expect(names).toContain('web-search-prime');
+    expect(names).toContain('web-reader');
+    expect(names).toContain('zread');
+    expect(names).toHaveLength(3);
+  });
+
+  it('OMOC_MCP_SERVERS should be union of core + optional', () => {
+    const all = Object.keys(OMOC_MCP_SERVERS);
+    const core = Object.keys(CORE_MCP_SERVERS);
+    const optional = Object.keys(OPTIONAL_MCP_SERVERS);
+    expect(all).toHaveLength(core.length + optional.length);
+    for (const name of [...core, ...optional]) {
+      expect(all).toContain(name);
+    }
+  });
+});
+
+describe('runMcporterSetup with excludeServers', () => {
+  it('should exclude specified servers', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcporter-excl-test-'));
+    const configPath = path.join(dir, 'mcporter.json');
+
+    try {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      const result = runMcporterSetup({
+        configPath,
+        excludeServers: ['web-search-prime', 'zread'],
+        logger,
+      });
+
+      expect(result.added).not.toContain('web-search-prime');
+      expect(result.added).not.toContain('zread');
+      expect(result.added).toContain('exa');
+      expect(result.added).toContain('context7');
+      expect(result.added).toContain('grep_app');
+      expect(result.added).toContain('web-reader');
+      expect(result.added).toHaveLength(4);
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+
+  it('should add all servers when excludeServers is empty', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcporter-excl-test-'));
+    const configPath = path.join(dir, 'mcporter.json');
+
+    try {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      const result = runMcporterSetup({
+        configPath,
+        excludeServers: [],
+        logger,
+      });
+
+      expect(result.added).toHaveLength(6);
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+});
+
+describe('applyPlannerGuard', () => {
+  it('should add deny list to prometheus only', () => {
+    const agents = [
+      { id: 'omoc_prometheus', tools: { profile: 'full' as const } },
+      { id: 'omoc_atlas', tools: { profile: 'full' as const } },
+    ];
+    applyPlannerGuard(agents);
+
+    expect(agents[0]!.tools.deny).toEqual(expect.arrayContaining(['write', 'edit', 'apply_patch']));
+    expect((agents[1]!.tools as any).deny).toBeUndefined();
+  });
+
+  it('should preserve existing fields on prometheus', () => {
+    const agents = [
+      { id: 'omoc_prometheus', tools: { profile: 'full' as const }, name: 'Prometheus' },
+    ];
+    applyPlannerGuard(agents);
+
+    expect(agents[0]!.name).toBe('Prometheus');
+    expect(agents[0]!.tools.profile).toBe('full');
+    expect(agents[0]!.tools.deny).toBeDefined();
+  });
+
+  it('should create tools object if missing', () => {
+    const agents: Array<{ id: string; tools?: { deny?: string[] } }> = [
+      { id: 'omoc_prometheus' },
+    ];
+    applyPlannerGuard(agents);
+
+    expect(agents[0]!.tools?.deny).toEqual(expect.arrayContaining(['write', 'edit', 'apply_patch']));
   });
 });
