@@ -13,7 +13,7 @@ export function registerSpawnGuard(api: OmocPluginApi): void {
     'before_tool_call',
     async (
       event: { toolName: string; params: Record<string, unknown> },
-      _ctx: TypedHookContext,
+      ctx: TypedHookContext,
     ): Promise<{ block?: boolean; blockReason?: string } | void> => {
       if (event.toolName !== SPAWN_TOOL_NAME) {
         return;
@@ -21,7 +21,7 @@ export function registerSpawnGuard(api: OmocPluginApi): void {
 
       let activePersona: string | null;
       try {
-        activePersona = await getActivePersona();
+        activePersona = await getActivePersona(ctx.workspaceDir);
       } catch {
         return;
       }

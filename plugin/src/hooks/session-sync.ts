@@ -8,9 +8,10 @@ import { readFileSync } from 'fs';
 export function registerSessionSync(api: OmocPluginApi): void {
   api.on<{ sessionId: string; resumedFrom?: string }, void>(
     'session_start',
-    async (_event: { sessionId: string; resumedFrom?: string }, _ctx: TypedHookContext): Promise<void> => {
+    async (_event: { sessionId: string; resumedFrom?: string }, ctx: TypedHookContext): Promise<void> => {
       try {
-        const activePersona = await getActivePersona();
+        const wsDir = ctx.workspaceDir;
+        const activePersona = await getActivePersona(wsDir);
         if (!activePersona) return;
 
         const personaContent = readPersonaPromptSync(activePersona);
@@ -19,7 +20,7 @@ export function registerSessionSync(api: OmocPluginApi): void {
           return;
         }
 
-        const agentsPath = resolveAgentsMdPath();
+        const agentsPath = resolveAgentsMdPath(wsDir);
         try {
           const current = readFileSync(agentsPath, 'utf-8');
           if (current.includes(personaContent.slice(0, 100))) return;
@@ -27,7 +28,7 @@ export function registerSessionSync(api: OmocPluginApi): void {
           // AGENTS.md missing or unreadable — needs sync
         }
 
-        await replaceAgentsMd(personaContent);
+        await replaceAgentsMd(personaContent, wsDir);
         api.logger.info(
           `${LOG_PREFIX} Session sync: AGENTS.md re-synced with .omoc-state (persona=${activePersona})`,
         );

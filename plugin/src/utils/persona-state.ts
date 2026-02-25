@@ -1,16 +1,22 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { dirname, join } from 'path';
-import { homedir } from 'os';
 import type { OmocPluginApi } from '../types.js';
+import { resolveOpenClawWorkspaceDir } from './paths.js';
 
 let activePersonaId: string | null = null;
 let loaded = false;
-const stateDir = join('workspace', '.omoc-state');
-let stateFilePath = join(stateDir, 'active-persona');
+
+function resolveStateDir(workspaceDir?: string): string {
+  return join(resolveOpenClawWorkspaceDir(workspaceDir), '.omoc-state');
+}
+
+function resolveStateFilePath(workspaceDir?: string): string {
+  return join(resolveStateDir(workspaceDir), 'active-persona');
+}
 
 export async function initPersonaState(_api: OmocPluginApi): Promise<void> {
   try {
-    await mkdir(dirname(stateFilePath), { recursive: true });
+    await mkdir(resolveStateDir(), { recursive: true });
   } catch (error) {
     console.warn('[omoc] Failed to initialize persona state directory:', error);
   }
@@ -27,8 +33,8 @@ export async function setActivePersona(id: string | null): Promise<void> {
   await setActivePersonaId(id);
 }
 
-export async function getActivePersona(): Promise<string | null> {
-  if (!loaded) await loadFromDisk();
+export async function getActivePersona(workspaceDir?: string): Promise<string | null> {
+  if (!loaded) await loadFromDisk(workspaceDir);
   return activePersonaId;
 }
 
@@ -38,9 +44,9 @@ export async function resetPersonaState(): Promise<void> {
   await saveOffState();
 }
 
-async function loadFromDisk(): Promise<void> {
+async function loadFromDisk(workspaceDir?: string): Promise<void> {
   try {
-    const content = (await readFile(stateFilePath, 'utf-8')).trim();
+    const content = (await readFile(resolveStateFilePath(workspaceDir), 'utf-8')).trim();
     activePersonaId = (content && content !== OFF_MARKER) ? content : null;
   } catch (error: any) {
     // ENOENT is expected on first boot — no state file yet
@@ -56,8 +62,8 @@ export const OFF_MARKER = '__OFF__';
 
 async function saveToDisk(): Promise<void> {
   try {
-    await mkdir(dirname(stateFilePath), { recursive: true });
-    await writeFile(stateFilePath, activePersonaId ?? '', 'utf-8');
+    await mkdir(resolveStateDir(), { recursive: true });
+    await writeFile(resolveStateFilePath(), activePersonaId ?? '', 'utf-8');
   } catch (error) {
     console.warn('[omoc] Failed to persist persona state to disk:', error);
   }
@@ -65,30 +71,26 @@ async function saveToDisk(): Promise<void> {
 
 async function saveOffState(): Promise<void> {
   try {
-    await mkdir(dirname(stateFilePath), { recursive: true });
-    await writeFile(stateFilePath, OFF_MARKER, 'utf-8');
+    await mkdir(resolveStateDir(), { recursive: true });
+    await writeFile(resolveStateFilePath(), OFF_MARKER, 'utf-8');
   } catch (error) {
     console.warn('[omoc] Failed to persist persona off-state to disk:', error);
   }
 }
 
-export function resolveAgentsMdPath(): string {
-  const profile = process.env.OPENCLAW_PROFILE?.trim();
-  const wsDir = (profile && profile.toLowerCase() !== 'default')
-    ? join(homedir(), '.openclaw', `workspace-${profile}`)
-    : join(homedir(), '.openclaw', 'workspace');
-  return join(wsDir, 'AGENTS.md');
+export function resolveAgentsMdPath(workspaceDir?: string): string {
+  return join(resolveOpenClawWorkspaceDir(workspaceDir), 'AGENTS.md');
 }
 
-export async function replaceAgentsMd(personaContent: string): Promise<void> {
-  const agentsPath = resolveAgentsMdPath();
+export async function replaceAgentsMd(personaContent: string, workspaceDir?: string): Promise<void> {
+  const agentsPath = resolveAgentsMdPath(workspaceDir);
   await mkdir(dirname(agentsPath), { recursive: true });
   const merged = `${DEFAULT_AGENTS_MD}\n---\n\n${personaContent}`;
   await writeFile(agentsPath, merged, 'utf-8');
 }
 
-export async function restoreAgentsMdToDefault(): Promise<void> {
-  const agentsPath = resolveAgentsMdPath();
+export async function restoreAgentsMdToDefault(workspaceDir?: string): Promise<void> {
+  const agentsPath = resolveAgentsMdPath(workspaceDir);
   await mkdir(dirname(agentsPath), { recursive: true });
   await writeFile(agentsPath, DEFAULT_AGENTS_MD, 'utf-8');
 }
