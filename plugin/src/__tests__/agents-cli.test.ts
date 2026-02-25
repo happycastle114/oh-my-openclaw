@@ -20,6 +20,13 @@ import {
   applyProviderPreset,
   getProviderNames,
 } from '../cli/model-presets.js';
+import {
+  OMOC_MCP_SERVERS,
+  mergeMcpServers,
+  readMcporterConfig,
+  writeMcporterConfig,
+  runMcporterSetup,
+} from '../cli/mcporter-setup.js';
 
 describe('Agent Configs', () => {
   describe('OMOC_AGENT_CONFIGS structure', () => {
@@ -657,5 +664,221 @@ describe('applyProviderToConfigs', () => {
     expect(explore?.model).toBe('anthropic/claude-sonnet-4-6');
     const librarian = modified.find((a) => a.id === 'omoc_librarian');
     expect(librarian?.model).toBe('anthropic/claude-sonnet-4-6');
+  });
+});
+
+describe('mcporter-setup', () => {
+  describe('OMOC_MCP_SERVERS', () => {
+    it('should have exactly 6 MCP servers', () => {
+      expect(Object.keys(OMOC_MCP_SERVERS)).toHaveLength(6);
+    });
+
+    it('should include all expected server names', () => {
+      const names = Object.keys(OMOC_MCP_SERVERS);
+      expect(names).toContain('web-search-prime');
+      expect(names).toContain('web-reader');
+      expect(names).toContain('exa');
+      expect(names).toContain('context7');
+      expect(names).toContain('grep_app');
+      expect(names).toContain('zread');
+    });
+
+    it('should have url and description for every server', () => {
+      for (const [name, entry] of Object.entries(OMOC_MCP_SERVERS)) {
+        expect(entry.url).toBeDefined();
+        expect(entry.url).toMatch(/^https:\/\//);
+        expect(entry.description).toBeDefined();
+        expect(entry.description.length).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  describe('mergeMcpServers', () => {
+    it('should add all servers to empty config', () => {
+      const existing = { mcpServers: {} };
+      const { config, result } = mergeMcpServers(existing, OMOC_MCP_SERVERS);
+
+      expect(result.added).toHaveLength(6);
+      expect(result.skipped).toHaveLength(0);
+      expect(Object.keys(config.mcpServers)).toHaveLength(6);
+    });
+
+    it('should skip existing servers', () => {
+      const existing = {
+        mcpServers: { exa: { url: 'https://custom-exa.example.com' } },
+      };
+      const { config, result } = mergeMcpServers(existing, OMOC_MCP_SERVERS);
+
+      expect(result.skipped).toContain('exa');
+      expect(result.added).toHaveLength(5);
+      expect(config.mcpServers['exa']?.url).toBe('https://custom-exa.example.com');
+    });
+
+    it('should preserve non-OmOC servers', () => {
+      const existing = {
+        mcpServers: { 'my-custom-server': { url: 'https://custom.example.com' } },
+      };
+      const { config } = mergeMcpServers(existing, OMOC_MCP_SERVERS);
+
+      expect(config.mcpServers['my-custom-server']).toBeDefined();
+      expect(Object.keys(config.mcpServers)).toHaveLength(7);
+    });
+
+    it('should preserve other config fields', () => {
+      const existing = { mcpServers: {}, imports: ['./other.json'] } as any;
+      const { config } = mergeMcpServers(existing, OMOC_MCP_SERVERS);
+
+      expect((config as any).imports).toEqual(['./other.json']);
+    });
+  });
+
+  describe('readMcporterConfig', () => {
+    it('should return empty config for non-existent file', () => {
+      const config = readMcporterConfig('/nonexistent/mcporter.json');
+      expect(config.mcpServers).toEqual({});
+    });
+
+    it('should parse existing config file', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcporter-test-'));
+      const configPath = path.join(dir, 'mcporter.json');
+      fs.writeFileSync(configPath, JSON.stringify({ mcpServers: { test: { url: 'https://test.com' } } }));
+
+      try {
+        const config = readMcporterConfig(configPath);
+        expect(config.mcpServers['test']?.url).toBe('https://test.com');
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+  });
+
+  describe('writeMcporterConfig', () => {
+    it('should create directories and write config', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcporter-test-'));
+      const configPath = path.join(dir, 'nested', 'dir', 'mcporter.json');
+
+      try {
+        writeMcporterConfig(configPath, { mcpServers: { test: { url: 'https://test.com' } } });
+        expect(fs.existsSync(configPath)).toBe(true);
+
+        const content = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+        expect(content.mcpServers.test.url).toBe('https://test.com');
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+  });
+
+  describe('runMcporterSetup', () => {
+    it('should add all 6 servers to empty config', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcporter-test-'));
+      const configPath = path.join(dir, 'mcporter.json');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        const result = runMcporterSetup({ configPath, logger });
+
+        expect(result.added).toHaveLength(6);
+        expect(result.skipped).toHaveLength(0);
+        expect(fs.existsSync(configPath)).toBe(true);
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+
+    it('should create backup when config exists', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcporter-test-'));
+      const configPath = path.join(dir, 'mcporter.json');
+      fs.writeFileSync(configPath, '{"mcpServers":{}}');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        runMcporterSetup({ configPath, logger });
+
+        expect(fs.existsSync(configPath + '.bak')).toBe(true);
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+
+    it('should not write on dry-run', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcporter-test-'));
+      const configPath = path.join(dir, 'mcporter.json');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        runMcporterSetup({ configPath, dryRun: true, logger });
+
+        expect(fs.existsSync(configPath)).toBe(false);
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+
+    it('should be idempotent', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcporter-test-'));
+      const configPath = path.join(dir, 'mcporter.json');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        runMcporterSetup({ configPath, logger });
+        const firstContent = fs.readFileSync(configPath, 'utf-8');
+
+        const result = runMcporterSetup({ configPath, logger });
+        const secondContent = fs.readFileSync(configPath, 'utf-8');
+
+        expect(result.added).toHaveLength(0);
+        expect(result.skipped).toHaveLength(6);
+        expect(JSON.parse(firstContent)).toEqual(JSON.parse(secondContent));
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+  });
+
+  describe('runSetup with setupMcporter', () => {
+    it('should set up mcporter when setupMcporter=true', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-mcp-test-'));
+      const configPath = path.join(dir, 'openclaw.json');
+      const mcporterPath = path.join(dir, 'mcporter.json');
+      fs.writeFileSync(configPath, '{"agents": {"list": []}}');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        const result = runSetup({
+          configPath,
+          logger,
+          setupMcporter: true,
+          mcporterConfigPath: mcporterPath,
+        });
+
+        expect(result.mcporterAdded).toHaveLength(6);
+        expect(fs.existsSync(mcporterPath)).toBe(true);
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
+
+    it('should not set up mcporter when setupMcporter is false', () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-mcp-test-'));
+      const configPath = path.join(dir, 'openclaw.json');
+      const mcporterPath = path.join(dir, 'mcporter.json');
+      fs.writeFileSync(configPath, '{"agents": {"list": []}}');
+
+      try {
+        const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        const result = runSetup({
+          configPath,
+          logger,
+          setupMcporter: false,
+          mcporterConfigPath: mcporterPath,
+        });
+
+        expect(result.mcporterAdded).toBeUndefined();
+        expect(fs.existsSync(mcporterPath)).toBe(false);
+      } finally {
+        fs.rmSync(dir, { recursive: true });
+      }
+    });
   });
 });
