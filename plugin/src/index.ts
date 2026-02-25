@@ -15,7 +15,8 @@ import { registerRalphCommands } from './commands/ralph-commands.js';
 import { registerStatusCommands } from './commands/status-commands.js';
 import { registerPersonaCommands } from './commands/persona-commands.js';
 import { registerContextInjector } from './hooks/context-injector.js';
-import { registerPersonaInjector } from './hooks/persona-injector.js';
+import { registerSessionSync } from './hooks/session-sync.js';
+import { registerSpawnGuard } from './hooks/spawn-guard.js';
 import { registerSetupCli } from './cli/setup.js';
 
 /**
@@ -98,10 +99,16 @@ export default function register(api: OmocPluginApi) {
     api.logger.info(`[${PLUGIN_ID}] Context injector hook registered (before_prompt_build)`);
   });
 
-  safeRegister(api, 'persona-injector', 'hook', () => {
-    registerPersonaInjector(api);
-    registry.hooks.push('persona-injector');
-    api.logger.info(`[${PLUGIN_ID}] Persona injector hook registered (sub-agent before_prompt_build)`);
+  safeRegister(api, 'session-sync', 'hook', () => {
+    registerSessionSync(api);
+    registry.hooks.push('session-sync');
+    api.logger.info(`[${PLUGIN_ID}] Session sync hook registered (session_start)`);
+  });
+
+  safeRegister(api, 'spawn-guard', 'hook', () => {
+    registerSpawnGuard(api);
+    registry.hooks.push('spawn-guard');
+    api.logger.info(`[${PLUGIN_ID}] Spawn guard hook registered (before_tool_call)`);
   });
 
   safeRegister(api, 'ralph-loop', 'service', () => {

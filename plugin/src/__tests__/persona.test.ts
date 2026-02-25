@@ -41,7 +41,8 @@ import {
   clearPersonaCache,
 } from '../agents/persona-prompts.js';
 import { registerPersonaCommands } from '../commands/persona-commands.js';
-import { registerPersonaInjector } from '../hooks/persona-injector.js';
+import { registerSessionSync } from '../hooks/session-sync.js';
+import { registerSpawnGuard } from '../hooks/spawn-guard.js';
 import { createMockApi } from './helpers/mock-factory.js';
 
 describe('persona-state', () => {
@@ -376,60 +377,126 @@ describe('persona-commands (/omoc)', () => {
   });
 });
 
-describe('persona-injector (sub-agent before_prompt_build)', () => {
-  let hookHandler: (event: { systemPrompt?: string }, ctx: { agentId?: string; sessionKey?: string }) => Promise<{ systemPrompt?: string; prependContext?: string } | void>;
+describe('session-sync (session_start)', () => {
+  let hookHandler: (event: { sessionId: string }, ctx: { agentId?: string }) => Promise<void>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     clearPersonaCache();
+    await resetPersonaState();
     vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
     vi.mocked(statSync).mockReturnValue({ mtimeMs: Date.now() } as ReturnType<typeof statSync>);
     const api = createMockApi();
-    registerPersonaInjector(api);
+    registerSessionSync(api);
     hookHandler = (api.on as ReturnType<typeof vi.fn>).mock.calls[0][1];
   });
 
-  it('skips main session (no :subagent: in sessionKey)', async () => {
-    const result = await hookHandler(
-      { systemPrompt: 'base prompt' },
-      { agentId: 'atlas', sessionKey: 'agent:main:main' },
-    );
-    expect(result).toBeUndefined();
+  it('does nothing when no active persona', async () => {
+    vi.mocked(fsPromises.writeFile).mockClear();
+    await hookHandler({ sessionId: 'sess-1' }, {});
+    expect(fsPromises.writeFile).not.toHaveBeenCalled();
   });
 
-  it('injects persona for sub-agent session with known agentId', async () => {
-    const result = await hookHandler(
-      { systemPrompt: 'base prompt' },
-      { agentId: 'explore', sessionKey: 'agent:main:subagent:abc-123' },
-    );
-    expect(result).toBeDefined();
-    expect(result!.systemPrompt).toContain('base prompt');
-    expect(result!.systemPrompt).toContain('Mock Persona Content');
+  it('syncs AGENTS.md when persona is active and file is stale', async () => {
+    await setActivePersona('omoc_atlas');
+    vi.mocked(fsPromises.writeFile).mockClear();
+    vi.mocked(readFileSync).mockImplementation((path: unknown) => {
+      if (String(path).includes('AGENTS.md')) return 'old content';
+      return '# Mock Persona Content\nYou are Atlas.';
+    });
+
+    await hookHandler({ sessionId: 'sess-1' }, {});
+    expect(fsPromises.writeFile).toHaveBeenCalled();
+    const writeCall = vi.mocked(fsPromises.writeFile).mock.calls[0];
+    expect(String(writeCall[0])).toContain('AGENTS.md');
   });
 
-  it('skips sub-agent with unknown agentId', async () => {
-    const result = await hookHandler(
-      { systemPrompt: 'base prompt' },
-      { agentId: 'nonexistent-agent', sessionKey: 'agent:main:subagent:abc-123' },
-    );
-    expect(result).toBeUndefined();
-  });
+  it('skips sync when AGENTS.md already contains persona content', async () => {
+    await setActivePersona('omoc_atlas');
+    vi.mocked(readFileSync).mockImplementation((path: unknown) => {
+      if (String(path).includes('AGENTS.md')) return '# Mock Persona Content\nYou are Atlas.';
+      return '# Mock Persona Content\nYou are Atlas.';
+    });
 
-  it('falls back to prependContext when no systemPrompt in event', async () => {
-    const result = await hookHandler(
-      {},
-      { agentId: 'oracle', sessionKey: 'agent:main:subagent:abc-123' },
-    );
-    expect(result).toBeDefined();
-    expect(result!.prependContext).toContain('Mock Persona Content');
-    expect(result!.systemPrompt).toBeUndefined();
-  });
+    // writeFile was called once by setActivePersona, clear it
+    vi.mocked(fsPromises.writeFile).mockClear();
 
-  it('skips when no agentId provided', async () => {
-    const result = await hookHandler(
-      { systemPrompt: 'base prompt' },
-      { sessionKey: 'agent:main:subagent:abc-123' },
-    );
-    expect(result).toBeUndefined();
+    await hookHandler({ sessionId: 'sess-1' }, {});
+    expect(fsPromises.writeFile).not.toHaveBeenCalled();
   });
 });
+
+describe('spawn-guard (before_tool_call)', () => {
+  let hookHandler: (
+    event: { toolName: string; params: Record<string, unknown> },
+    ctx: { agentId?: string; sessionKey?: string },
+  ) => Promise<{ block?: boolean; blockReason?: string } | void>;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    await resetPersonaState();
+    const api = createMockApi();
+    registerSpawnGuard(api);
+    hookHandler = (api.on as ReturnType<typeof vi.fn>).mock.calls[0][1];
+  });
+
+  it('allows non-sessions_spawn tools regardless of state', async () => {
+    await setActivePersona('omoc_atlas');
+    const result = await hookHandler(
+      { toolName: 'read', params: {} },
+      {},
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it('allows sessions_spawn when no active persona', async () => {
+    const result = await hookHandler(
+      { toolName: 'sessions_spawn', params: { task: 'do something' } },
+      {},
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it('allows sessions_spawn with agentId when persona is active', async () => {
+    await setActivePersona('omoc_atlas');
+    const result = await hookHandler(
+      { toolName: 'sessions_spawn', params: { task: 'do something', agentId: 'omoc_explore' } },
+      {},
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it('blocks sessions_spawn without agentId when persona is active', async () => {
+    await setActivePersona('omoc_atlas');
+    const result = await hookHandler(
+      { toolName: 'sessions_spawn', params: { task: 'do something' } },
+      {},
+    );
+    expect(result).toBeDefined();
+    expect(result!.block).toBe(true);
+    expect(result!.blockReason).toContain('agentId is required');
+    expect(result!.blockReason).toContain('omoc_atlas');
+  });
+
+  it('blocks sessions_spawn with empty agentId when persona is active', async () => {
+    await setActivePersona('omoc_atlas');
+    const result = await hookHandler(
+      { toolName: 'sessions_spawn', params: { task: 'do something', agentId: '  ' } },
+      {},
+    );
+    expect(result).toBeDefined();
+    expect(result!.block).toBe(true);
+  });
+
+  it('block reason includes available agent names', async () => {
+    await setActivePersona('omoc_atlas');
+    const result = await hookHandler(
+      { toolName: 'sessions_spawn', params: { task: 'explore codebase' } },
+      {},
+    );
+    expect(result!.blockReason).toContain('explore');
+    expect(result!.blockReason).toContain('oracle');
+    expect(result!.blockReason).toContain('sisyphus');
+  });
+});
+
