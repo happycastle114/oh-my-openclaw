@@ -15,6 +15,7 @@ import { registerRalphCommands } from './commands/ralph-commands.js';
 import { registerStatusCommands } from './commands/status-commands.js';
 import { registerPersonaCommands } from './commands/persona-commands.js';
 import { registerContextInjector } from './hooks/context-injector.js';
+import { registerPersonaInjector } from './hooks/persona-injector.js';
 import { registerSetupCli } from './cli/setup.js';
 
 /**
@@ -95,6 +96,12 @@ export default function register(api: OmocPluginApi) {
     registerContextInjector(guarded);
     registry.hooks.push('context-injector');
     api.logger.info(`[${PLUGIN_ID}] Context injector hook registered (before_prompt_build)`);
+  });
+
+  safeRegister(api, 'persona-injector', 'hook', () => {
+    registerPersonaInjector(api);
+    registry.hooks.push('persona-injector');
+    api.logger.info(`[${PLUGIN_ID}] Persona injector hook registered (sub-agent before_prompt_build)`);
   });
 
   safeRegister(api, 'ralph-loop', 'service', () => {

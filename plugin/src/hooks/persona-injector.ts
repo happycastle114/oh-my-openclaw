@@ -1,64 +1,57 @@
 import { OmocPluginApi, TypedHookContext, BeforePromptBuildEvent, BeforePromptBuildResult } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
-import { getActivePersona } from '../utils/persona-state.js';
 import { readPersonaPromptSync, resolvePersonaId } from '../agents/persona-prompts.js';
 
 /**
- * Resolve the effective persona ID.
+ * Persona injector for **sub-agent sessions only**.
  *
- * Priority:
- *   1. Manually set persona via /omoc command (getActivePersona())
- *   2. agentId from the hook context (set by OpenClaw core)
- *   3. null — no persona to inject
+ * Main session persona is handled by AGENTS.md file replacement (see persona-commands.ts).
+ * Sub-agents are ephemeral (single task → die), so prependContext accumulation is not an issue.
+ *
+ * Resolution: ctx.agentId (set by OpenClaw from openclaw.json5 agent config)
+ *   → resolvePersonaId maps e.g. "explore" → "omoc_explore" → agents/explore.md
  */
-async function resolveEffectivePersona(ctx: TypedHookContext): Promise<{ personaId: string; source: 'manual' | 'auto' } | null> {
-  const manual = await getActivePersona();
-  if (manual) {
-    const resolved = resolvePersonaId(manual);
-    if (resolved) return { personaId: resolved, source: 'manual' };
-  }
-
-  const agentId = ctx.agentId;
-  if (!agentId) return null;
-
-  const resolved = resolvePersonaId(agentId);
-  if (!resolved) return null;
-
-  return { personaId: resolved, source: 'auto' };
-}
-
 export function registerPersonaInjector(api: OmocPluginApi): void {
   api.on<BeforePromptBuildEvent, BeforePromptBuildResult | void>(
     'before_prompt_build',
     async (event: BeforePromptBuildEvent, ctx: TypedHookContext): Promise<BeforePromptBuildResult | void> => {
-      const result = await resolveEffectivePersona(ctx);
+      // Only inject for sub-agent sessions.
+      // Main session uses AGENTS.md file replacement (no accumulation bug).
+      const sessionKey = ctx.sessionKey ?? '';
+      if (!sessionKey.includes(':subagent:')) {
+        return;
+      }
 
-       if (!result) {
-         const manual = await getActivePersona();
-         api.logger.info(
-           `${LOG_PREFIX} Persona injector: no persona resolved (agentId=${ctx.agentId ?? 'none'}, manual=${manual ?? 'none'})`
-         );
-         return;
-       }
+      // Resolve persona from agentId (e.g., "explore" → "omoc_explore")
+      const agentId = ctx.agentId;
+      if (!agentId) return;
 
-       const { personaId, source } = result;
+      const personaId = resolvePersonaId(agentId);
+      if (!personaId) {
+        api.logger.info(
+          `${LOG_PREFIX} Persona injector: no persona for agentId=${agentId} (sub-agent session)`,
+        );
+        return;
+      }
 
-       try {
-         const content = readPersonaPromptSync(personaId);
+      try {
+        const content = readPersonaPromptSync(personaId);
 
-         if (event.systemPrompt) {
-           api.logger.info(
-             `${LOG_PREFIX} Persona appended to system prompt: ${personaId} (${source}, agentId=${ctx.agentId ?? 'none'})`,
-           );
-           return { systemPrompt: `${event.systemPrompt}\n\n${content}` };
-         }
+        if (event.systemPrompt) {
+          // Append persona to the existing system prompt (preserves tools, runtime, subagent context)
+          api.logger.info(
+            `${LOG_PREFIX} Sub-agent persona injected: ${personaId} (agentId=${agentId}, session=${sessionKey})`,
+          );
+          return { systemPrompt: `${event.systemPrompt}\n\n${content}` };
+        }
 
-         api.logger.info(
-           `${LOG_PREFIX} Persona via prependContext fallback: ${personaId} (${source}, agentId=${ctx.agentId ?? 'none'})`,
-         );
-         return { prependContext: content };
-       } catch (err) {
-         api.logger.error(`${LOG_PREFIX} Failed to inject persona ${personaId}:`, err);
+        // Fallback: no system prompt available, use prependContext
+        api.logger.info(
+          `${LOG_PREFIX} Sub-agent persona via prependContext: ${personaId} (agentId=${agentId})`,
+        );
+        return { prependContext: content };
+      } catch (err) {
+        api.logger.error(`${LOG_PREFIX} Failed to inject persona for sub-agent ${personaId}:`, err);
         return;
       }
     },

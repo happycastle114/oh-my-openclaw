@@ -41,6 +41,7 @@ import {
   clearPersonaCache,
 } from '../agents/persona-prompts.js';
 import { registerPersonaCommands } from '../commands/persona-commands.js';
+import { registerPersonaInjector } from '../hooks/persona-injector.js';
 import { createMockApi } from './helpers/mock-factory.js';
 
 describe('persona-state', () => {
@@ -372,5 +373,63 @@ describe('persona-commands (/omoc)', () => {
 
     expect(await getActivePersona()).toBe('omoc_atlas');
     expect(result.text).toContain('OmOC Mode: ON');
+  });
+});
+
+describe('persona-injector (sub-agent before_prompt_build)', () => {
+  let hookHandler: (event: { systemPrompt?: string }, ctx: { agentId?: string; sessionKey?: string }) => Promise<{ systemPrompt?: string; prependContext?: string } | void>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clearPersonaCache();
+    vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
+    vi.mocked(statSync).mockReturnValue({ mtimeMs: Date.now() } as ReturnType<typeof statSync>);
+    const api = createMockApi();
+    registerPersonaInjector(api);
+    hookHandler = (api.on as ReturnType<typeof vi.fn>).mock.calls[0][1];
+  });
+
+  it('skips main session (no :subagent: in sessionKey)', async () => {
+    const result = await hookHandler(
+      { systemPrompt: 'base prompt' },
+      { agentId: 'atlas', sessionKey: 'agent:main:main' },
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it('injects persona for sub-agent session with known agentId', async () => {
+    const result = await hookHandler(
+      { systemPrompt: 'base prompt' },
+      { agentId: 'explore', sessionKey: 'agent:main:subagent:abc-123' },
+    );
+    expect(result).toBeDefined();
+    expect(result!.systemPrompt).toContain('base prompt');
+    expect(result!.systemPrompt).toContain('Mock Persona Content');
+  });
+
+  it('skips sub-agent with unknown agentId', async () => {
+    const result = await hookHandler(
+      { systemPrompt: 'base prompt' },
+      { agentId: 'nonexistent-agent', sessionKey: 'agent:main:subagent:abc-123' },
+    );
+    expect(result).toBeUndefined();
+  });
+
+  it('falls back to prependContext when no systemPrompt in event', async () => {
+    const result = await hookHandler(
+      {},
+      { agentId: 'oracle', sessionKey: 'agent:main:subagent:abc-123' },
+    );
+    expect(result).toBeDefined();
+    expect(result!.prependContext).toContain('Mock Persona Content');
+    expect(result!.systemPrompt).toBeUndefined();
+  });
+
+  it('skips when no agentId provided', async () => {
+    const result = await hookHandler(
+      { systemPrompt: 'base prompt' },
+      { sessionKey: 'agent:main:subagent:abc-123' },
+    );
+    expect(result).toBeUndefined();
   });
 });
