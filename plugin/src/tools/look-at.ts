@@ -64,7 +64,7 @@ export function registerLookAtTool(api: OmocPluginApi) {
       model: Type.Optional(
         Type.String({
           description: 'Gemini model to use',
-          default: 'gemini-2.5-flash',
+          default: 'gemini-3-flash',
         }),
       ),
     }),
@@ -74,7 +74,7 @@ export function registerLookAtTool(api: OmocPluginApi) {
         const tmuxSocket = getConfig(api).tmux_socket;
 
         try {
-          const model = params.model ?? 'gemini-2.5-flash';
+          const model = params.model ?? 'gemini-3-flash';
 
           const command = `gemini -m '${shellQuote(model)}' --prompt '${shellQuote(params.goal)}' -f '${shellQuote(params.file_path)}' -o text > '${shellQuote(tempFile)}' 2>&1`;
 

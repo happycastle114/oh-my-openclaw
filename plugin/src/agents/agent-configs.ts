@@ -179,8 +179,8 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     id: 'omoc_looker',
     name: 'Multimodal Looker',
     model: {
-      primary: 'google/gemini-2.5-flash',
-      fallbacks: ['anthropic/claude-sonnet-4-6'],
+      primary: 'google/gemini-3.1-pro',
+      fallbacks: ['google/gemini-3-flash', 'anthropic/claude-sonnet-4-6'],
     },
     identity: {
       name: 'Multimodal Looker',
@@ -197,8 +197,8 @@ export const OMOC_AGENT_CONFIGS: OmocAgentConfig[] = [
     id: 'omoc_frontend',
     name: 'Frontend',
     model: {
-      primary: 'google/gemini-2.5-pro',
-      fallbacks: ['anthropic/claude-sonnet-4-6'],
+      primary: 'google/gemini-3.1-pro',
+      fallbacks: ['google/gemini-3-flash', 'anthropic/claude-sonnet-4-6'],
     },
     identity: {
       name: 'Frontend',

@@ -180,11 +180,14 @@ function askQuestion(rl: readline.Interface, question: string): Promise<string> 
 }
 
 const TIER_LABELS: Record<ModelTier, string> = {
-  planning: 'Planning/Architecture',
-  worker: 'Implementation Workers',
-  orchestrator: 'Task Orchestrator',
-  lightweight: 'Search/Research',
-  visual: 'Visual/Frontend',
+  strategic: 'Strategic Planning (prometheus, atlas)',
+  reasoning: 'Deep Reasoning (oracle)',
+  analysis: 'Analysis/Review (metis, momus)',
+  worker: 'Implementation (sisyphus)',
+  'deep-worker': 'Deep Implementation (hephaestus)',
+  search: 'Codebase Search (explore)',
+  research: 'Documentation Research (librarian)',
+  visual: 'Visual/Frontend (looker, frontend)',
 };
 
 function printPreview(logger: Logger, provider: string): void {

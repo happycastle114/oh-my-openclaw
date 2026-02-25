@@ -26,11 +26,11 @@
       "alternatives": ["claude-opus-4-6-thinking", "gemini-2.5-pro"]
     },
     "multimodal": {
-      "model": "gemini-2.5-flash",
+      "model": "gemini-3-flash",
       "description": "PDF/image/video analysis. Run via Gemini CLI tmux session.",
       "agents": ["multimodal-looker"],
       "tool": "gemini-cli",
-      "alternatives": ["gemini-2.5-pro", "gemini-3.1-pro"]
+      "alternatives": ["gemini-3.1-pro"]
     },
     "artistry": {
       "model": "claude-opus-4-6-thinking",
@@ -75,11 +75,10 @@
       },
       "gemini": {
         "description": "Gemini CLI multimodal analysis — multiple concurrent execution possible (gemini, gemini-2, ...)",
-        "default_model": "gemini-2.5-flash",
+        "default_model": "gemini-3-flash",
         "models": {
-          "gemini-2.5-flash": { "flag": "-m gemini-2.5-flash", "speed": "fast", "description": "Quick verification" },
-          "gemini-2.5-pro": { "flag": "-m gemini-2.5-pro", "speed": "medium", "description": "Detailed analysis" },
-          "gemini-3.1-pro": { "flag": "-m gemini-3.1-pro", "speed": "slow", "description": "Highest quality" }
+          "gemini-3-flash": { "flag": "-m gemini-3-flash", "speed": "fast", "description": "Quick verification" },
+          "gemini-3.1-pro": { "flag": "-m gemini-3.1-pro", "speed": "medium", "description": "Detailed analysis / highest quality" }
         },
         "ram_per_session": "~200MB"
       },

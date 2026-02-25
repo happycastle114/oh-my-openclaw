@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.2] - 2026-02-25
+
+### Changed
+- **8-tier model system**: Replaced 5-tier system (planning/worker/orchestrator/lightweight/visual) with 8 granular tiers for per-agent model control during onboarding
+  - `strategic` (prometheus, atlas) — strategy and orchestration
+  - `reasoning` (oracle) — deep architectural reasoning
+  - `analysis` (metis, momus) — review and gap analysis (now cheaper tier)
+  - `worker` (sisyphus) — general implementation
+  - `deep-worker` (hephaestus) — complex implementation
+  - `search` (explore) — codebase search (cheapest tier)
+  - `research` (librarian) — documentation research (cheapest tier)
+  - `visual` (looker, frontend) — visual/frontend analysis
+- **Gemini model updates**: Default multimodal/look-at model upgraded from `gemini-2.5-flash` to `gemini-3-flash`; visual tier upgraded from `gemini-2.5-pro` to `gemini-3.1-pro`
+- **Provider presets**: All 3 provider presets (Anthropic, OpenAI, Google) updated to 8-tier model mapping
+- **Custom provider flow**: `omoc-setup` wizard now prompts for 8 tiers instead of 5
+
 ## [0.8.4] - 2026-02-23
 
 ### Added

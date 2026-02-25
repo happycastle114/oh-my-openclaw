@@ -353,7 +353,7 @@ The plugin registers 3 custom tools, all prefixed with `omoc_`.
 | `deep` | `claude-opus-4-6-thinking` |
 | `ultrabrain` | `gpt-5.3-codex` |
 | `visual-engineering` | `gemini-3.1-pro` |
-| `multimodal` | `gemini-2.5-flash` |
+| `multimodal` | `gemini-3-flash` |
 | `artistry` | `claude-opus-4-6-thinking` |
 | `unspecified-low` | `claude-sonnet-4-6` |
 | `unspecified-high` | `claude-opus-4-6-thinking` |
@@ -379,7 +379,7 @@ The plugin registers 3 custom tools, all prefixed with `omoc_`.
 |-----------|------|----------|---------|-------------|
 | `file_path` | `string` | Yes | — | Path to the file to analyze |
 | `goal` | `string` | Yes | — | What to analyze or look for |
-| `model` | `string` | No | `gemini-2.5-flash` | Gemini model to use |
+| `model` | `string` | No | `gemini-3-flash` | Gemini model to use |
 
 **tmux Configuration:**
 
@@ -755,8 +755,8 @@ Oh-My-OpenClaw uses a category-based routing system to select the optimal model 
 | `quick` | `claude-sonnet-4-6` | `gpt-5.3-codex-spark`, `gemini-3-flash` | Simple fixes, searches, small tasks, file operations | sisyphus-junior, explore, librarian |
 | `deep` | `claude-opus-4-6-thinking` | `gpt-5.3-codex`, `gemini-3.1-pro` | Complex refactoring, analysis, gap detection, plan review | hephaestus, metis, momus |
 | `ultrabrain` | `gpt-5.3-codex` | `claude-opus-4-6-thinking`, `gemini-3.1-pro-high` | Deep logical reasoning, complex architecture decisions | prometheus, atlas, oracle |
-| `visual-engineering` | `gemini-3.1-pro` | `claude-opus-4-6-thinking`, `gemini-2.5-pro` | Frontend, UI/UX, design, styling, animation, visual analysis | frontend, multimodal-looker |
-| `multimodal` | `gemini-2.5-flash` | `gemini-2.5-pro`, `gemini-3.1-pro` | PDF/image/video analysis via Gemini CLI tmux session | multimodal-looker |
+| `visual-engineering` | `gemini-3.1-pro` | `claude-opus-4-6-thinking`, `gemini-3-pro` | Frontend, UI/UX, design, styling, animation, visual analysis | frontend, multimodal-looker |
+| `multimodal` | `gemini-3-flash` | `gemini-3.1-pro`, `gemini-3-pro` | PDF/image/video analysis via Gemini CLI tmux session | multimodal-looker |
 | `artistry` | `claude-opus-4-6-thinking` | `gemini-3.1-pro` | Highly creative/artistic tasks, novel ideas, design exploration | — |
 | `unspecified-low` | `claude-sonnet-4-6` | — | Tasks that don't fit other categories, low effort required | — |
 | `unspecified-high` | `claude-opus-4-6-thinking` | — | Tasks that don't fit other categories, high effort required | — |
@@ -820,15 +820,15 @@ Multiple instances supported: `opencode`, `opencode-2`, `opencode-3`, etc.
 | Property | Value |
 |----------|-------|
 | **Description** | Gemini CLI multimodal analysis sessions |
-| **Default Model** | `gemini-2.5-flash` |
+| **Default Model** | `gemini-3-flash` |
 | **RAM per session** | ~200 MB |
 
 **Available Models:**
 
 | Model | Flag | Speed | Description |
 |-------|------|-------|-------------|
-| `gemini-2.5-flash` | `-m gemini-2.5-flash` | fast | Quick checks |
-| `gemini-2.5-pro` | `-m gemini-2.5-pro` | medium | Detailed analysis |
+| `gemini-3-flash` | `-m gemini-3-flash` | fast | Quick checks |
+| `gemini-3-pro` | `-m gemini-3-pro` | medium | Detailed analysis |
 | `gemini-3.1-pro` | `-m gemini-3.1-pro` | slow | Highest quality |
 
 Multiple instances supported: `gemini`, `gemini-2`, etc.
