@@ -14,6 +14,7 @@ import {
   registerCustomPreset,
   type ModelTier,
 } from './model-presets.js';
+import { OMOC_MCP_SERVERS, runMcporterSetup } from './mcporter-setup.js';
 
 type AgentsSection = {
   defaults?: Record<string, unknown>;
@@ -125,6 +126,8 @@ export interface MergeResult {
   added: string[];
   skipped: string[];
   updated: string[];
+  mcporterAdded?: string[];
+  mcporterSkipped?: string[];
 }
 
 export function mergeAgentConfigs(
@@ -210,10 +213,9 @@ async function runCustomProviderFlow(
   rl: readline.Interface,
   logger: Logger,
 ): Promise<string> {
-  logger.info('');
-  logger.info('  Enter model IDs for each tier.');
-  logger.info('  Format: provider/model (e.g., cliproxy/claude-opus-4-6, z.ai/gpt-5.3-codex)');
-  logger.info('');
+    logger.info('');
+    logger.info('Step 1/3: Select your AI provider');
+    logger.info('');
 
   const tierModels = {} as Record<ModelTier, string>;
 
@@ -240,7 +242,7 @@ async function runCustomProviderFlow(
   return customName;
 }
 
-export async function runInteractiveSetup(logger: Logger): Promise<{ provider: string }> {
+export async function runInteractiveSetup(logger: Logger): Promise<{ provider: string; setupMcporter: boolean }> {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -284,7 +286,7 @@ export async function runInteractiveSetup(logger: Logger): Promise<{ provider: s
     logger.info(`  ✓ Selected: ${PROVIDER_LABELS[provider] ?? 'Custom'}`);
     logger.info('');
 
-    logger.info('Step 2/2: Model configuration preview');
+    logger.info('Step 2/3: Model configuration preview');
     logger.info('');
     printPreview(logger, provider);
     logger.info('');
@@ -292,11 +294,25 @@ export async function runInteractiveSetup(logger: Logger): Promise<{ provider: s
     const confirm = await askQuestion(rl, '  Apply this configuration? (Y/n): ');
     if (confirm.toLowerCase() === 'n' || confirm.toLowerCase() === 'no') {
       logger.info('  Setup cancelled.');
-      return { provider: '' };
+      return { provider: '', setupMcporter: false };
     }
 
     logger.info('');
-    return { provider };
+    logger.info('Step 3/3: Web search MCP servers');
+    logger.info('');
+    logger.info('  OmOC agents use mcporter MCP servers for web search,');
+    logger.info('  documentation lookup, and code search:');
+    logger.info('');
+    for (const [name, entry] of Object.entries(OMOC_MCP_SERVERS)) {
+      logger.info(`    ${name}: ${entry.description}`);
+    }
+    logger.info('');
+
+    const mcpConfirm = await askQuestion(rl, '  Set up these MCP servers? (Y/n): ');
+    const setupMcporter = mcpConfirm.toLowerCase() !== 'n' && mcpConfirm.toLowerCase() !== 'no';
+
+    logger.info('');
+    return { provider, setupMcporter };
   } finally {
     rl.close();
   }
@@ -308,6 +324,8 @@ export interface SetupOptions {
   force?: boolean;
   dryRun?: boolean;
   provider?: string;
+  setupMcporter?: boolean;
+  mcporterConfigPath?: string;
   interactive?: boolean;
   logger: Logger;
 }
@@ -383,6 +401,18 @@ export function runSetup(options: SetupOptions): MergeResult {
     logger.info('No changes needed — all OmOC agents already present.');
   }
 
+  if (options.setupMcporter) {
+    logger.info('');
+    logger.info('Setting up mcporter MCP servers...');
+    const mcpResult = runMcporterSetup({
+      configPath: options.mcporterConfigPath,
+      dryRun,
+      logger,
+    });
+    result.mcporterAdded = mcpResult.added;
+    result.mcporterSkipped = mcpResult.skipped;
+  }
+
   return result;
 }
 
@@ -413,10 +443,13 @@ export function registerSetupCli(ctx: {
           throw new Error(`Unknown provider "${provider}". Valid: ${valid}`);
         }
 
+        let setupMcporter = false;
+
         if (!provider && process.stdin.isTTY) {
           const result = await runInteractiveSetup(ctx.logger);
           if (!result.provider) return;
           provider = result.provider;
+          setupMcporter = result.setupMcporter;
         }
 
         runSetup({
@@ -425,6 +458,7 @@ export function registerSetupCli(ctx: {
           force: provider ? true : opts.force,
           dryRun: opts.dryRun,
           provider,
+          setupMcporter,
           logger: ctx.logger,
         });
 
