@@ -17,6 +17,7 @@ import { registerPersonaCommands } from './commands/persona-commands.js';
 import { registerContextInjector } from './hooks/context-injector.js';
 import { registerSessionSync } from './hooks/session-sync.js';
 import { registerSpawnGuard } from './hooks/spawn-guard.js';
+import { registerKeywordDetector } from './hooks/keyword-detector/hook.js';
 import { registerSetupCli } from './cli/setup.js';
 
 /**
@@ -91,6 +92,12 @@ export default function register(api: OmocPluginApi) {
     registerStartupHook(guarded);
     registry.hooks.push('gateway-startup');
     api.logger.info(`[${PLUGIN_ID}] Gateway startup hook registered`);
+  });
+
+  safeRegister(api, 'keyword-detector', 'hook', () => {
+    registerKeywordDetector(guarded);
+    registry.hooks.push('keyword-detector');
+    api.logger.info(`[${PLUGIN_ID}] Keyword detector hook registered (before_prompt_build, priority 75)`);
   });
 
   safeRegister(api, 'context-injector', 'hook', () => {

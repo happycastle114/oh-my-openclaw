@@ -35,13 +35,13 @@ export async function getActivePersona(): Promise<string | null> {
 export async function resetPersonaState(): Promise<void> {
   activePersonaId = null;
   loaded = true;
-  await saveToDisk();
+  await saveOffState();
 }
 
 async function loadFromDisk(): Promise<void> {
   try {
     const content = (await readFile(stateFilePath, 'utf-8')).trim();
-    activePersonaId = content || null;
+    activePersonaId = (content && content !== OFF_MARKER) ? content : null;
   } catch (error: any) {
     // ENOENT is expected on first boot — no state file yet
     if (error?.code !== 'ENOENT') {
@@ -52,12 +52,23 @@ async function loadFromDisk(): Promise<void> {
   loaded = true;
 }
 
+export const OFF_MARKER = '__OFF__';
+
 async function saveToDisk(): Promise<void> {
   try {
     await mkdir(dirname(stateFilePath), { recursive: true });
     await writeFile(stateFilePath, activePersonaId ?? '', 'utf-8');
   } catch (error) {
     console.warn('[omoc] Failed to persist persona state to disk:', error);
+  }
+}
+
+async function saveOffState(): Promise<void> {
+  try {
+    await mkdir(dirname(stateFilePath), { recursive: true });
+    await writeFile(stateFilePath, OFF_MARKER, 'utf-8');
+  } catch (error) {
+    console.warn('[omoc] Failed to persist persona off-state to disk:', error);
   }
 }
 
