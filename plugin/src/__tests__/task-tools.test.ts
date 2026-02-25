@@ -417,7 +417,7 @@ describe('Agent End Reminder', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Session Cleanup (session_start — new sessions clear store)
+// Session Cleanup (session_start + session_end clear store)
 // ---------------------------------------------------------------------------
 describe('Session Cleanup', () => {
   let mockApi: any;
@@ -429,59 +429,91 @@ describe('Session Cleanup', () => {
     mockApi = createMockApiAny();
   });
 
-  it('registers on session_start hook with priority 190', () => {
+  it('registers on both session_start and session_end hooks', () => {
     registerSessionCleanup(mockApi);
 
-    expect(mockApi.on).toHaveBeenCalledOnce();
+    expect(mockApi.on).toHaveBeenCalledTimes(2);
     expect(mockApi.on.mock.calls[0][0]).toBe('session_start');
     expect(mockApi.on.mock.calls[0][2]).toEqual({ priority: 190 });
+    expect(mockApi.on.mock.calls[1][0]).toBe('session_end');
+    expect(mockApi.on.mock.calls[1][2]).toEqual({ priority: 50 });
   });
 
-  it('clears store and counter for new sessions (no resumedFrom)', async () => {
-    createTodo('Leftover task', 'high', 'pending', 'sess-abc');
-    _sessionCounters.set('sess-abc', 7);
+  describe('session_start', () => {
+    it('clears store and counter for new sessions (no resumedFrom)', async () => {
+      createTodo('Leftover task', 'high', 'pending', 'sess-abc');
+      _sessionCounters.set('sess-abc', 7);
 
-    registerSessionCleanup(mockApi);
-    const handler = getOnHandler(mockApi, 'session_start');
-    const ctx = createMockContext({ sessionKey: 'sess-abc' });
+      registerSessionCleanup(mockApi);
+      const handler = getOnHandler(mockApi, 'session_start');
+      const ctx = createMockContext({ sessionKey: 'sess-abc' });
 
-    await handler({ sessionId: 'sess-abc' }, ctx);
+      await handler({ sessionId: 'sess-abc' }, ctx);
 
-    expect(listTodos(undefined, 'sess-abc')).toHaveLength(0);
-    expect(_sessionCounters.has('sess-abc')).toBe(false);
+      expect(listTodos(undefined, 'sess-abc')).toHaveLength(0);
+      expect(_sessionCounters.has('sess-abc')).toBe(false);
+    });
+
+    it('preserves store for resumed sessions', async () => {
+      createTodo('Keep me', 'high', 'pending', 'sess-resume');
+
+      registerSessionCleanup(mockApi);
+      const handler = getOnHandler(mockApi, 'session_start');
+      const ctx = createMockContext({ sessionKey: 'sess-resume' });
+
+      await handler({ sessionId: 'sess-resume', resumedFrom: 'old-sess' }, ctx);
+
+      expect(listTodos(undefined, 'sess-resume')).toHaveLength(1);
+    });
+
+    it('falls back to event.sessionId when ctx keys are absent', async () => {
+      createTodo('Orphan', 'medium', 'pending', 'evt-sid');
+
+      registerSessionCleanup(mockApi);
+      const handler = getOnHandler(mockApi, 'session_start');
+      const ctx = createMockContext({ sessionKey: undefined, sessionId: undefined });
+
+      await handler({ sessionId: 'evt-sid' }, ctx);
+
+      expect(listTodos(undefined, 'evt-sid')).toHaveLength(0);
+    });
   });
 
-  it('preserves store for resumed sessions', async () => {
-    createTodo('Keep me', 'high', 'pending', 'sess-resume');
+  describe('session_end', () => {
+    it('clears store and counter on session end', async () => {
+      createTodo('Stale task', 'high', 'pending', 'sess-end');
+      _sessionCounters.set('sess-end', 5);
 
-    registerSessionCleanup(mockApi);
-    const handler = getOnHandler(mockApi, 'session_start');
-    const ctx = createMockContext({ sessionKey: 'sess-resume' });
+      registerSessionCleanup(mockApi);
+      const handler = getOnHandler(mockApi, 'session_end');
+      const ctx = createMockContext({ sessionId: 'sess-end' });
 
-    await handler({ sessionId: 'sess-resume', resumedFrom: 'old-sess' }, ctx);
+      await handler({ sessionId: 'sess-end', messageCount: 42 }, ctx);
 
-    expect(listTodos(undefined, 'sess-resume')).toHaveLength(1);
-  });
+      expect(listTodos(undefined, 'sess-end')).toHaveLength(0);
+      expect(_sessionCounters.has('sess-end')).toBe(false);
+    });
 
-  it('does not throw when sessionKey is missing', async () => {
-    registerSessionCleanup(mockApi);
-    const handler = getOnHandler(mockApi, 'session_start');
-    const ctx = createMockContext({ sessionKey: undefined, sessionId: undefined });
+    it('uses event.sessionId as fallback', async () => {
+      createTodo('Orphan end', 'medium', 'pending', 'evt-end');
 
-    await expect(
-      handler({ sessionId: 'new-sess' }, ctx),
-    ).resolves.not.toThrow();
-  });
+      registerSessionCleanup(mockApi);
+      const handler = getOnHandler(mockApi, 'session_end');
+      const ctx = createMockContext({ sessionKey: undefined, sessionId: undefined });
 
-  it('falls back to event.sessionId when ctx keys are absent', async () => {
-    createTodo('Orphan', 'medium', 'pending', 'evt-sid');
+      await handler({ sessionId: 'evt-end', messageCount: 10 }, ctx);
 
-    registerSessionCleanup(mockApi);
-    const handler = getOnHandler(mockApi, 'session_start');
-    const ctx = createMockContext({ sessionKey: undefined, sessionId: undefined });
+      expect(listTodos(undefined, 'evt-end')).toHaveLength(0);
+    });
 
-    await handler({ sessionId: 'evt-sid' }, ctx);
+    it('does not throw when sessionId is missing', async () => {
+      registerSessionCleanup(mockApi);
+      const handler = getOnHandler(mockApi, 'session_end');
+      const ctx = createMockContext({ sessionKey: undefined, sessionId: undefined });
 
-    expect(listTodos(undefined, 'evt-sid')).toHaveLength(0);
+      await expect(
+        handler({ sessionId: '', messageCount: 0 }, ctx),
+      ).resolves.not.toThrow();
+    });
   });
 });
