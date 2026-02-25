@@ -135,7 +135,7 @@ export default function register(api: OmocPluginApi) {
   safeRegister(api, 'session-cleanup', 'hook', () => {
     registerSessionCleanup(api);
     registry.hooks.push('session-cleanup');
-    api.logger.info(`[${PLUGIN_ID}] Session cleanup hook registered (session_start)`);
+    api.logger.info(`[${PLUGIN_ID}] Session cleanup hooks registered (session_start, session_end)`);
   });
 
   safeRegister(api, 'todo-tools', 'tool', () => {

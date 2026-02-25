@@ -110,6 +110,18 @@ interface SessionStartEvent {
   resumedFrom?: string;
 }
 
+interface SessionEndEvent {
+  sessionId: string;
+  messageCount: number;
+  durationMs?: number;
+}
+
+function clearSession(sessionKey: string, api: OmocPluginApi, reason: string): void {
+  resetStore(sessionKey);
+  sessionCounters.delete(sessionKey);
+  api.logger.info(`${LOG_PREFIX} Todo store cleared (${reason}, session=${sessionKey})`);
+}
+
 export function registerSessionCleanup(api: OmocPluginApi): void {
   api.on<SessionStartEvent, void>(
     'session_start',
@@ -119,11 +131,20 @@ export function registerSessionCleanup(api: OmocPluginApi): void {
       const sessionKey = ctx.sessionKey ?? ctx.sessionId ?? event.sessionId;
       if (!sessionKey) return;
 
-      resetStore(sessionKey);
-      sessionCounters.delete(sessionKey);
-      api.logger.info(`${LOG_PREFIX} Todo store cleared for new session (${sessionKey})`);
+      clearSession(sessionKey, api, 'new session');
     },
     { priority: 190 },
+  );
+
+  api.on<SessionEndEvent, void>(
+    'session_end',
+    async (event: SessionEndEvent, ctx: TypedHookContext): Promise<void> => {
+      const sessionKey = ctx.sessionId ?? event.sessionId;
+      if (!sessionKey) return;
+
+      clearSession(sessionKey, api, 'session_end');
+    },
+    { priority: 50 },
   );
 }
 
