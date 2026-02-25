@@ -1,7 +1,7 @@
 import { OmocPluginApi } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
-import { getActivePersona, setActivePersonaId, resetPersonaState } from '../utils/persona-state.js';
-import { resolvePersonaId, listPersonas, DEFAULT_PERSONA_ID } from '../agents/persona-prompts.js';
+import { getActivePersona, setActivePersonaId, resetPersonaState, replaceAgentsMd, restoreAgentsMdToDefault } from '../utils/persona-state.js';
+import { resolvePersonaId, listPersonas, readPersonaPrompt, DEFAULT_PERSONA_ID } from '../agents/persona-prompts.js';
 
 function getDisplayName(personaId: string): string {
   const persona = listPersonas().find((p) => p.id === personaId);
@@ -21,6 +21,8 @@ export function registerPersonaCommands(api: OmocPluginApi) {
       if (!args) {
         const previousId = await getActivePersona();
         await setActivePersonaId(DEFAULT_PERSONA_ID);
+        const content = await readPersonaPrompt(DEFAULT_PERSONA_ID);
+        await replaceAgentsMd(content);
         const name = getDisplayName(DEFAULT_PERSONA_ID);
 
         const switchNote =
@@ -29,7 +31,7 @@ export function registerPersonaCommands(api: OmocPluginApi) {
             : '';
 
         return {
-          text: `# OmOC Mode: ON\n\nActive persona: **${name}**${switchNote}\n\nApplied immediately — your next message will use this persona.\n\nUse \`/omoc list\` to see available personas, or \`/omoc <name>\` to switch.`,
+          text: `# OmOC Mode: ON\n\nActive persona: **${name}**${switchNote}\n\nAGENTS.md replaced with persona prompt. Your next message will use this persona.\n\nUse \`/omoc list\` to see available personas, or \`/omoc <name>\` to switch.`,
         };
       }
 
@@ -37,10 +39,11 @@ export function registerPersonaCommands(api: OmocPluginApi) {
         const wasActive = await getActivePersona();
         const wasName = wasActive ? getDisplayName(wasActive) : null;
         await resetPersonaState();
+        await restoreAgentsMdToDefault();
         return {
           text: wasName
-            ? `# OmOC Mode: OFF\n\nPersona **${wasName}** deactivated. Applied immediately — your next message will use default behavior.`
-            : '# OmOC Mode: OFF\n\nNo persona was active.',
+            ? `# OmOC Mode: OFF\n\nPersona **${wasName}** deactivated. AGENTS.md restored to default.`
+            : '# OmOC Mode: OFF\n\nNo persona was active. AGENTS.md restored to default.',
         };
       }
 
@@ -78,6 +81,8 @@ export function registerPersonaCommands(api: OmocPluginApi) {
 
       const previousId = await getActivePersona();
       await setActivePersonaId(resolvedId);
+      const content = await readPersonaPrompt(resolvedId);
+      await replaceAgentsMd(content);
       const displayName = getDisplayName(resolvedId);
       const switched = listPersonas().find((p) => p.id === resolvedId);
 
@@ -87,7 +92,7 @@ export function registerPersonaCommands(api: OmocPluginApi) {
           : '';
 
       return {
-        text: `# Persona Switched\n\nActive persona: **${displayName}**${switchNote}\n\nApplied immediately — your next message will use the ${switched?.theme ?? 'persona'} prompt.`,
+        text: `# Persona Switched\n\nActive persona: **${displayName}**${switchNote}\n\nAGENTS.md replaced. Your next message will use the ${switched?.theme ?? 'persona'} prompt.`,
       };
     },
   });

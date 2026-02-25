@@ -1,12 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('fs', () => ({
-  readFileSync: vi.fn().mockReturnValue('# Mock Persona Content\nYou are Atlas.'),
-  statSync: vi.fn().mockReturnValue({ mtimeMs: 1000 }),
-  promises: {
-    readFile: vi.fn().mockResolvedValue('# Mock Persona Content\nYou are Atlas.'),
-  },
+vi.mock('fs/promises', () => ({
+  readFile: vi.fn().mockResolvedValue('# Mock Persona Content\nYou are Atlas.'),
+  writeFile: vi.fn().mockResolvedValue(undefined),
+  mkdir: vi.fn().mockResolvedValue(undefined),
 }));
+
+vi.mock('fs', async () => {
+  const fsp = await vi.importMock<typeof import('fs/promises')>('fs/promises');
+  return {
+    readFileSync: vi.fn().mockReturnValue('# Mock Persona Content\nYou are Atlas.'),
+    statSync: vi.fn().mockReturnValue({ mtimeMs: 1000 }),
+    promises: fsp,
+  };
+});
 
 vi.mock('../utils/config.js', () => ({
   getConfig: vi.fn(() => ({
@@ -22,6 +29,8 @@ import {
   setActivePersona,
   getActivePersona,
   resetPersonaState,
+  replaceAgentsMd,
+  restoreAgentsMdToDefault,
 } from '../utils/persona-state.js';
 import {
   resolvePersonaId,
@@ -31,7 +40,6 @@ import {
   DEFAULT_PERSONA_ID,
   clearPersonaCache,
 } from '../agents/persona-prompts.js';
-import { registerPersonaInjector } from '../hooks/persona-injector.js';
 import { registerPersonaCommands } from '../commands/persona-commands.js';
 import { createMockApi } from './helpers/mock-factory.js';
 
@@ -201,293 +209,43 @@ describe('persona-prompts', () => {
   });
 });
 
-describe('persona-injector hook (before_prompt_build)', () => {
-  beforeEach(async () => {
+describe('AGENTS.md manager (replaceAgentsMd / restoreAgentsMdToDefault)', () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    clearPersonaCache();
-    await resetPersonaState();
-    vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
-    vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
   });
 
-  it('registers before_prompt_build typed hook via api.on()', () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
+  it('replaceAgentsMd writes persona content to AGENTS.md', async () => {
+    await replaceAgentsMd('# Persona Content');
 
-    expect(api.on).toHaveBeenCalledTimes(1);
-    expect(api.on.mock.calls[0][0]).toBe('before_prompt_build');
-    expect(api.on.mock.calls[0][2]).toEqual({ priority: 100 });
-    expect(api.registerHook).not.toHaveBeenCalled();
-  });
-
-  it('does not inject when no persona is active and no agentId', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const event = { prompt: 'hello' };
-    const ctx = {};
-    const result = await handler(event, ctx);
-
-    expect(result).toBeUndefined();
-    expect(api.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('no persona resolved')
+    expect(fsPromises.mkdir).toHaveBeenCalled();
+    expect(fsPromises.writeFile).toHaveBeenCalledWith(
+      expect.stringContaining('AGENTS.md'),
+      expect.stringMatching(/# AGENTS\.md - Your Workspace[\s\S]*---\n\n# Persona Content/),
+      'utf-8',
     );
   });
 
-  it('does not inject when agentId is not an omoc agent', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
+  it('restoreAgentsMdToDefault writes default template to AGENTS.md', async () => {
+    await restoreAgentsMdToDefault();
 
-    const handler = api.on.mock.calls[0][1];
-    const event = { prompt: 'hello' };
-    const ctx = { agentId: 'some_other_agent' };
-    const result = await handler(event, ctx);
-
-    expect(result).toBeUndefined();
-    expect(api.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('no persona resolved')
+    expect(fsPromises.writeFile).toHaveBeenCalledWith(
+      expect.stringContaining('AGENTS.md'),
+      expect.stringContaining('# AGENTS.md - Your Workspace'),
+      'utf-8',
     );
   });
 
-  it('injects persona prompt when persona is manually active', async () => {
-    await setActivePersona('omoc_atlas');
-    const api = createMockApi();
-    registerPersonaInjector(api);
+  it('restoreAgentsMdToDefault includes essential sections', async () => {
+    await restoreAgentsMdToDefault();
 
-    const handler = api.on.mock.calls[0][1];
-    const event = { prompt: 'hello' };
-    const ctx = {};
-    const result = await handler(event, ctx);
-
-    expect(result).toBeDefined();
-    expect(result.prependContext).toContain('Mock Persona Content');
-    expect(api.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('manual')
+    const writeCall = vi.mocked(fsPromises.writeFile).mock.calls.find(
+      (c) => String(c[0]).includes('AGENTS.md'),
     );
-  });
-
-  it('auto-injects persona from ctx.agentId', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const event = { prompt: 'hello' };
-    const ctx = { agentId: 'omoc_atlas' };
-    const result = await handler(event, ctx);
-
-    expect(result).toBeDefined();
-    expect(result.prependContext).toContain('Mock Persona Content');
-    expect(api.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('auto')
-    );
-  });
-
-  it('auto-injects for all known omoc agents', async () => {
-    const knownAgentIds = [
-      'omoc_prometheus', 'omoc_sisyphus', 'omoc_hephaestus',
-      'omoc_oracle', 'omoc_explore', 'omoc_librarian',
-      'omoc_metis', 'omoc_momus', 'omoc_looker', 'omoc_frontend',
-    ];
-
-    for (const agentId of knownAgentIds) {
-      vi.clearAllMocks();
-      clearPersonaCache();
-      await resetPersonaState();
-      vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
-      vi.mocked(readFileSync).mockReturnValue(`# ${agentId} Content`);
-
-      const api = createMockApi();
-      registerPersonaInjector(api);
-
-      const handler = api.on.mock.calls[0][1];
-      const event = { prompt: 'hello' };
-      const ctx = { agentId };
-      const result = await handler(event, ctx);
-
-      expect(result).toBeDefined();
-      expect(result.prependContext).toContain(`${agentId} Content`);
-    }
-  });
-
-  it('manual persona takes priority over agentId', async () => {
-    await setActivePersona('omoc_oracle');
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const event = { prompt: 'hello' };
-    const ctx = { agentId: 'omoc_atlas' };
-    const result = await handler(event, ctx);
-
-    expect(result).toBeDefined();
-    expect(result.prependContext).toContain('Mock Persona Content');
-    expect(api.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('manual')
-    );
-  });
-
-  it('falls back to prependContext when no system message in event', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const event = { prompt: 'hello' };
-    const ctx = { agentId: 'omoc_atlas' };
-    const result = await handler(event, ctx);
-
-    expect(result).toHaveProperty('prependContext');
-    expect(result).not.toHaveProperty('bootstrapFiles');
-    expect(result).not.toHaveProperty('systemPrompt');
-  });
-
-  it('returns systemPrompt (not prependContext) when event.systemPrompt exists', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const event = {
-      prompt: 'hello',
-      systemPrompt: 'You are a helpful assistant.',
-    };
-    const ctx = { agentId: 'omoc_atlas' };
-    const result = await handler(event, ctx);
-
-    expect(result).toHaveProperty('systemPrompt');
-    expect(result).not.toHaveProperty('prependContext');
-    expect(result.systemPrompt).toContain('You are a helpful assistant.');
-    expect(result.systemPrompt).toContain('Mock Persona Content');
-  });
-
-  it('logs with source=auto and prependContext fallback for agentId detection', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    await handler({ prompt: 'hello' }, { agentId: 'omoc_prometheus' });
-
-    expect(api.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('prependContext fallback')
-    );
-    expect(api.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('auto')
-    );
-  });
-
-  it('logs systemPrompt append when event.systemPrompt exists', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    await handler(
-      { prompt: 'hello', systemPrompt: 'base prompt' },
-      { agentId: 'omoc_prometheus' },
-    );
-
-    expect(api.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('appended to system prompt')
-    );
-  });
-});
-
-describe('persona-injector systemPrompt append integration', () => {
-  beforeEach(async () => {
-    vi.clearAllMocks();
-    clearPersonaCache();
-    await resetPersonaState();
-    vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
-    vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
-  });
-
-  it('appends persona to event.systemPrompt', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const event = {
-      prompt: 'new question',
-      systemPrompt: 'You are a helpful assistant.',
-    };
-    const ctx = { agentId: 'omoc_atlas' };
-    const result = await handler(event, ctx);
-
-    expect(result).toBeDefined();
-    expect(result.systemPrompt).toBe('You are a helpful assistant.\n\n# Mock Persona Content\nYou are Atlas.');
-    expect(result).not.toHaveProperty('prependContext');
-  });
-
-  it('falls back to prependContext when event.systemPrompt is missing', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const event = { prompt: 'first question' };
-    const ctx = { agentId: 'omoc_atlas' };
-    const result = await handler(event, ctx);
-
-    expect(result).toBeDefined();
-    expect(result.prependContext).toContain('Mock Persona Content');
-    expect(result).not.toHaveProperty('systemPrompt');
-  });
-
-  it('falls back to prependContext when event.systemPrompt is empty string', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const event = { prompt: 'hello', systemPrompt: '' };
-    const ctx = { agentId: 'omoc_atlas' };
-    const result = await handler(event, ctx);
-
-    expect(result).toBeDefined();
-    expect(result.prependContext).toContain('Mock Persona Content');
-    expect(result).not.toHaveProperty('systemPrompt');
-  });
-
-  it('does not accumulate persona across simulated turns', async () => {
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const baseSystemPrompt = 'You are a helpful assistant.';
-
-    const turn1 = await handler(
-      { prompt: 'turn 1', systemPrompt: baseSystemPrompt },
-      { agentId: 'omoc_atlas' },
-    );
-    expect(turn1.systemPrompt).toBe(`${baseSystemPrompt}\n\n# Mock Persona Content\nYou are Atlas.`);
-
-    // On next turn, OpenClaw rebuilds systemPromptText fresh — event.systemPrompt
-    // is the ORIGINAL base prompt, not the previously returned override.
-    vi.clearAllMocks();
-    vi.mocked(statSync).mockReturnValue({ mtimeMs: 1000 } as any);
-    vi.mocked(readFileSync).mockReturnValue('# Mock Persona Content\nYou are Atlas.');
-
-    const turn2 = await handler(
-      { prompt: 'turn 2', systemPrompt: baseSystemPrompt },
-      { agentId: 'omoc_atlas' },
-    );
-    expect(turn2.systemPrompt).toBe(turn1.systemPrompt);
-  });
-
-  it('works with manual persona + event.systemPrompt', async () => {
-    await setActivePersona('omoc_oracle');
-    const api = createMockApi();
-    registerPersonaInjector(api);
-
-    const handler = api.on.mock.calls[0][1];
-    const event = {
-      prompt: 'question',
-      systemPrompt: 'Base prompt.',
-    };
-    const ctx = {};
-    const result = await handler(event, ctx);
-
-    expect(result.systemPrompt).toContain('Base prompt.');
-    expect(result.systemPrompt).toContain('Mock Persona Content');
-    expect(api.logger.info).toHaveBeenCalledWith(
-      expect.stringContaining('manual'),
-    );
+    expect(writeCall).toBeDefined();
+    const content = writeCall![1] as string;
+    expect(content).toContain('## Every Session');
+    expect(content).toContain('## Memory');
+    expect(content).toContain('## Safety');
   });
 });
 
@@ -506,7 +264,7 @@ describe('persona-commands (/omoc)', () => {
     expect(api.registerCommand.mock.calls[0][0].acceptsArgs).toBe(true);
   });
 
-  it('/omoc (no args) activates default persona', async () => {
+  it('/omoc (no args) activates default persona and writes AGENTS.md', async () => {
     const api = createMockApi();
     registerPersonaCommands(api);
 
@@ -516,9 +274,15 @@ describe('persona-commands (/omoc)', () => {
     expect(await getActivePersona()).toBe('omoc_atlas');
     expect(result.text).toContain('OmOC Mode: ON');
     expect(result.text).toContain('Atlas');
+    expect(result.text).toContain('AGENTS.md replaced');
+    expect(fsPromises.writeFile).toHaveBeenCalledWith(
+      expect.stringContaining('AGENTS.md'),
+      expect.stringContaining('Mock Persona Content'),
+      'utf-8',
+    );
   });
 
-  it('/omoc off deactivates persona', async () => {
+  it('/omoc off deactivates persona and restores AGENTS.md to default', async () => {
     await setActivePersona('omoc_atlas');
     const api = createMockApi();
     registerPersonaCommands(api);
@@ -529,6 +293,12 @@ describe('persona-commands (/omoc)', () => {
     expect(await getActivePersona()).toBeNull();
     expect(result.text).toContain('OmOC Mode: OFF');
     expect(result.text).toContain('Atlas');
+    expect(result.text).toContain('restored to default');
+    expect(fsPromises.writeFile).toHaveBeenCalledWith(
+      expect.stringContaining('AGENTS.md'),
+      expect.stringContaining('# AGENTS.md - Your Workspace'),
+      'utf-8',
+    );
   });
 
   it('/omoc off when no persona active', async () => {

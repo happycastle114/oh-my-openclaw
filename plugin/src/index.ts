@@ -14,7 +14,6 @@ import { registerWorkflowCommands } from './commands/workflow-commands.js';
 import { registerRalphCommands } from './commands/ralph-commands.js';
 import { registerStatusCommands } from './commands/status-commands.js';
 import { registerPersonaCommands } from './commands/persona-commands.js';
-import { registerPersonaInjector } from './hooks/persona-injector.js';
 import { registerContextInjector } from './hooks/context-injector.js';
 import { registerSetupCli } from './cli/setup.js';
 
@@ -90,12 +89,6 @@ export default function register(api: OmocPluginApi) {
     registerStartupHook(guarded);
     registry.hooks.push('gateway-startup');
     api.logger.info(`[${PLUGIN_ID}] Gateway startup hook registered`);
-  });
-
-  safeRegister(api, 'persona-injector', 'hook', () => {
-    registerPersonaInjector(guarded);
-    registry.hooks.push('persona-injector');
-    api.logger.info(`[${PLUGIN_ID}] Persona injector hook registered`);
   });
 
   safeRegister(api, 'context-injector', 'hook', () => {
