@@ -21,7 +21,7 @@ export function registerSpawnGuard(api: OmocPluginApi): void {
 
       let activePersona: string | null;
       try {
-        activePersona = await getActivePersona(ctx.workspaceDir);
+        activePersona = await getActivePersona(ctx.workspaceDir, ctx.agentId);
       } catch {
         return;
       }

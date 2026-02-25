@@ -11,7 +11,7 @@ export function registerSessionSync(api: OmocPluginApi): void {
     async (_event: { sessionId: string; resumedFrom?: string }, ctx: TypedHookContext): Promise<void> => {
       try {
         const wsDir = ctx.workspaceDir;
-        const activePersona = await getActivePersona(wsDir);
+        const activePersona = await getActivePersona(wsDir, ctx.agentId);
         if (!activePersona) return;
 
         const personaContent = readPersonaPromptSync(activePersona);

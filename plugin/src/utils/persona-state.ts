@@ -2,6 +2,9 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { dirname, join } from 'path';
 import type { OmocPluginApi } from '../types.js';
 import { resolveOpenClawWorkspaceDir } from './paths.js';
+import { ALL_AGENT_IDS } from '../agents/agent-ids.js';
+
+const KNOWN_AGENT_IDS = new Set(ALL_AGENT_IDS);
 
 let activePersonaId: string | null = null;
 let loaded = false;
@@ -33,9 +36,14 @@ export async function setActivePersona(id: string | null): Promise<void> {
   await setActivePersonaId(id);
 }
 
-export async function getActivePersona(workspaceDir?: string): Promise<string | null> {
+export async function getActivePersona(workspaceDir?: string, agentId?: string): Promise<string | null> {
   if (!loaded) await loadFromDisk(workspaceDir);
-  return activePersonaId;
+  if (activePersonaId) return activePersonaId;
+  if (agentId && KNOWN_AGENT_IDS.has(agentId)) {
+    await setActivePersonaId(agentId);
+    return agentId;
+  }
+  return null;
 }
 
 export async function resetPersonaState(): Promise<void> {
