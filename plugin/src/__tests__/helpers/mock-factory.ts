@@ -17,6 +17,11 @@ export function createMockApi(overrides?: Partial<OmocPluginApi>): OmocPluginApi
       warn: vi.fn(),
       error: vi.fn(),
     },
+    runtime: {
+      system: {
+        enqueueSystemEvent: vi.fn(),
+      },
+    },
     registerHook: vi.fn(),
     registerTool: vi.fn(),
     registerCommand: vi.fn(),

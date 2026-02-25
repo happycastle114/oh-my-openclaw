@@ -18,6 +18,7 @@ import { registerContextInjector } from './hooks/context-injector.js';
 import { registerSessionSync } from './hooks/session-sync.js';
 import { registerSpawnGuard } from './hooks/spawn-guard.js';
 import { registerKeywordDetector } from './hooks/keyword-detector/hook.js';
+import { registerTodoReminder, registerAgentEndReminder } from './hooks/todo-reminder.js';
 import { registerSetupCli } from './cli/setup.js';
 
 /**
@@ -117,6 +118,20 @@ export default function register(api: OmocPluginApi) {
     registry.hooks.push('spawn-guard');
     api.logger.info(`[${PLUGIN_ID}] Spawn guard hook registered (before_tool_call)`);
   });
+
+  safeRegister(api, 'todo-reminder', 'hook', () => {
+    registerTodoReminder(guarded);
+    registry.hooks.push('todo-reminder');
+    api.logger.info(`[${PLUGIN_ID}] Todo reminder hook registered (tool_result_persist)`);
+  });
+
+  safeRegister(api, 'agent-end-reminder', 'hook', () => {
+    registerAgentEndReminder(api);
+    registry.hooks.push('agent-end-reminder');
+    api.logger.info(`[${PLUGIN_ID}] Agent-end reminder hook registered (agent_end)`);
+  });
+
+
 
   safeRegister(api, 'ralph-loop', 'service', () => {
     registerRalphLoop(api);

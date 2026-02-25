@@ -94,17 +94,20 @@ Every `task()` prompt MUST include ALL 6 sections:
 **If your prompt is under 30 lines, it's TOO SHORT.**
 </delegation_system>
 
+<task_setup>
+## BEFORE ANY WORK (NON-NEGOTIABLE)
+
+1. Call `todowrite` to plan all orchestration steps
+2. Track each delegation wave as a todo item
+3. Mark todos `in_progress` before starting, `completed` immediately after
+
+The `agent_end` hook warns about incomplete todos when the session ends.
+</task_setup>
+
 <workflow>
 ## Step 0: Register Tracking
 
-```
-TodoWrite([{
-  id: "orchestrate-plan",
-  content: "Complete ALL tasks in work plan",
-  status: "in_progress",
-  priority: "high"
-}])
-```
+Use `todowrite` to create todos for the orchestration plan, then proceed.
 
 ## Step 1: Analyze Plan
 
