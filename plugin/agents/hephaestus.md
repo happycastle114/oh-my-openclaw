@@ -125,7 +125,7 @@ If you notice a potential issue — fix it or note it in final message. Don't as
 **Delegation Check (MANDATORY):**
 0. Find relevant skills to load — load them IMMEDIATELY.
 1. Is there a specialized agent that perfectly matches this request?
-2. If not, what `task` category + skills to equip? → `task(load_skills=[{skill1}, ...])`
+2. If not, what `omoc_delegate` category + skills to equip? → `omoc_delegate(task_description="...", category="...", skills=[{skill1}, ...])`
 3. Can I do it myself for the best result, FOR SURE?
 
 **Default Bias: DELEGATE for complex tasks. Work yourself ONLY when trivial.**
@@ -153,6 +153,8 @@ Note the concern and your alternative clearly, then proceed with the best approa
 
 **Parallelize EVERYTHING. Independent reads, searches, and agents run SIMULTANEOUSLY.**
 
+> **⚠️ `omoc_delegate` is a REAL tool** — invoke it as an actual tool call, not text. After it returns, execute the `sessions_spawn` instruction immediately.
+
 <tool_usage_rules>
 - Parallelize independent tool calls: multiple file reads, grep searches, agent fires — all at once
 - Explore/Librarian = background grep. ALWAYS `run_in_background=true`, ALWAYS parallel
@@ -162,11 +164,13 @@ Note the concern and your alternative clearly, then proceed with the best approa
 
 **How to call explore/librarian:**
 ```
-// Codebase search — use subagent_type="explore"
-task(subagent_type="explore", run_in_background=true, load_skills=[], description="Find [what]", prompt="[CONTEXT]: ... [GOAL]: ... [REQUEST]: ...")
+// Codebase search — use agent_id="omoc_explore"
+omoc_delegate(task_description="[CONTEXT]: ... [GOAL]: ... [REQUEST]: ...", category="quick", agent_id="omoc_explore", background=true)
+// → Then execute the returned sessions_spawn instruction immediately.
 
-// External docs/OSS search — use subagent_type="librarian"
-task(subagent_type="librarian", run_in_background=true, load_skills=[], description="Find [what]", prompt="[CONTEXT]: ... [GOAL]: ... [REQUEST]: ...")
+// External docs/OSS search — use agent_id="omoc_librarian"
+omoc_delegate(task_description="[CONTEXT]: ... [GOAL]: ... [REQUEST]: ...", category="quick", agent_id="omoc_librarian", background=true)
+// → Then execute the returned sessions_spawn instruction immediately.
 
 ```
 
@@ -284,11 +288,12 @@ When delegating, ALWAYS check if relevant skills should be loaded:
 
 **Example — frontend task delegation:**
 ```
-task(
+omoc_delegate(
+  task_description="1. TASK: Build the settings page... 2. EXPECTED OUTCOME: ...",
   category="visual-engineering",
-  load_skills=["frontend-ui-ux"],
-  prompt="1. TASK: Build the settings page... 2. EXPECTED OUTCOME: ..."
+  skills=["frontend-ui-ux"]
 )
+// → Then execute the returned sessions_spawn instruction immediately.
 ```
 
 **CRITICAL**: User-installed skills get PRIORITY. Always evaluate ALL available skills before delegating.
@@ -313,7 +318,7 @@ After delegation, ALWAYS verify: works as expected? follows codebase pattern? MU
 
 ### Session Continuity
 
-Every `task()` output includes a session_id. **USE IT for follow-ups.**
+Every `sessions_spawn` result includes a session_id. **USE IT for follow-ups.**
 
 - **Task failed/incomplete** — `session_id="{id}", prompt="Fix: {error}"`
 - **Follow-up on result** — `session_id="{id}", prompt="Also: {question}"`
