@@ -202,7 +202,7 @@ describe('registerLookAtTool', () => {
     expect(result.content[0].text).toBe('Analysis result text');
   });
 
-  it('uses default model gemini-3-flash when model is not provided', async () => {
+  it('uses default model gemini-3-flash-preview when model is not provided', async () => {
     mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
       cb(null, 'output', '');
     });
@@ -216,7 +216,7 @@ describe('registerLookAtTool', () => {
     });
 
     const [, args] = mockedExecFile.mock.calls[0];
-    expect(args[1]).toBe('gemini-3-flash');
+    expect(args[1]).toBe('gemini-3-flash-preview');
   });
 
   it('returns toolError when CLI times out (error.killed === true)', async () => {
