@@ -10,7 +10,6 @@ import { registerRalphLoop } from './services/ralph-loop.js';
 import { registerDelegateTool } from './tools/task-delegation.js';
 import { registerLookAtTool } from './tools/look-at.js';
 import { registerCheckpointTool } from './tools/checkpoint.js';
-import { registerWorkflowCommands } from './commands/workflow-commands.js';
 import { registerRalphCommands } from './commands/ralph-commands.js';
 import { registerStatusCommands } from './commands/status-commands.js';
 import { registerPersonaCommands } from './commands/persona-commands.js';
@@ -166,12 +165,6 @@ export default function register(api: OmocPluginApi) {
     registerCheckpointTool(api);
     registry.tools.push('omoc_checkpoint');
     api.logger.info(`[${PLUGIN_ID}] Checkpoint tool registered`);
-  });
-
-  safeRegister(api, 'workflow-commands', 'command', () => {
-    registerWorkflowCommands(api);
-    registry.commands.push('ultrawork', 'plan', 'start_work');
-    api.logger.info(`[${PLUGIN_ID}] Workflow commands registered (ultrawork, plan, start_work)`);
   });
 
   safeRegister(api, 'ralph-commands', 'command', () => {
