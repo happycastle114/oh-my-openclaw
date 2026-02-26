@@ -27,7 +27,7 @@ export function registerLookAtTool(api: OmocPluginApi) {
       ),
     }),
     execute: async (_toolCallId: string, params: LookAtParams) => {
-      const model = params.model ?? 'gemini-2.5-flash';
+      const model = params.model ?? 'gemini-3-flash';
 
       try {
         const stdout = await new Promise<string>((resolve, reject) => {

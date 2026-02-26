@@ -22,7 +22,7 @@ export function registerWebSearchTool(api: OmocPluginApi) {
       model: Type.Optional(
         Type.String({
           description: 'Gemini model to use',
-          default: 'gemini-2.5-flash',
+          default: 'gemini-3-flash',
         }),
       ),
     }),
@@ -32,7 +32,7 @@ export function registerWebSearchTool(api: OmocPluginApi) {
         return toolError('Query is required and must not be empty');
       }
 
-      const model = params.model ?? 'gemini-2.5-flash';
+      const model = params.model ?? 'gemini-3-flash';
 
       return new Promise((resolve) => {
         execFile(

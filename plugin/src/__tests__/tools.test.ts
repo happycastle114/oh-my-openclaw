@@ -202,7 +202,7 @@ describe('registerLookAtTool', () => {
     expect(result.content[0].text).toBe('Analysis result text');
   });
 
-  it('uses default model gemini-2.5-flash when model is not provided', async () => {
+  it('uses default model gemini-3-flash when model is not provided', async () => {
     mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
       cb(null, 'output', '');
     });
@@ -216,7 +216,7 @@ describe('registerLookAtTool', () => {
     });
 
     const [, args] = mockedExecFile.mock.calls[0];
-    expect(args[1]).toBe('gemini-2.5-flash');
+    expect(args[1]).toBe('gemini-3-flash');
   });
 
   it('returns toolError when CLI times out (error.killed === true)', async () => {
@@ -325,7 +325,7 @@ describe('registerWebSearchTool', () => {
     // Verify execFile was called with correct args
     const [cmd, args, opts] = mockedExecFile.mock.calls[0];
     expect(cmd).toBe('gemini');
-    expect(args).toEqual(['-m', 'gemini-2.5-flash', '--prompt', 'latest TypeScript features', '-o', 'text']);
+    expect(args).toEqual(['-m', 'gemini-3-flash', '--prompt', 'latest TypeScript features', '-o', 'text']);
     expect(opts).toMatchObject({ timeout: 90_000 });
   });
 
