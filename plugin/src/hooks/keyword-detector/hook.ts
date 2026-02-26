@@ -1,6 +1,8 @@
 import { OmocPluginApi, TypedHookContext, BeforePromptBuildEvent, BeforePromptBuildResult } from '../../types.js';
 import { LOG_PREFIX } from '../../constants.js';
-import { detectKeywords } from './detector.js';
+import { detectKeywords, WORKFLOW_PERSONA_MAP } from './detector.js';
+import { setActivePersonaId, replaceAgentsMd } from '../../utils/persona-state.js';
+import { readPersonaPrompt } from '../../agents/persona-prompts.js';
 
 export function registerKeywordDetector(api: OmocPluginApi): void {
   api.on<BeforePromptBuildEvent, BeforePromptBuildResult>(
@@ -18,8 +20,22 @@ export function registerKeywordDetector(api: OmocPluginApi): void {
         `${LOG_PREFIX} Keyword detector: ${detected.map((k) => k.type).join(', ')} detected`,
       );
 
+      const workflowHit = detected.find((k) => k.type in WORKFLOW_PERSONA_MAP);
+      if (workflowHit) {
+        const personaId = WORKFLOW_PERSONA_MAP[workflowHit.type]!;
+        switchPersona(api, personaId);
+      }
+
       return { prependContext: merged };
     },
     { priority: 75 },
   );
+}
+
+function switchPersona(api: OmocPluginApi, personaId: string): void {
+  setActivePersonaId(personaId)
+    .then(() => readPersonaPrompt(personaId))
+    .then((content) => replaceAgentsMd(content))
+    .then(() => api.logger.info(`${LOG_PREFIX} Keyword detector: persona switched to ${personaId}`))
+    .catch((err) => api.logger.error(`${LOG_PREFIX} Keyword detector: persona switch failed`, err));
 }
