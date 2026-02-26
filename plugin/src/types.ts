@@ -91,6 +91,11 @@ export interface OmocPluginApi {
     warn: (...args: unknown[]) => void;
     error: (...args: unknown[]) => void;
   };
+  runtime: {
+    system: {
+      enqueueSystemEvent: (text: string, options: { sessionKey: string; contextKey?: string | null }) => void;
+    };
+  };
   registerHook: <TEvent>(event: string, handler: (event: TEvent) => TEvent | void | undefined, meta?: HookMeta) => void;
   registerTool: <TParams>(config: ToolRegistration<TParams>) => void;
   registerCommand: <TCtx = { args?: string }>(config: CommandRegistration<TCtx>) => void;
@@ -120,7 +125,10 @@ export interface BeforePromptBuildResult {
 }
 
 // Event shape for before_prompt_build / before_agent_start hooks
+// OpenClaw passes the current system prompt text so plugins can read/modify it
+// without parsing the messages array (see attempt.ts resolvePromptBuildHookResult).
 export interface BeforePromptBuildEvent {
   prompt?: string;
   messages?: unknown[];
+  systemPrompt?: string;
 }

@@ -46,7 +46,7 @@ SESSION="gemini"
 
 # Single file analysis
 tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 -l -- \
-  "gemini -m gemini-2.5-flash --prompt 'Analyze this file. Evaluate layout, design, and content quality, and suggest improvements.' -f /path/to/file.pdf -o text" \
+  "gemini -m gemini-3-flash --prompt 'Analyze this file. Evaluate layout, design, and content quality, and suggest improvements.' -f /path/to/file.pdf -o text" \
   && sleep 0.1 && tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 Enter
 
 # Check results (wait 10-30 seconds)
@@ -60,7 +60,7 @@ When analysis results are long, redirect to file:
 
 ```bash
 tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 -l -- \
-  "gemini -m gemini-2.5-flash --prompt 'Detailed analysis' -f /path/to/file.pdf -o text > /tmp/gemini-analysis.md 2>&1" \
+  "gemini -m gemini-3-flash --prompt 'Detailed analysis' -f /path/to/file.pdf -o text > /tmp/gemini-analysis.md 2>&1" \
   && sleep 0.1 && tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 Enter
 
 # Read results file
@@ -72,7 +72,7 @@ cat /tmp/gemini-analysis.md
 
 ```bash
 tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 -l -- \
-  "gemini -m gemini-2.5-flash --prompt 'Compare these two files' -f /path/to/before.png -f /path/to/after.png -o text" \
+  "gemini -m gemini-3-flash --prompt 'Compare these two files' -f /path/to/before.png -f /path/to/after.png -o text" \
   && sleep 0.1 && tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 Enter
 ```
 
@@ -125,8 +125,8 @@ Analyze this error screenshot.
 
 | Use Case | Recommended Model | Reason |
 |----------|-------------------|--------|
-| Quick check | `gemini-2.5-flash` | Fast, sufficient multimodal capability |
-| Detailed analysis | `gemini-2.5-pro` | Deeper analysis, longer content |
+| Quick check | `gemini-3-flash` | Fast, sufficient multimodal capability |
+| Detailed analysis | `gemini-3-pro` | Deeper analysis, longer content |
 | Best quality | `gemini-3.1-pro` | Latest model, best multimodal |
 
 ## OpenClaw read vs Gemini CLI

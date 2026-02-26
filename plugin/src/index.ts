@@ -11,12 +11,15 @@ import { registerDelegateTool } from './tools/task-delegation.js';
 import { registerLookAtTool } from './tools/look-at.js';
 import { registerCheckpointTool } from './tools/checkpoint.js';
 import { registerWebSearchTool } from './tools/web-search.js';
-import { registerWorkflowCommands } from './commands/workflow-commands.js';
 import { registerRalphCommands } from './commands/ralph-commands.js';
 import { registerStatusCommands } from './commands/status-commands.js';
 import { registerPersonaCommands } from './commands/persona-commands.js';
-import { registerPersonaInjector } from './hooks/persona-injector.js';
 import { registerContextInjector } from './hooks/context-injector.js';
+import { registerSessionSync } from './hooks/session-sync.js';
+import { registerSpawnGuard } from './hooks/spawn-guard.js';
+import { registerKeywordDetector } from './hooks/keyword-detector/hook.js';
+import { registerTodoReminder, registerAgentEndReminder, registerSessionCleanup } from './hooks/todo-reminder.js';
+import { registerTodoTools } from './tools/todo/index.js';
 import { registerSetupCli } from './cli/setup.js';
 import { initPersonaState } from './utils/persona-state.js';
 
@@ -94,16 +97,52 @@ export default function register(api: OmocPluginApi) {
     api.logger.info(`[${PLUGIN_ID}] Gateway startup hook registered`);
   });
 
-  safeRegister(api, 'persona-injector', 'hook', () => {
-    registerPersonaInjector(guarded);
-    registry.hooks.push('persona-injector');
-    api.logger.info(`[${PLUGIN_ID}] Persona injector hook registered`);
+  safeRegister(api, 'keyword-detector', 'hook', () => {
+    registerKeywordDetector(guarded);
+    registry.hooks.push('keyword-detector');
+    api.logger.info(`[${PLUGIN_ID}] Keyword detector hook registered (before_prompt_build, priority 75)`);
   });
 
   safeRegister(api, 'context-injector', 'hook', () => {
     registerContextInjector(guarded);
     registry.hooks.push('context-injector');
     api.logger.info(`[${PLUGIN_ID}] Context injector hook registered (before_prompt_build)`);
+  });
+
+  safeRegister(api, 'session-sync', 'hook', () => {
+    registerSessionSync(api);
+    registry.hooks.push('session-sync');
+    api.logger.info(`[${PLUGIN_ID}] Session sync hook registered (session_start)`);
+  });
+
+  safeRegister(api, 'spawn-guard', 'hook', () => {
+    registerSpawnGuard(api);
+    registry.hooks.push('spawn-guard');
+    api.logger.info(`[${PLUGIN_ID}] Spawn guard hook registered (before_tool_call)`);
+  });
+
+  safeRegister(api, 'todo-reminder', 'hook', () => {
+    registerTodoReminder(guarded);
+    registry.hooks.push('todo-reminder');
+    api.logger.info(`[${PLUGIN_ID}] Todo reminder hook registered (tool_result_persist)`);
+  });
+
+  safeRegister(api, 'agent-end-reminder', 'hook', () => {
+    registerAgentEndReminder(api);
+    registry.hooks.push('agent-end-reminder');
+    api.logger.info(`[${PLUGIN_ID}] Agent-end reminder hook registered (agent_end)`);
+  });
+
+  safeRegister(api, 'session-cleanup', 'hook', () => {
+    registerSessionCleanup(api);
+    registry.hooks.push('session-cleanup');
+    api.logger.info(`[${PLUGIN_ID}] Session cleanup hooks registered (session_start, session_end)`);
+  });
+
+  safeRegister(api, 'todo-tools', 'tool', () => {
+    registerTodoTools(api);
+    registry.tools.push('omoc_todo_create', 'omoc_todo_list', 'omoc_todo_update');
+    api.logger.info(`[${PLUGIN_ID}] Todo tools registered (3 tools)`);
   });
 
   safeRegister(api, 'ralph-loop', 'service', () => {
@@ -136,11 +175,6 @@ export default function register(api: OmocPluginApi) {
     api.logger.info(`[${PLUGIN_ID}] Web Search tool registered`);
   });
 
-  safeRegister(api, 'workflow-commands', 'command', () => {
-    registerWorkflowCommands(api);
-    registry.commands.push('ultrawork', 'plan', 'start_work');
-    api.logger.info(`[${PLUGIN_ID}] Workflow commands registered (ultrawork, plan, start_work)`);
-  });
 
   safeRegister(api, 'ralph-commands', 'command', () => {
     registerRalphCommands(api);

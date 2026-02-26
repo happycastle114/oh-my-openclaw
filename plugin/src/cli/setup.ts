@@ -14,6 +14,8 @@ import {
   registerCustomPreset,
   type ModelTier,
 } from './model-presets.js';
+import { CORE_MCP_SERVERS, OPTIONAL_MCP_SERVERS, runMcporterSetup } from './mcporter-setup.js';
+import { PLANNER_DENY } from '../constants.js';
 
 type AgentsSection = {
   defaults?: Record<string, unknown>;
@@ -125,6 +127,8 @@ export interface MergeResult {
   added: string[];
   skipped: string[];
   updated: string[];
+  mcporterAdded?: string[];
+  mcporterSkipped?: string[];
 }
 
 export function mergeAgentConfigs(
@@ -180,11 +184,15 @@ function askQuestion(rl: readline.Interface, question: string): Promise<string> 
 }
 
 const TIER_LABELS: Record<ModelTier, string> = {
-  planning: 'Planning/Architecture',
-  worker: 'Implementation Workers',
-  orchestrator: 'Task Orchestrator',
-  lightweight: 'Search/Research',
-  visual: 'Visual/Frontend',
+  planner: 'Strategic Planning (prometheus)',
+  orchestrator: 'Orchestration (atlas)',
+  reasoning: 'Deep Reasoning (oracle)',
+  analysis: 'Analysis/Review (metis, momus)',
+  worker: 'Implementation (sisyphus)',
+  'deep-worker': 'Deep Implementation (hephaestus)',
+  search: 'Codebase Search (explore)',
+  research: 'Documentation Research (librarian)',
+  visual: 'Visual/Frontend (looker, frontend)',
 };
 
 function printPreview(logger: Logger, provider: string): void {
@@ -207,10 +215,9 @@ async function runCustomProviderFlow(
   rl: readline.Interface,
   logger: Logger,
 ): Promise<string> {
-  logger.info('');
-  logger.info('  Enter model IDs for each tier.');
-  logger.info('  Format: provider/model (e.g., cliproxy/claude-opus-4-6, z.ai/gpt-5.3-codex)');
-  logger.info('');
+    logger.info('');
+    logger.info('Step 1/3: Select your AI provider');
+    logger.info('');
 
   const tierModels = {} as Record<ModelTier, string>;
 
@@ -237,23 +244,40 @@ async function runCustomProviderFlow(
   return customName;
 }
 
-export async function runInteractiveSetup(logger: Logger): Promise<{ provider: string }> {
+export interface InteractiveSetupResult {
+  provider: string;
+  setupMcporter: boolean;
+  excludeServers: string[];
+  enableTodoEnforcer: boolean;
+  enablePlannerGuard: boolean;
+}
+
+export async function runInteractiveSetup(logger: Logger): Promise<InteractiveSetupResult> {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
 
+  const emptyResult: InteractiveSetupResult = {
+    provider: '',
+    setupMcporter: false,
+    excludeServers: [],
+    enableTodoEnforcer: false,
+    enablePlannerGuard: false,
+  };
+
   try {
     logger.info('');
-    logger.info('🗺️  Oh-My-OpenClaw Agent Setup');
-    logger.info('─'.repeat(40));
+    logger.info('Oh-My-OpenClaw Agent Setup');
+    logger.info('-'.repeat(40));
     logger.info('');
 
+    // Step 1/4: Provider selection
     const presetProviders = getProviderNames();
     const choices = [...presetProviders, 'custom'];
     const choiceCount = choices.length;
 
-    logger.info('Step 1/2: Select your AI provider');
+    logger.info('Step 1/4: Select your AI provider');
     logger.info('');
     choices.forEach((p, i) => {
       logger.info(`  ${i + 1}. ${PROVIDER_LABELS[p] ?? p}`);
@@ -278,10 +302,11 @@ export async function runInteractiveSetup(logger: Logger): Promise<{ provider: s
     }
 
     logger.info('');
-    logger.info(`  ✓ Selected: ${PROVIDER_LABELS[provider] ?? 'Custom'}`);
+    logger.info(`  Selected: ${PROVIDER_LABELS[provider] ?? 'Custom'}`);
     logger.info('');
 
-    logger.info('Step 2/2: Model configuration preview');
+    // Step 2/4: Model preview + confirm
+    logger.info('Step 2/4: Model configuration preview');
     logger.info('');
     printPreview(logger, provider);
     logger.info('');
@@ -289,11 +314,43 @@ export async function runInteractiveSetup(logger: Logger): Promise<{ provider: s
     const confirm = await askQuestion(rl, '  Apply this configuration? (Y/n): ');
     if (confirm.toLowerCase() === 'n' || confirm.toLowerCase() === 'no') {
       logger.info('  Setup cancelled.');
-      return { provider: '' };
+      return emptyResult;
     }
 
+    // Step 3/4: MCP servers
     logger.info('');
-    return { provider };
+    logger.info('Step 3/4: MCP servers');
+    logger.info('');
+    logger.info('  Core servers (always included):');
+    for (const [name, entry] of Object.entries(CORE_MCP_SERVERS)) {
+      logger.info(`    ${name}: ${entry.description}`);
+    }
+    logger.info('');
+
+    logger.info('  Optional servers:');
+    const excludeServers: string[] = [];
+    for (const [name, entry] of Object.entries(OPTIONAL_MCP_SERVERS)) {
+      const answer = await askQuestion(rl, `    Enable ${name} (${entry.description})? (Y/n): `);
+      if (answer.toLowerCase() === 'n' || answer.toLowerCase() === 'no') {
+        excludeServers.push(name);
+      }
+    }
+    logger.info('');
+
+    const setupMcporter = true;
+
+    // Step 4/4: Plugin features
+    logger.info('Step 4/4: Plugin features');
+    logger.info('');
+
+    const todoAnswer = await askQuestion(rl, '  Enable todo enforcer (forces task tracking)? (Y/n): ');
+    const enableTodoEnforcer = todoAnswer.toLowerCase() !== 'n' && todoAnswer.toLowerCase() !== 'no';
+
+    const guardAnswer = await askQuestion(rl, '  Enable planner guard (prevents prometheus from editing code)? (Y/n): ');
+    const enablePlannerGuard = guardAnswer.toLowerCase() !== 'n' && guardAnswer.toLowerCase() !== 'no';
+
+    logger.info('');
+    return { provider, setupMcporter, excludeServers, enableTodoEnforcer, enablePlannerGuard };
   } finally {
     rl.close();
   }
@@ -305,8 +362,28 @@ export interface SetupOptions {
   force?: boolean;
   dryRun?: boolean;
   provider?: string;
+  setupMcporter?: boolean;
+  mcporterConfigPath?: string;
+  excludeServers?: string[];
+  enableTodoEnforcer?: boolean;
+  enablePlannerGuard?: boolean;
   interactive?: boolean;
   logger: Logger;
+}
+
+export function applyPlannerGuard(
+  agentList: Array<{ id: string; tools?: { deny?: string[]; [key: string]: unknown }; [key: string]: unknown }>,
+): void {
+  for (const agent of agentList) {
+    if (agent.id === 'omoc_prometheus') {
+      if (!agent.tools) {
+        agent.tools = {};
+      }
+      const existingDeny = agent.tools.deny ?? [];
+      const merged = new Set([...existingDeny, ...PLANNER_DENY]);
+      agent.tools.deny = [...merged];
+    }
+  }
 }
 
 export function runSetup(options: SetupOptions): MergeResult {
@@ -380,6 +457,40 @@ export function runSetup(options: SetupOptions): MergeResult {
     logger.info('No changes needed — all OmOC agents already present.');
   }
 
+  if (options.enablePlannerGuard) {
+    applyPlannerGuard(config.agents.list);
+    if (!dryRun) {
+      fs.writeFileSync(configPath, serializeConfig(config), 'utf-8');
+    }
+    logger.info('Planner guard enabled: prometheus restricted from code editing');
+  }
+
+  if (options.enableTodoEnforcer !== undefined) {
+    const pluginSettings = ((config as Record<string, unknown>).pluginSettings ?? {}) as Record<string, Record<string, unknown>>;
+    if (!pluginSettings['oh-my-openclaw']) {
+      pluginSettings['oh-my-openclaw'] = {};
+    }
+    pluginSettings['oh-my-openclaw']['todo_enforcer_enabled'] = options.enableTodoEnforcer;
+    (config as Record<string, unknown>).pluginSettings = pluginSettings;
+    if (!dryRun) {
+      fs.writeFileSync(configPath, serializeConfig(config), 'utf-8');
+    }
+    logger.info(`Todo enforcer: ${options.enableTodoEnforcer ? 'enabled' : 'disabled'}`);
+  }
+
+  if (options.setupMcporter) {
+    logger.info('');
+    logger.info('Setting up mcporter MCP servers...');
+    const mcpResult = runMcporterSetup({
+      configPath: options.mcporterConfigPath,
+      excludeServers: options.excludeServers,
+      dryRun,
+      logger,
+    });
+    result.mcporterAdded = mcpResult.added;
+    result.mcporterSkipped = mcpResult.skipped;
+  }
+
   return result;
 }
 
@@ -410,10 +521,19 @@ export function registerSetupCli(ctx: {
           throw new Error(`Unknown provider "${provider}". Valid: ${valid}`);
         }
 
+        let setupMcporter = false;
+        let excludeServers: string[] = [];
+        let enableTodoEnforcer: boolean | undefined;
+        let enablePlannerGuard: boolean | undefined;
+
         if (!provider && process.stdin.isTTY) {
           const result = await runInteractiveSetup(ctx.logger);
           if (!result.provider) return;
           provider = result.provider;
+          setupMcporter = result.setupMcporter;
+          excludeServers = result.excludeServers;
+          enableTodoEnforcer = result.enableTodoEnforcer;
+          enablePlannerGuard = result.enablePlannerGuard;
         }
 
         runSetup({
@@ -422,6 +542,10 @@ export function registerSetupCli(ctx: {
           force: provider ? true : opts.force,
           dryRun: opts.dryRun,
           provider,
+          setupMcporter,
+          excludeServers,
+          enableTodoEnforcer,
+          enablePlannerGuard,
           logger: ctx.logger,
         });
 

@@ -1,15 +1,18 @@
+import { join } from 'path';
 import { PluginConfig, OmocPluginApi, ABSOLUTE_MAX_RALPH_ITERATIONS } from '../types.js';
+import { resolveOpenClawWorkspaceDir } from './paths.js';
 
 export function getConfig(api: OmocPluginApi): PluginConfig {
+  const wsDir = resolveOpenClawWorkspaceDir();
   const defaults: PluginConfig = {
     max_ralph_iterations: 10,
     todo_enforcer_enabled: false,
     todo_enforcer_cooldown_ms: 2000,
     todo_enforcer_max_failures: 5,
     comment_checker_enabled: true,
-    notepad_dir: 'workspace/notepads',
-    plans_dir: 'workspace/plans',
-    checkpoint_dir: 'workspace/checkpoints',
+    notepad_dir: join(wsDir, 'notepads'),
+    plans_dir: join(wsDir, 'plans'),
+    checkpoint_dir: join(wsDir, 'checkpoints'),
     tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
     model_routing: undefined,
   };

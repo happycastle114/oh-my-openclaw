@@ -35,11 +35,11 @@ Categories map task types to models and agents. Defined under the `"categories"`
       "alternatives": ["gpt-5.3-codex-spark", "gemini-3-flash"]
     },
     "multimodal": {
-      "model": "gemini-2.5-flash",
+      "model": "gemini-3-flash",
       "description": "PDF/image/video analysis via Gemini CLI tmux session",
       "agents": ["multimodal-looker"],
       "tool": "gemini-cli",
-      "alternatives": ["gemini-2.5-pro", "gemini-3.1-pro"]
+      "alternatives": ["gemini-3-pro", "gemini-3.1-pro"]
     }
   }
 }
@@ -63,7 +63,7 @@ Categories map task types to models and agents. Defined under the `"categories"`
 | `deep` | `claude-opus-4-6-thinking` | hephaestus, metis, momus | Complex refactoring, analysis, gap detection, plan review |
 | `ultrabrain` | `gpt-5.3-codex` | prometheus, atlas, oracle | Deep logical reasoning, complex architecture decisions |
 | `visual-engineering` | `gemini-3.1-pro` | frontend, multimodal-looker | Frontend, UI/UX, design, styling, animation, visual analysis |
-| `multimodal` | `gemini-2.5-flash` | multimodal-looker | PDF/image/video analysis via Gemini CLI |
+| `multimodal` | `gemini-3-flash` | multimodal-looker | PDF/image/video analysis via Gemini CLI |
 | `artistry` | `claude-opus-4-6-thinking` | _(none)_ | Highly creative/artistic tasks, novel ideas, design exploration |
 | `writing` | `claude-sonnet-4-6` | _(none)_ | Documentation, prose, technical writing |
 | `unspecified-low` | `claude-sonnet-4-6` | _(none)_ | Tasks that don't fit other categories, low effort required |
@@ -151,10 +151,10 @@ Routes multimodal analysis tasks to Gemini CLI.
 ```json
 "gemini": {
   "description": "Gemini CLI multimodal analysis — multiple instances supported",
-  "default_model": "gemini-2.5-flash",
+  "default_model": "gemini-3-flash",
   "models": {
-    "gemini-2.5-flash": { "flag": "-m gemini-2.5-flash", "speed": "fast",   "description": "Quick checks" },
-    "gemini-2.5-pro":   { "flag": "-m gemini-2.5-pro",   "speed": "medium", "description": "Detailed analysis" },
+    "gemini-3-flash": { "flag": "-m gemini-3-flash", "speed": "fast",   "description": "Quick checks" },
+    "gemini-3-pro":   { "flag": "-m gemini-3-pro",   "speed": "medium", "description": "Detailed analysis" },
     "gemini-3.1-pro":   { "flag": "-m gemini-3.1-pro",   "speed": "slow",   "description": "Highest quality" }
   },
   "ram_per_session": "~200MB"

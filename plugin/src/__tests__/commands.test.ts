@@ -1,13 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock fs (readFileSync used by workflow-commands)
-vi.mock('fs', () => ({
-  readFileSync: vi.fn().mockReturnValue('# Mock Workflow Content\nStep 1\nStep 2'),
-  promises: {
-    readFile: vi.fn().mockResolvedValue('# Mock Workflow Content\nStep 1\nStep 2'),
-  },
-}));
-
 // Mock ralph-loop service (used by ralph-commands)
 vi.mock('../services/ralph-loop.js', () => ({
   startLoop: vi.fn().mockResolvedValue({
@@ -57,95 +49,11 @@ vi.mock('../utils/config.js', () => ({
   })),
 }));
 
-import { promises as fsPromises } from 'fs';
-import { registerWorkflowCommands } from '../commands/workflow-commands.js';
 import { registerRalphCommands } from '../commands/ralph-commands.js';
 import { registerStatusCommands } from '../commands/status-commands.js';
 import { startLoop, stopLoop, getStatus } from '../services/ralph-loop.js';
 import { getMessageCount } from '../hooks/message-monitor.js';
 import { createMockApi, createMockConfig } from './helpers/mock-factory.js';
-
-// ─── Workflow Commands ──────────────────────────────────────
-describe('registerWorkflowCommands', () => {
-  let mockApi: ReturnType<typeof createMockApi>;
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockApi = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
-  });
-
-  it('registers 3 commands (ultrawork, plan, start_work)', () => {
-    registerWorkflowCommands(mockApi);
-
-    expect(mockApi.registerCommand).toHaveBeenCalledTimes(3);
-
-    const names = mockApi.registerCommand.mock.calls.map((c: any) => c[0].name);
-    expect(names).toContain('ultrawork');
-    expect(names).toContain('plan');
-    expect(names).toContain('start_work');
-  });
-
-  it('ultrawork handler returns workflow text with task description', async () => {
-    registerWorkflowCommands(mockApi);
-
-    const ultraworkCall = mockApi.registerCommand.mock.calls.find(
-      (c: any) => c[0].name === 'ultrawork'
-    );
-    const handler = ultraworkCall[0].handler;
-    const result = await handler({ args: 'Add authentication' });
-
-    expect(result.text).toContain('Add authentication');
-    expect(result.text).toContain('Ultrawork Mode');
-    expect(result.text).toContain('Mock Workflow Content');
-  });
-
-  it('plan handler returns planning workflow with topic', async () => {
-    registerWorkflowCommands(mockApi);
-
-    const planCall = mockApi.registerCommand.mock.calls.find(
-      (c: any) => c[0].name === 'plan'
-    );
-    const handler = planCall[0].handler;
-    const result = await handler({ args: 'Database migration strategy' });
-
-    expect(result.text).toContain('Database migration strategy');
-    expect(result.text).toContain('Planning Mode');
-    expect(result.text).toContain('Mock Workflow Content');
-  });
-
-  it('start_work handler returns execution workflow', async () => {
-    registerWorkflowCommands(mockApi);
-
-    const startWorkCall = mockApi.registerCommand.mock.calls.find(
-      (c: any) => c[0].name === 'start_work'
-    );
-    const handler = startWorkCall[0].handler;
-    const result = await handler({ args: 'plan-v2.md' });
-
-    expect(result.text).toContain('plan-v2.md');
-    expect(result.text).toContain('Start Work Mode');
-    expect(result.text).toContain('Mock Workflow Content');
-  });
-
-  it('handles missing workflow file gracefully', async () => {
-    vi.mocked(fsPromises.readFile).mockImplementation(async () => {
-      const err: any = new Error('ENOENT: no such file');
-      err.code = 'ENOENT';
-      throw err;
-    });
-
-    registerWorkflowCommands(mockApi);
-
-    const ultraworkCall = mockApi.registerCommand.mock.calls.find(
-      (c: any) => c[0].name === 'ultrawork'
-    );
-    const handler = ultraworkCall[0].handler;
-    const result = await handler({ args: 'test task' });
-
-    expect(result.text).toContain('Error');
-    expect(result.text).toContain('Could not read workflow file');
-  });
-});
 
 // ─── Ralph Commands ─────────────────────────────────────────
 describe('registerRalphCommands', () => {

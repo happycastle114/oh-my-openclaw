@@ -1,6 +1,6 @@
 import { AGENT_TIER_MAP } from '../agents/agent-ids.js';
 
-export type ModelTier = 'planning' | 'worker' | 'orchestrator' | 'lightweight' | 'visual';
+export type ModelTier = 'planner' | 'orchestrator' | 'reasoning' | 'analysis' | 'worker' | 'deep-worker' | 'search' | 'research' | 'visual';
 
 export type ModelConfig = {
   primary: string;
@@ -11,25 +11,37 @@ export type ProviderPreset = Record<ModelTier, ModelConfig>;
 
 export const PROVIDER_PRESETS: Record<string, ProviderPreset> = {
   anthropic: {
-    planning: { primary: 'anthropic/claude-opus-4-6', fallbacks: ['openai/gpt-5.3-codex'] },
-    worker: { primary: 'anthropic/claude-opus-4-6', fallbacks: ['openai/gpt-5.3-codex'] },
+    planner: { primary: 'anthropic/claude-opus-4-6', fallbacks: ['openai/gpt-5.3-codex'] },
     orchestrator: { primary: 'anthropic/claude-sonnet-4-6', fallbacks: ['openai/gpt-4.1'] },
-    lightweight: { primary: 'anthropic/claude-sonnet-4-6', fallbacks: [] },
-    visual: { primary: 'google/gemini-2.5-pro', fallbacks: ['anthropic/claude-sonnet-4-6'] },
+    reasoning: { primary: 'anthropic/claude-opus-4-6', fallbacks: ['openai/gpt-5.3-codex'] },
+    analysis: { primary: 'anthropic/claude-sonnet-4-6', fallbacks: ['openai/gpt-4.1'] },
+    worker: { primary: 'anthropic/claude-opus-4-6', fallbacks: ['openai/gpt-5.3-codex'] },
+    'deep-worker': { primary: 'anthropic/claude-opus-4-6', fallbacks: ['openai/gpt-5.3-codex'] },
+    search: { primary: 'anthropic/claude-sonnet-4-6', fallbacks: [] },
+    research: { primary: 'anthropic/claude-sonnet-4-6', fallbacks: [] },
+    visual: { primary: 'google/gemini-3.1-pro', fallbacks: ['anthropic/claude-sonnet-4-6'] },
   },
   openai: {
-    planning: { primary: 'openai/gpt-5.3-codex', fallbacks: ['anthropic/claude-opus-4-6'] },
-    worker: { primary: 'openai/gpt-5.3-codex', fallbacks: ['anthropic/claude-opus-4-6'] },
+    planner: { primary: 'openai/gpt-5.3-codex', fallbacks: ['anthropic/claude-opus-4-6'] },
     orchestrator: { primary: 'openai/gpt-4.1', fallbacks: ['anthropic/claude-sonnet-4-6'] },
-    lightweight: { primary: 'openai/gpt-4.1-mini', fallbacks: [] },
-    visual: { primary: 'google/gemini-2.5-pro', fallbacks: ['openai/gpt-4.1'] },
+    reasoning: { primary: 'openai/gpt-5.3-codex', fallbacks: ['anthropic/claude-opus-4-6'] },
+    analysis: { primary: 'openai/gpt-4.1', fallbacks: ['anthropic/claude-sonnet-4-6'] },
+    worker: { primary: 'openai/gpt-5.3-codex', fallbacks: ['anthropic/claude-opus-4-6'] },
+    'deep-worker': { primary: 'openai/gpt-5.3-codex', fallbacks: ['anthropic/claude-opus-4-6'] },
+    search: { primary: 'openai/gpt-4.1-mini', fallbacks: [] },
+    research: { primary: 'openai/gpt-4.1-mini', fallbacks: [] },
+    visual: { primary: 'google/gemini-3.1-pro', fallbacks: ['openai/gpt-4.1'] },
   },
   google: {
-    planning: { primary: 'google/gemini-3.1-pro', fallbacks: ['anthropic/claude-opus-4-6'] },
-    worker: { primary: 'google/gemini-3.1-pro', fallbacks: ['anthropic/claude-opus-4-6'] },
+    planner: { primary: 'google/gemini-3.1-pro', fallbacks: ['anthropic/claude-opus-4-6'] },
     orchestrator: { primary: 'google/gemini-3-flash', fallbacks: ['anthropic/claude-sonnet-4-6'] },
-    lightweight: { primary: 'google/gemini-3-flash', fallbacks: [] },
-    visual: { primary: 'google/gemini-2.5-pro', fallbacks: ['google/gemini-3-flash'] },
+    reasoning: { primary: 'google/gemini-3.1-pro', fallbacks: ['anthropic/claude-opus-4-6'] },
+    analysis: { primary: 'google/gemini-3-flash', fallbacks: ['anthropic/claude-sonnet-4-6'] },
+    worker: { primary: 'google/gemini-3.1-pro', fallbacks: ['anthropic/claude-opus-4-6'] },
+    'deep-worker': { primary: 'google/gemini-3.1-pro', fallbacks: ['anthropic/claude-opus-4-6'] },
+    search: { primary: 'google/gemini-3-flash', fallbacks: [] },
+    research: { primary: 'google/gemini-3-flash', fallbacks: [] },
+    visual: { primary: 'google/gemini-3.1-pro', fallbacks: ['google/gemini-3-flash'] },
   },
 };
 
@@ -42,7 +54,7 @@ export const PROVIDER_LABELS: Record<string, string> = {
   custom: 'Custom (enter model IDs manually)',
 };
 
-export const MODEL_TIERS: ModelTier[] = ['planning', 'worker', 'orchestrator', 'lightweight', 'visual'];
+export const MODEL_TIERS: ModelTier[] = ['planner', 'orchestrator', 'reasoning', 'analysis', 'worker', 'deep-worker', 'search', 'research', 'visual'];
 
 export function buildCustomPreset(tierModels: Record<ModelTier, string>): ProviderPreset {
   const preset: Partial<ProviderPreset> = {};

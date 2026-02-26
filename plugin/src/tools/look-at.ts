@@ -22,7 +22,7 @@ export function registerLookAtTool(api: OmocPluginApi) {
       model: Type.Optional(
         Type.String({
           description: 'Gemini model to use',
-          default: 'gemini-2.5-flash',
+          default: 'gemini-3-flash',
         }),
       ),
     }),

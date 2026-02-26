@@ -5,7 +5,8 @@ import { registerCommentChecker } from '../hooks/comment-checker.js';
 import { registerMessageMonitor, getMessageCount } from '../hooks/message-monitor.js';
 import { registerStartupHook } from '../hooks/startup.js';
 import { ContextCollector, contextCollector } from '../features/context-collector.js';
-import type { OmocPluginApi } from '../types.js';
+import { createTodo, resetStore } from '../tools/todo/store.js';
+import type { OmocPluginApi, BeforePromptBuildEvent, BeforePromptBuildResult, TypedHookContext } from '../types.js';
 import { createMockApi as createFactoryMockApi, createMockConfig } from './helpers/mock-factory.js';
 
 type MockApi = Omit<
@@ -203,6 +204,150 @@ describe('todo-enforcer hook', () => {
 
     const secondCollect = contextCollector.collect('sess-1');
     expect(secondCollect.some((entry) => entry.id === 'todo-enforcer')).toBe(false);
+  });
+});
+
+describe('todo-enforcer continuation hook (before_prompt_build)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetEnforcerState();
+    contextCollector.clearAll();
+    resetStore();
+  });
+
+  function getContinuationHandler(api: MockApi) {
+    const onCall = api.on.mock.calls.find(
+      (call: unknown[]) => call[0] === 'before_prompt_build',
+    );
+    if (!onCall) throw new Error('before_prompt_build handler not found on api.on');
+    return onCall[1] as (
+      event: BeforePromptBuildEvent,
+      ctx: TypedHookContext,
+    ) => BeforePromptBuildResult | void;
+  }
+
+  it('returns continuation context when incomplete todos exist', () => {
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+    registerTodoEnforcer(api);
+
+    createTodo('Build the feature', 'high', 'in_progress', 'sess-cont');
+    createTodo('Write tests', 'medium', 'pending', 'sess-cont');
+
+    const handler = getContinuationHandler(api);
+    const result = handler(
+      { prompt: 'subagent completed' },
+      { sessionKey: 'sess-cont' },
+    );
+
+    expect(result).toBeDefined();
+    expect(result!.prependContext).toContain('SUBAGENT CONTINUATION');
+    expect(result!.prependContext).toContain('Build the feature');
+    expect(result!.prependContext).toContain('Write tests');
+  });
+
+  it('returns void when no incomplete todos exist', () => {
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+    registerTodoEnforcer(api);
+
+    createTodo('Done task', 'medium', 'completed', 'sess-empty');
+
+    const handler = getContinuationHandler(api);
+    const result = handler(
+      { prompt: 'hello' },
+      { sessionKey: 'sess-empty' },
+    );
+
+    expect(result).toBeUndefined();
+  });
+
+  it('returns void when todo_enforcer_enabled=false', () => {
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: false }) });
+    registerTodoEnforcer(api);
+
+    createTodo('Some task', 'high', 'pending', 'sess-disabled');
+
+    const handler = getContinuationHandler(api);
+    const result = handler(
+      { prompt: 'hello' },
+      { sessionKey: 'sess-disabled' },
+    );
+
+    expect(result).toBeUndefined();
+  });
+
+  it('includes todo status and content in prepended context', () => {
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+    registerTodoEnforcer(api);
+
+    createTodo('Task A', 'high', 'in_progress', 'sess-detail');
+    createTodo('Task B', 'medium', 'pending', 'sess-detail');
+    createTodo('Task C', 'low', 'completed', 'sess-detail');
+
+    const handler = getContinuationHandler(api);
+    const result = handler(
+      { prompt: 'announce result' },
+      { sessionKey: 'sess-detail' },
+    );
+
+    expect(result).toBeDefined();
+    expect(result!.prependContext).toContain('[in_progress] Task A');
+    expect(result!.prependContext).toContain('[pending] Task B');
+    expect(result!.prependContext).not.toContain('Task C');
+  });
+
+  it('falls back through sessionId and agentId when sessionKey is missing', () => {
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+    registerTodoEnforcer(api);
+
+    createTodo('Fallback task', 'high', 'pending', 'my-agent');
+
+    const handler = getContinuationHandler(api);
+
+    const result = handler(
+      { prompt: 'hello' },
+      { agentId: 'my-agent' },
+    );
+
+    expect(result).toBeDefined();
+    expect(result!.prependContext).toContain('Fallback task');
+  });
+
+  it('falls back to default when no context keys are present', () => {
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+    registerTodoEnforcer(api);
+
+    createTodo('Default task', 'high', 'pending', 'default');
+
+    const handler = getContinuationHandler(api);
+    const result = handler({ prompt: 'hello' }, {});
+
+    expect(result).toBeDefined();
+    expect(result!.prependContext).toContain('Default task');
+  });
+
+  it('logs when continuation is injected', () => {
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+    registerTodoEnforcer(api);
+
+    createTodo('Log task', 'high', 'pending', 'sess-log');
+
+    const handler = getContinuationHandler(api);
+    handler({ prompt: 'hello' }, { sessionKey: 'sess-log' });
+
+    expect(api.logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('Todo continuation injected: 1 incomplete todo(s)'),
+    );
+  });
+
+  it('registers with priority 60', () => {
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+    registerTodoEnforcer(api);
+
+    const onCall = api.on.mock.calls.find(
+      (call: unknown[]) => call[0] === 'before_prompt_build',
+    );
+    expect(onCall).toBeDefined();
+    expect(onCall![2]).toEqual({ priority: 60 });
   });
 });
 
