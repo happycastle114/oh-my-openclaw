@@ -1,12 +1,17 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { dirname, join } from 'path';
 import type { OmocPluginApi } from '../types.js';
+import { resolveWorkspacePath } from './paths.js';
 
 let activePersonaId: string | null = null;
 let loaded = false;
 let stateFilePath = join('workspace', '.omoc-state', 'active-persona');
 
-export async function initPersonaState(_api: OmocPluginApi): Promise<void> {
+export async function initPersonaState(api: OmocPluginApi): Promise<void> {
+  const workspaceDir = api.workspaceDir;
+  if (workspaceDir) {
+    stateFilePath = resolveWorkspacePath(workspaceDir, '.omoc-state', 'active-persona');
+  }
   try {
     await mkdir(dirname(stateFilePath), { recursive: true });
   } catch (error) {
