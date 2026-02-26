@@ -85,6 +85,7 @@ export interface ServiceRegistration {
 export interface OmocPluginApi {
   pluginConfig?: PluginConfig;
   config: PluginConfig;
+  workspaceDir?: string;
   logger: {
     info: (...args: unknown[]) => void;
     warn: (...args: unknown[]) => void;

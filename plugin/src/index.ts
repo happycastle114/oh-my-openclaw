@@ -10,6 +10,7 @@ import { registerRalphLoop } from './services/ralph-loop.js';
 import { registerDelegateTool } from './tools/task-delegation.js';
 import { registerLookAtTool } from './tools/look-at.js';
 import { registerCheckpointTool } from './tools/checkpoint.js';
+import { registerWebSearchTool } from './tools/web-search.js';
 import { registerRalphCommands } from './commands/ralph-commands.js';
 import { registerStatusCommands } from './commands/status-commands.js';
 import { registerPersonaCommands } from './commands/persona-commands.js';
@@ -20,6 +21,7 @@ import { registerKeywordDetector } from './hooks/keyword-detector/hook.js';
 import { registerTodoReminder, registerAgentEndReminder, registerSessionCleanup } from './hooks/todo-reminder.js';
 import { registerTodoTools } from './tools/todo/index.js';
 import { registerSetupCli } from './cli/setup.js';
+import { initPersonaState } from './utils/persona-state.js';
 
 /**
  * Generation counter for multi-registration handling.
@@ -167,6 +169,13 @@ export default function register(api: OmocPluginApi) {
     api.logger.info(`[${PLUGIN_ID}] Checkpoint tool registered`);
   });
 
+  safeRegister(api, 'omoc_web_search', 'tool', () => {
+    registerWebSearchTool(api);
+    registry.tools.push('omoc_web_search');
+    api.logger.info(`[${PLUGIN_ID}] Web Search tool registered`);
+  });
+
+
   safeRegister(api, 'ralph-commands', 'command', () => {
     registerRalphCommands(api);
     registry.commands.push('ralph_loop', 'ralph_stop', 'omoc_status');
@@ -178,6 +187,8 @@ export default function register(api: OmocPluginApi) {
     registry.commands.push('omoc_health', 'omoc_config');
     api.logger.info(`[${PLUGIN_ID}] Status commands registered (omoc_health, omoc_config)`);
   });
+
+  initPersonaState(api);
 
   safeRegister(api, 'persona-commands', 'command', () => {
     registerPersonaCommands(api);
