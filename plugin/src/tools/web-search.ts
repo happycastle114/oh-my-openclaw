@@ -38,7 +38,7 @@ export function registerWebSearchTool(api: OmocPluginApi) {
         execFile(
           'gemini',
           ['-m', model, '--prompt', query, '-o', 'text'],
-          { timeout: GEMINI_TIMEOUT_MS },
+          { timeout: GEMINI_TIMEOUT_MS, maxBuffer: 10 * 1024 * 1024 },
           (error, stdout, stderr) => {
             if (error) {
               const message = stderr?.trim() || error.message || 'Gemini CLI execution failed';
