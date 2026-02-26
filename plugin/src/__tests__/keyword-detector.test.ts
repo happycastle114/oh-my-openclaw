@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { detectKeywords } from '../hooks/keyword-detector/detector.js';
+import { detectKeywords, WORKFLOW_PERSONA_MAP } from '../hooks/keyword-detector/detector.js';
 import { registerKeywordDetector } from '../hooks/keyword-detector/hook.js';
 import { createMockApi } from './helpers/mock-factory.js';
 
@@ -83,6 +83,35 @@ describe('keyword-detector', () => {
       const result = detectKeywords('tìm kiếm mẫu xác thực');
       expect(result.some((k) => k.type === 'search')).toBe(true);
     });
+
+    it('detects /plan command', () => {
+      const result = detectKeywords('/plan create a migration strategy');
+      expect(result.some((k) => k.type === 'plan')).toBe(true);
+    });
+
+    it('detects /start_work command', () => {
+      const result = detectKeywords('/start_work plan-v2.md');
+      expect(result.some((k) => k.type === 'start_work')).toBe(true);
+    });
+
+    it('detects start_work without slash', () => {
+      const result = detectKeywords('start_work on the approved plan');
+      expect(result.some((k) => k.type === 'start_work')).toBe(true);
+    });
+  });
+
+  describe('WORKFLOW_PERSONA_MAP', () => {
+    it('maps ultrawork to omoc_atlas', () => {
+      expect(WORKFLOW_PERSONA_MAP.ultrawork).toBe('omoc_atlas');
+    });
+
+    it('maps plan to omoc_prometheus', () => {
+      expect(WORKFLOW_PERSONA_MAP.plan).toBe('omoc_prometheus');
+    });
+
+    it('maps start_work to omoc_atlas', () => {
+      expect(WORKFLOW_PERSONA_MAP.start_work).toBe('omoc_atlas');
+    });
   });
 
   describe('registerKeywordDetector hook', () => {
@@ -144,6 +173,16 @@ describe('keyword-detector', () => {
     it('includes coding-mode when coding keywords present', () => {
       const result = hookHandler({ prompt: '이 기능 구현해줘' }, {});
       expect((result as any).prependContext).toContain('[coding-mode]');
+    });
+
+    it('returns plan-mode context when /plan detected', () => {
+      const result = hookHandler({ prompt: '/plan design the auth system' }, {});
+      expect((result as any).prependContext).toContain('[plan-mode]');
+    });
+
+    it('returns start-work-mode context when /start_work detected', () => {
+      const result = hookHandler({ prompt: '/start_work plan-v2.md' }, {});
+      expect((result as any).prependContext).toContain('[start-work-mode]');
     });
 
     it('registers with priority 75', () => {
