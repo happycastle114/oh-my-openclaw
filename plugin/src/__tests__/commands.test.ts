@@ -85,7 +85,7 @@ describe('registerWorkflowCommands', () => {
     expect(names).toContain('start_work');
   });
 
-  it('ultrawork handler returns workflow text with task description', async () => {
+  it('ultrawork handler switches persona to atlas and returns brief confirmation', async () => {
     registerWorkflowCommands(mockApi);
 
     const ultraworkCall = mockApi.registerCommand.mock.calls.find(
@@ -95,11 +95,10 @@ describe('registerWorkflowCommands', () => {
     const result = await handler({ args: 'Add authentication' });
 
     expect(result.text).toContain('Add authentication');
-    expect(result.text).toContain('Ultrawork Mode');
-    expect(result.text).toContain('Mock Workflow Content');
+    expect(result.text).toContain('Atlas');
   });
 
-  it('plan handler returns planning workflow with topic', async () => {
+  it('plan handler switches persona to prometheus and returns brief confirmation', async () => {
     registerWorkflowCommands(mockApi);
 
     const planCall = mockApi.registerCommand.mock.calls.find(
@@ -109,11 +108,10 @@ describe('registerWorkflowCommands', () => {
     const result = await handler({ args: 'Database migration strategy' });
 
     expect(result.text).toContain('Database migration strategy');
-    expect(result.text).toContain('Planning Mode');
-    expect(result.text).toContain('Mock Workflow Content');
+    expect(result.text).toContain('Prometheus');
   });
 
-  it('start_work handler returns execution workflow', async () => {
+  it('start_work handler switches persona to atlas and returns brief confirmation', async () => {
     registerWorkflowCommands(mockApi);
 
     const startWorkCall = mockApi.registerCommand.mock.calls.find(
@@ -123,11 +121,10 @@ describe('registerWorkflowCommands', () => {
     const result = await handler({ args: 'plan-v2.md' });
 
     expect(result.text).toContain('plan-v2.md');
-    expect(result.text).toContain('Start Work Mode');
-    expect(result.text).toContain('Mock Workflow Content');
+    expect(result.text).toContain('Atlas');
   });
 
-  it('handles missing workflow file gracefully', async () => {
+  it('still returns confirmation even when persona file read fails gracefully', async () => {
     vi.mocked(fsPromises.readFile).mockImplementation(async () => {
       const err: any = new Error('ENOENT: no such file');
       err.code = 'ENOENT';
@@ -142,8 +139,8 @@ describe('registerWorkflowCommands', () => {
     const handler = ultraworkCall[0].handler;
     const result = await handler({ args: 'test task' });
 
-    expect(result.text).toContain('Error');
-    expect(result.text).toContain('Could not read workflow file');
+    expect(result.text).toContain('test task');
+    expect(result.text).toContain('Atlas');
   });
 });
 
