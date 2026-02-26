@@ -22,12 +22,12 @@ export function registerLookAtTool(api: OmocPluginApi) {
       model: Type.Optional(
         Type.String({
           description: 'Gemini model to use',
-          default: 'gemini-3-flash',
+          default: 'gemini-3-flash-preview',
         }),
       ),
     }),
     execute: async (_toolCallId: string, params: LookAtParams) => {
-      const model = params.model ?? 'gemini-3-flash';
+      const model = params.model ?? 'gemini-3-flash-preview';
 
       try {
         const stdout = await new Promise<string>((resolve, reject) => {

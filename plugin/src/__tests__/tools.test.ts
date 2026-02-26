@@ -325,7 +325,7 @@ describe('registerWebSearchTool', () => {
     // Verify execFile was called with correct args
     const [cmd, args, opts] = mockedExecFile.mock.calls[0];
     expect(cmd).toBe('gemini');
-    expect(args).toEqual(['-m', 'gemini-3-flash', '--prompt', 'latest TypeScript features', '-o', 'text']);
+    expect(args).toEqual(['-m', 'gemini-3-flash-preview', '--prompt', 'latest TypeScript features', '-o', 'text']);
     expect(opts).toMatchObject({ timeout: 90_000 });
   });
 

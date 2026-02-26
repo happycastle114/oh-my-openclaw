@@ -2,6 +2,7 @@
 name: gemini-look-at
 description: Gemini CLI-based multimodal analysis skill. Analyzes PDFs, images, screenshots, and diagrams using Gemini's native multimodal capabilities. Executed via tmux gemini session.
 ---
+
 # Gemini Look-At — Multimodal Analysis via Gemini CLI
 
 OmO's `look-at` tool reimplemented with Gemini CLI + tmux.
@@ -46,7 +47,7 @@ SESSION="gemini"
 
 # Single file analysis
 tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 -l -- \
-  "gemini -m gemini-3-flash --prompt 'Analyze this file. Evaluate layout, design, and content quality, and suggest improvements.' -f /path/to/file.pdf -o text" \
+  "gemini -m gemini-3-flash-preview --prompt 'Analyze this file. Evaluate layout, design, and content quality, and suggest improvements.' -f /path/to/file.pdf -o text" \
   && sleep 0.1 && tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 Enter
 
 # Check results (wait 10-30 seconds)
@@ -60,7 +61,7 @@ When analysis results are long, redirect to file:
 
 ```bash
 tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 -l -- \
-  "gemini -m gemini-3-flash --prompt 'Detailed analysis' -f /path/to/file.pdf -o text > /tmp/gemini-analysis.md 2>&1" \
+  "gemini -m gemini-3-flash-preview --prompt 'Detailed analysis' -f /path/to/file.pdf -o text > /tmp/gemini-analysis.md 2>&1" \
   && sleep 0.1 && tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 Enter
 
 # Read results file
@@ -72,13 +73,14 @@ cat /tmp/gemini-analysis.md
 
 ```bash
 tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 -l -- \
-  "gemini -m gemini-3-flash --prompt 'Compare these two files' -f /path/to/before.png -f /path/to/after.png -o text" \
+  "gemini -m gemini-3-flash-preview --prompt 'Compare these two files' -f /path/to/before.png -f /path/to/after.png -o text" \
   && sleep 0.1 && tmux -S "$SOCKET" send-keys -t "$SESSION":0.0 Enter
 ```
 
 ## Analysis Prompts by Pattern
 
 ### PDF Layout/Design Review
+
 ```
 Evaluate this PDF's layout, line breaks, and design.
 If there are unnatural parts, tell me specifically.
@@ -86,6 +88,7 @@ In particular, check: margins, font size, line spacing, page breaks, table/image
 ```
 
 ### Screenshot UI Review
+
 ```
 Analyze this web UI screenshot.
 1. Layout alignment and spacing consistency
@@ -97,6 +100,7 @@ Provide specific improvement suggestions.
 ```
 
 ### Architecture Diagram Interpretation
+
 ```
 Analyze this architecture diagram.
 - Identify the role of each component
@@ -106,6 +110,7 @@ Analyze this architecture diagram.
 ```
 
 ### Before/After Comparison
+
 ```
 Compare these two images.
 - List specific changes
@@ -114,6 +119,7 @@ Compare these two images.
 ```
 
 ### Error Screenshot Debugging
+
 ```
 Analyze this error screenshot.
 - Read the error message accurately
@@ -123,21 +129,21 @@ Analyze this error screenshot.
 
 ## Model Selection Guide
 
-| Use Case | Recommended Model | Reason |
-|----------|-------------------|--------|
-| Quick check | `gemini-3-flash` | Fast, sufficient multimodal capability |
-| Detailed analysis | `gemini-3-pro` | Deeper analysis, longer content |
-| Best quality | `gemini-3.1-pro` | Latest model, best multimodal |
+| Use Case          | Recommended Model | Reason                                 |
+| ----------------- | ----------------- | -------------------------------------- |
+| Quick check       | `gemini-3-flash`  | Fast, sufficient multimodal capability |
+| Detailed analysis | `gemini-3-pro`    | Deeper analysis, longer content        |
+| Best quality      | `gemini-3.1-pro`  | Latest model, best multimodal          |
 
 ## OpenClaw read vs Gemini CLI
 
-| Feature | OpenClaw `read` | Gemini CLI |
-|---------|----------------|------------|
-| Images (PNG/JPG) | ✅ Send as attachment | ✅ Native analysis |
-| PDF | ❌ Text only | ✅ Layout-inclusive analysis |
-| Video | ❌ | ✅ Frame analysis |
-| Multiple files simultaneously | ❌ One at a time | ✅ Multiple `-f` flags |
-| Authentication | Not required | tmux session required |
+| Feature                       | OpenClaw `read`       | Gemini CLI                   |
+| ----------------------------- | --------------------- | ---------------------------- |
+| Images (PNG/JPG)              | ✅ Send as attachment | ✅ Native analysis           |
+| PDF                           | ❌ Text only          | ✅ Layout-inclusive analysis |
+| Video                         | ❌                    | ✅ Frame analysis            |
+| Multiple files simultaneously | ❌ One at a time      | ✅ Multiple `-f` flags       |
+| Authentication                | Not required          | tmux session required        |
 
 ## Workflow: OpenCode + Gemini CLI Integration
 
