@@ -486,7 +486,7 @@ describe('subagent-tracker', () => {
       expect(getTrackedSubagents().has('run-ignore-123')).toBe(true);
 
       const regularMessage = {
-        content: 'Just a regular message without announce keywords',
+        content: 'Just a regular chat message with no special terms',
       };
 
       messageHandler(regularMessage);
