@@ -1,11 +1,9 @@
 import { Type } from '@sinclair/typebox';
-import { execFile } from 'child_process';
 
-import { OmocPluginApi } from '../types.js';
-import { TOOL_PREFIX } from '../constants.js';
+import { OmocPluginApi, TOOL_PREFIX } from '../types.js';
+import { getConfig } from '../utils/config.js';
+import { resolveCliCommand, runCli } from '../utils/cli-runner.js';
 import { toolResponse, toolError } from '../utils/helpers.js';
-
-const GEMINI_TIMEOUT_MS = 90_000;
 
 interface WebSearchParams {
   query: string;
@@ -13,10 +11,12 @@ interface WebSearchParams {
 }
 
 export function registerWebSearchTool(api: OmocPluginApi) {
+  const config = getConfig(api);
+  const backend = config.cli_backend?.web_search ?? 'gemini';
+
   api.registerTool({
     name: `${TOOL_PREFIX}web_search`,
-    description:
-      'Search the web using Gemini CLI with Google Search grounding. Returns markdown text with grounded results.',
+    description: `Search the web using ${backend} CLI with Google Search grounding. Returns markdown text with grounded results.`,
     parameters: Type.Object({
       query: Type.String({ description: 'Search query or question to answer using web search' }),
       model: Type.Optional(
@@ -32,30 +32,23 @@ export function registerWebSearchTool(api: OmocPluginApi) {
         return toolError('Query is required and must not be empty');
       }
 
-      const model = params.model ?? 'gemini-3-flash-preview';
+      try {
+        const { command, args } = resolveCliCommand(backend, 'web_search', {
+          model: params.model,
+          prompt: query,
+        });
 
-      return new Promise((resolve) => {
-        execFile(
-          'gemini',
-          ['-m', model, '--prompt', query, '-o', 'text'],
-          { timeout: GEMINI_TIMEOUT_MS, maxBuffer: 10 * 1024 * 1024 },
-          (error, stdout, stderr) => {
-            if (error) {
-              const message = stderr?.trim() || error.message || 'Gemini CLI execution failed';
-              resolve(toolError(message));
-              return;
-            }
+        const result = await runCli(command, args, { timeout: 90_000 });
 
-            const result = stdout?.trim();
-            if (!result) {
-              resolve(toolError('Gemini CLI returned empty output'));
-              return;
-            }
+        if (!result.stdout) {
+          return toolError('CLI returned empty output');
+        }
 
-            resolve(toolResponse(result));
-          },
-        );
-      });
+        return toolResponse(result.stdout);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return toolError(message);
+      }
     },
     optional: true,
   });
