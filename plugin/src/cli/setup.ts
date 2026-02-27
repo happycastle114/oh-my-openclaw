@@ -15,7 +15,7 @@ import {
   type ModelTier,
 } from './model-presets.js';
 import { CORE_MCP_SERVERS, OPTIONAL_MCP_SERVERS, runMcporterSetup } from './mcporter-setup.js';
-import { PLANNER_DENY } from '../constants.js';
+import { PLANNER_DENY, CLI_BACKENDS, ACP_HARNESSES } from '../constants.js';
 
 type AgentsSection = {
   defaults?: Record<string, unknown>;
@@ -250,6 +250,10 @@ export interface InteractiveSetupResult {
   excludeServers: string[];
   enableTodoEnforcer: boolean;
   enablePlannerGuard: boolean;
+  cliBackendLookAt: string;
+  cliBackendWebSearch: string;
+  enableAcp: boolean;
+  acpDefaultHarness: string;
 }
 
 export async function runInteractiveSetup(logger: Logger): Promise<InteractiveSetupResult> {
@@ -264,6 +268,10 @@ export async function runInteractiveSetup(logger: Logger): Promise<InteractiveSe
     excludeServers: [],
     enableTodoEnforcer: false,
     enablePlannerGuard: false,
+    cliBackendLookAt: 'gemini',
+    cliBackendWebSearch: 'gemini',
+    enableAcp: false,
+    acpDefaultHarness: 'codex',
   };
 
   try {
@@ -277,7 +285,7 @@ export async function runInteractiveSetup(logger: Logger): Promise<InteractiveSe
     const choices = [...presetProviders, 'custom'];
     const choiceCount = choices.length;
 
-    logger.info('Step 1/4: Select your AI provider');
+    logger.info('Step 1/6: Select your AI provider');
     logger.info('');
     choices.forEach((p, i) => {
       logger.info(`  ${i + 1}. ${PROVIDER_LABELS[p] ?? p}`);
@@ -305,8 +313,8 @@ export async function runInteractiveSetup(logger: Logger): Promise<InteractiveSe
     logger.info(`  Selected: ${PROVIDER_LABELS[provider] ?? 'Custom'}`);
     logger.info('');
 
-    // Step 2/4: Model preview + confirm
-    logger.info('Step 2/4: Model configuration preview');
+    // Step 2/6: Model preview + confirm
+    logger.info('Step 2/6: Model configuration preview');
     logger.info('');
     printPreview(logger, provider);
     logger.info('');
@@ -317,9 +325,9 @@ export async function runInteractiveSetup(logger: Logger): Promise<InteractiveSe
       return emptyResult;
     }
 
-    // Step 3/4: MCP servers
+    // Step 3/6: MCP servers
     logger.info('');
-    logger.info('Step 3/4: MCP servers');
+    logger.info('Step 3/6: MCP servers');
     logger.info('');
     logger.info('  Core servers (always included):');
     for (const [name, entry] of Object.entries(CORE_MCP_SERVERS)) {
@@ -339,8 +347,8 @@ export async function runInteractiveSetup(logger: Logger): Promise<InteractiveSe
 
     const setupMcporter = true;
 
-    // Step 4/4: Plugin features
-    logger.info('Step 4/4: Plugin features');
+    // Step 4/6: Plugin features
+    logger.info('Step 4/6: Plugin features');
     logger.info('');
 
     const todoAnswer = await askQuestion(rl, '  Enable todo enforcer (forces task tracking)? (Y/n): ');
@@ -350,7 +358,66 @@ export async function runInteractiveSetup(logger: Logger): Promise<InteractiveSe
     const enablePlannerGuard = guardAnswer.toLowerCase() !== 'n' && guardAnswer.toLowerCase() !== 'no';
 
     logger.info('');
-    return { provider, setupMcporter, excludeServers, enableTodoEnforcer, enablePlannerGuard };
+
+    // Step 5/6: CLI Backend
+    logger.info('Step 5/6: CLI Backend');
+    logger.info('');
+
+    logger.info('  Select CLI backend for file analysis (omoc_look_at):');
+    CLI_BACKENDS.forEach((b, i) => {
+      const note = i === 0 ? ' (Gemini CLI - default)' : i === 1 ? ' (OpenAI Codex CLI)' : ' (OpenCode CLI)';
+      logger.info(`    ${i + 1}. ${b}${note}`);
+    });
+    let cliBackendLookAt = 'gemini';
+    {
+      const answer = await askQuestion(rl, `  Select (1-${CLI_BACKENDS.length}, default 1): `);
+      const idx = parseInt(answer, 10) - 1;
+      if (idx >= 0 && idx < CLI_BACKENDS.length) {
+        cliBackendLookAt = CLI_BACKENDS[idx]!;
+      }
+    }
+
+    logger.info('');
+    logger.info('  Select CLI backend for web search (omoc_web_search):');
+    CLI_BACKENDS.forEach((b, i) => {
+      const note = i === 0 ? ' (Gemini CLI - default, best for web search)' : i === 1 ? ' (OpenAI Codex CLI)' : ' (OpenCode CLI)';
+      logger.info(`    ${i + 1}. ${b}${note}`);
+    });
+    let cliBackendWebSearch = 'gemini';
+    {
+      const answer = await askQuestion(rl, `  Select (1-${CLI_BACKENDS.length}, default 1): `);
+      const idx = parseInt(answer, 10) - 1;
+      if (idx >= 0 && idx < CLI_BACKENDS.length) {
+        cliBackendWebSearch = CLI_BACKENDS[idx]!;
+      }
+    }
+
+    logger.info('');
+
+    // Step 6/6: ACP Runtime
+    logger.info('Step 6/6: ACP Runtime');
+    logger.info('');
+
+    const acpAnswer = await askQuestion(rl, '  Enable ACP runtime for task delegation? (Y/n): ');
+    const enableAcp = acpAnswer.toLowerCase() !== 'n' && acpAnswer.toLowerCase() !== 'no';
+
+    const orderedHarnesses = ['codex', 'opencode', 'gemini', 'claude', 'pi'] as const;
+    logger.info('  Default ACP harness:');
+    orderedHarnesses.forEach((h, i) => {
+      const note = i === 0 ? ' (default)' : '';
+      logger.info(`    ${i + 1}. ${h}${note}`);
+    });
+    let acpDefaultHarness = 'codex';
+    {
+      const answer = await askQuestion(rl, `  Select (1-${orderedHarnesses.length}, default 1): `);
+      const idx = parseInt(answer, 10) - 1;
+      if (idx >= 0 && idx < orderedHarnesses.length) {
+        acpDefaultHarness = orderedHarnesses[idx]!;
+      }
+    }
+
+    logger.info('');
+    return { provider, setupMcporter, excludeServers, enableTodoEnforcer, enablePlannerGuard, cliBackendLookAt, cliBackendWebSearch, enableAcp, acpDefaultHarness };
   } finally {
     rl.close();
   }
@@ -367,6 +434,10 @@ export interface SetupOptions {
   excludeServers?: string[];
   enableTodoEnforcer?: boolean;
   enablePlannerGuard?: boolean;
+  cliBackendLookAt?: string;
+  cliBackendWebSearch?: string;
+  enableAcp?: boolean;
+  acpDefaultHarness?: string;
   interactive?: boolean;
   logger: Logger;
 }
@@ -491,6 +562,34 @@ export function runSetup(options: SetupOptions): MergeResult {
     result.mcporterSkipped = mcpResult.skipped;
   }
 
+  // Write oh-my-openclaw plugin config (cli_backend, acp)
+  if (options.cliBackendLookAt !== undefined || options.cliBackendWebSearch !== undefined || options.enableAcp !== undefined) {
+    if (!config.plugins) config.plugins = {};
+    const plugins = config.plugins as Record<string, unknown>;
+    if (!plugins['entries']) plugins['entries'] = {};
+    const entries = plugins['entries'] as Record<string, unknown>;
+    if (!entries['oh-my-openclaw']) entries['oh-my-openclaw'] = {};
+    const omocEntry = entries['oh-my-openclaw'] as Record<string, unknown>;
+    const existingConfig = (omocEntry['config'] ?? {}) as Record<string, unknown>;
+    omocEntry['config'] = {
+      ...existingConfig,
+      cli_backend: {
+        look_at: options.cliBackendLookAt ?? 'gemini',
+        web_search: options.cliBackendWebSearch ?? 'gemini',
+      },
+      acp: {
+        enabled: options.enableAcp ?? false,
+        default_harness: options.acpDefaultHarness ?? 'codex',
+        delegate_via_acp: options.enableAcp ?? false,
+      },
+    };
+    if (!dryRun) {
+      fs.writeFileSync(configPath, serializeConfig(config), 'utf-8');
+    }
+    logger.info(`CLI backend: look_at=${options.cliBackendLookAt ?? 'gemini'}, web_search=${options.cliBackendWebSearch ?? 'gemini'}`);
+    logger.info(`ACP runtime: ${options.enableAcp ? 'enabled' : 'disabled'}, harness=${options.acpDefaultHarness ?? 'codex'}`);
+  }
+
   return result;
 }
 
@@ -525,6 +624,10 @@ export function registerSetupCli(ctx: {
         let excludeServers: string[] = [];
         let enableTodoEnforcer: boolean | undefined;
         let enablePlannerGuard: boolean | undefined;
+        let cliBackendLookAt: string | undefined;
+        let cliBackendWebSearch: string | undefined;
+        let enableAcp: boolean | undefined;
+        let acpDefaultHarness: string | undefined;
 
         if (!provider && process.stdin.isTTY) {
           const result = await runInteractiveSetup(ctx.logger);
@@ -534,6 +637,10 @@ export function registerSetupCli(ctx: {
           excludeServers = result.excludeServers;
           enableTodoEnforcer = result.enableTodoEnforcer;
           enablePlannerGuard = result.enablePlannerGuard;
+          cliBackendLookAt = result.cliBackendLookAt;
+          cliBackendWebSearch = result.cliBackendWebSearch;
+          enableAcp = result.enableAcp;
+          acpDefaultHarness = result.acpDefaultHarness;
         }
 
         runSetup({
@@ -546,6 +653,10 @@ export function registerSetupCli(ctx: {
           excludeServers,
           enableTodoEnforcer,
           enablePlannerGuard,
+          cliBackendLookAt,
+          cliBackendWebSearch,
+          enableAcp,
+          acpDefaultHarness,
           logger: ctx.logger,
         });
 
