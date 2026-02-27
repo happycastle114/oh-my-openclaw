@@ -9,6 +9,8 @@ interface TrackedSubagent {
   childSessionKey: string;
   task: string;
   spawnedAt: number;
+  /** Session key of the agent that spawned this sub-agent */
+  callerSessionKey?: string;
 }
 
 const trackedSubagents = new Map<string, TrackedSubagent>();
@@ -24,6 +26,11 @@ export function clearSubagentTracking(runId: string): void {
 
 export function getTrackedSubagents(): ReadonlyMap<string, TrackedSubagent> {
   return trackedSubagents;
+}
+
+/** Get the caller session key for a tracked sub-agent */
+export function getCallerSessionKey(runId: string): string | undefined {
+  return trackedSubagents.get(runId)?.callerSessionKey;
 }
 
 export function resetWebhookBridgeState(): void {
@@ -49,6 +56,8 @@ async function checkIncompleteTodos(api: OmocPluginApi): Promise<void> {
   const allSessionKeys = ['__default__', 'agent:main:main'];
   let totalIncomplete = 0;
   const summaryParts: string[] = [];
+  // Collect owner session keys from incomplete todos for targeted delivery
+  const ownerSessionKeys = new Set<string>();
 
   for (const sessionKey of allSessionKeys) {
     const incomplete = getIncompleteTodos(sessionKey);
@@ -56,6 +65,11 @@ async function checkIncompleteTodos(api: OmocPluginApi): Promise<void> {
       totalIncomplete += incomplete.length;
       const items = incomplete.map((t) => `  - [${t.status}] ${t.content}`).join('\n');
       summaryParts.push(items);
+      for (const todo of incomplete) {
+        if (todo.ownerSessionKey) {
+          ownerSessionKeys.add(todo.ownerSessionKey);
+        }
+      }
     }
   }
 
@@ -67,13 +81,19 @@ async function checkIncompleteTodos(api: OmocPluginApi): Promise<void> {
     `Review with \`${TOOL_PREFIX}todo_list\` and resume work. ` +
     `If blocked, update todo status. If all done, mark them complete.`;
 
+  // If we have owner session keys, send to the first one; otherwise fallback to default
+  const targetSessionKey = ownerSessionKeys.size > 0
+    ? [...ownerSessionKeys][0]
+    : undefined;
+
   const result = await callHooksAgent(message, webhookConfig, {
     name: 'OmOC-TodoReminder',
     deliver: false,
+    ...(targetSessionKey ? { sessionKey: targetSessionKey } : {}),
   }, api.logger);
 
   if (result.ok) {
-    api.logger.info(`${LOG_PREFIX} Periodic todo reminder sent via hooks/agent (${totalIncomplete} incomplete)`);
+    api.logger.info(`${LOG_PREFIX} Periodic todo reminder sent via hooks/agent (${totalIncomplete} incomplete, target=${targetSessionKey ?? 'default'})`);
   }
 }
 

@@ -1,6 +1,6 @@
 import { OmocPluginApi } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
-import { trackSubagentSpawn, clearSubagentTracking } from '../services/webhook-bridge.js';
+import { trackSubagentSpawn, clearSubagentTracking, getCallerSessionKey } from '../services/webhook-bridge.js';
 import { callHooksWake } from '../utils/webhook-client.js';
 import { getConfig } from '../utils/config.js';
 
@@ -9,6 +9,7 @@ const SPAWN_TOOL_NAME = 'sessions_spawn';
 interface ToolResultPayload {
   tool?: string;
   content?: string;
+  sessionId?: string;
   [key: string]: unknown;
 }
 
@@ -47,11 +48,17 @@ export function registerSubagentTracker(api: OmocPluginApi): void {
       const spawnResult = extractSpawnResult(content);
 
       if (spawnResult) {
+        // Capture the caller's session key from the payload context
+        const callerSessionKey = typeof payload.sessionId === 'string'
+          ? payload.sessionId
+          : undefined;
+
         trackSubagentSpawn({
           ...spawnResult,
           spawnedAt: Date.now(),
+          callerSessionKey,
         });
-        api.logger.info(`${LOG_PREFIX} Tracking sub-agent spawn: runId=${spawnResult.runId}`);
+        api.logger.info(`${LOG_PREFIX} Tracking sub-agent spawn: runId=${spawnResult.runId}, callerSession=${callerSessionKey ?? 'unknown'}`);
       }
 
       return undefined;
@@ -72,8 +79,10 @@ export function registerSubagentTracker(api: OmocPluginApi): void {
 
       const runIdMatch = content.match(/runId["\s:=]+["']?([a-zA-Z0-9_-]+)/);
       if (runIdMatch) {
+        // Get caller session key before clearing tracking
+        const callerSession = getCallerSessionKey(runIdMatch[1]);
         clearSubagentTracking(runIdMatch[1]);
-        api.logger.info(`${LOG_PREFIX} Cleared sub-agent tracking: runId=${runIdMatch[1]} (announce received)`);
+        api.logger.info(`${LOG_PREFIX} Cleared sub-agent tracking: runId=${runIdMatch[1]} (announce received, callerSession=${callerSession ?? 'unknown'})`);
 
         // Send wake to ensure the main agent processes the announce and continues work
         const config = getConfig(api);
