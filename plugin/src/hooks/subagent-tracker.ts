@@ -1,4 +1,4 @@
-import { OmocPluginApi } from '../types.js';
+import { OmocPluginApi, TypedHookContext } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
 import { trackSubagentSpawn, clearSubagentTracking, getCallerSessionKey, getTrackedSubagents } from '../services/webhook-bridge.js';
 import { callHooksWake } from '../utils/webhook-client.js';
@@ -10,6 +10,15 @@ interface ToolResultPayload {
   tool?: string;
   content?: string;
   sessionId?: string;
+  [key: string]: unknown;
+}
+
+
+interface SubagentEndedEvent {
+  runId?: string;
+  reason?: string;
+  outcome?: string;
+  error?: unknown;
   [key: string]: unknown;
 }
 
@@ -107,6 +116,47 @@ export function registerSubagentTracker(api: OmocPluginApi): void {
       name: 'oh-my-openclaw.subagent-tracker',
       description: 'Tracks sessions_spawn results for stale sub-agent detection',
     },
+  );
+
+
+  api.on<SubagentEndedEvent, void>(
+    'subagent_ended',
+    async (event: SubagentEndedEvent, ctx: TypedHookContext): Promise<void> => {
+      const runId = typeof event?.runId === 'string' ? event.runId : undefined;
+      if (!runId) return;
+
+      const tracked = getTrackedSubagents();
+      const wasTracked = tracked.has(runId);
+      const callerSession = getCallerSessionKey(runId);
+      clearSubagentTracking(runId);
+
+      if (!wasTracked) return;
+
+      api.logger.info(`${LOG_PREFIX} subagent_ended received: runId=${runId} (callerSession=${callerSession ?? 'unknown'})`);
+
+      const config = getConfig(api);
+      if (config.webhook_bridge_enabled && config.gateway_url && config.hooks_token) {
+        const requesterSessionKey = typeof (ctx as unknown as { requesterSessionKey?: unknown })?.requesterSessionKey === 'string'
+          ? ((ctx as unknown as { requesterSessionKey?: string }).requesterSessionKey)
+          : undefined;
+        const wakeMessage = requesterSessionKey
+          ? `[System] Sub-agent completed (runId=${runId}, requester=${requesterSessionKey}). Process the result and continue pending work.`
+          : `[System] Sub-agent completed (runId=${runId}). Process the result and continue pending work.`;
+
+        const result = await callHooksWake(
+          wakeMessage,
+          { gateway_url: config.gateway_url, hooks_token: config.hooks_token },
+          api.logger,
+        );
+
+        if (result.ok) {
+          api.logger.info(`${LOG_PREFIX} Wake sent from subagent_ended: runId=${runId}`);
+        } else {
+          api.logger.warn(`${LOG_PREFIX} Wake from subagent_ended failed: ${result.error ?? `status ${result.status}`}`);
+        }
+      }
+    },
+    { priority: 120 },
   );
 
   api.registerHook(
