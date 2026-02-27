@@ -79,8 +79,6 @@ export function registerRalphLoop(api: OmocPluginApi): void {
 
   api.registerService({
     id: 'omoc-ralph-loop',
-    name: 'Ralph Loop Service',
-    description: 'Self-referential completion mechanism with configurable iterations',
     start: async () => {
       await loadStateFromFile();
     },

@@ -116,8 +116,6 @@ export function registerWebhookBridge(api: OmocPluginApi): void {
 
   api.registerService({
     id: 'omoc-webhook-bridge',
-    name: 'Webhook Bridge Service',
-    description: 'Proactive agent messaging via Gateway webhook hooks',
     start: async () => {
       if (!config.webhook_bridge_enabled) {
         api.logger.info(`${LOG_PREFIX} Webhook bridge disabled (set webhook_bridge_enabled: true to enable)`);
