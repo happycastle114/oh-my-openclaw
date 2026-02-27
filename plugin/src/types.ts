@@ -8,10 +8,7 @@ export interface PluginConfig {
   todo_enforcer_cooldown_ms: number;
   todo_enforcer_max_failures: number;
   comment_checker_enabled: boolean;
-  notepad_dir: string;
-  plans_dir: string;
   checkpoint_dir: string;
-  tmux_socket: string;
   model_routing?: Partial<Record<string, { model: string; alternatives?: string[] }>>;
   // Webhook bridge configuration
   webhook_bridge_enabled: boolean;
