@@ -1,9 +1,11 @@
 {
   "id": "oh-my-openclaw",
   "name": "Oh-My-OpenClaw",
-  "description": "Multi-agent orchestration plugin \u2014 11 agents, category-based model routing, todo enforcer, ralph loop, agent setup CLI, and custom tools",
+  "description": "Multi-agent orchestration plugin — 11 agents, category-based model routing, todo enforcer, ralph loop, agent setup CLI, and custom tools",
   "version": "0.17.0",
-  "skills": ["skills"],
+  "skills": [
+    "skills"
+  ],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -44,7 +46,7 @@
       },
       "model_routing": {
         "type": "object",
-        "description": "Custom category\u2192model mappings. Override default model selection per category.",
+        "description": "Custom category→model mappings. Override default model selection per category.",
         "additionalProperties": {
           "type": "object",
           "properties": {
@@ -127,7 +129,7 @@
     },
     "model_routing": {
       "label": "Model Routing",
-      "description": "Custom category\u2192model mappings for task delegation",
+      "description": "Custom category→model mappings for task delegation",
       "group": "Model Routing"
     },
     "webhook_bridge_enabled": {
