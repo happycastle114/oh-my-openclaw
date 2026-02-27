@@ -1,0 +1,70 @@
+{
+  "branches": [
+    "master",
+    {
+      "name": "dev",
+      "prerelease": "dev"
+    }
+  ],
+  "tagFormat": "v${version}",
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "releaseRules": [
+          { "type": "feat", "release": "minor" },
+          { "type": "fix", "release": "patch" },
+          { "type": "perf", "release": "patch" },
+          { "type": "refactor", "release": "patch" },
+          { "type": "docs", "release": false },
+          { "type": "style", "release": false },
+          { "type": "test", "release": false },
+          { "type": "chore", "release": false },
+          { "type": "ci", "release": false },
+          { "breaking": true, "release": "major" }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits",
+        "presetConfig": {
+          "types": [
+            { "type": "feat", "section": "Features" },
+            { "type": "fix", "section": "Bug Fixes" },
+            { "type": "perf", "section": "Performance" },
+            { "type": "refactor", "section": "Refactoring" },
+            { "type": "docs", "section": "Documentation", "hidden": true },
+            { "type": "chore", "section": "Maintenance", "hidden": true },
+            { "type": "ci", "section": "CI", "hidden": true }
+          ]
+        }
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "node scripts/sync-version.mjs ${nextRelease.version}"
+      }
+    ],
+    [
+      "@semantic-release/npm",
+      {
+        "pkgRoot": "plugin"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "plugin/package.json",
+          "plugin/openclaw.plugin.json"
+        ],
+        "message": "chore(release): v${nextRelease.version} [skip ci]"
+      }
+    ],
+    "@semantic-release/github"
+  ]
+}
