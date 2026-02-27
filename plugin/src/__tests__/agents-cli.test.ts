@@ -12,6 +12,8 @@ import {
   runSetup,
   serializeConfig,
   applyProviderToConfigs,
+  readExistingHooksToken,
+  generateHooksToken,
   type MergeResult,
 } from '../cli/setup.js';
 import {
@@ -1102,5 +1104,175 @@ describe('applyPlannerGuard', () => {
     applyPlannerGuard(agents);
 
     expect(agents[0]!.tools?.deny).toEqual(expect.arrayContaining(['write', 'edit', 'apply_patch']));
+  });
+});
+
+describe('generateHooksToken', () => {
+  it('should return a 64-char hex string', () => {
+    const token = generateHooksToken();
+    expect(token).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('should generate unique tokens each call', () => {
+    const a = generateHooksToken();
+    const b = generateHooksToken();
+    expect(a).not.toBe(b);
+  });
+});
+
+describe('readExistingHooksToken', () => {
+  it('should return token from config with hooks.token', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-hooks-test-'));
+    const configPath = path.join(dir, 'openclaw.json');
+    fs.writeFileSync(configPath, '{"hooks": {"enabled": true, "token": "my-secret"}}');
+
+    try {
+      expect(readExistingHooksToken(configPath)).toBe('my-secret');
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+
+  it('should return undefined when hooks section is missing', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-hooks-test-'));
+    const configPath = path.join(dir, 'openclaw.json');
+    fs.writeFileSync(configPath, '{"agents": {"list": []}}');
+
+    try {
+      expect(readExistingHooksToken(configPath)).toBeUndefined();
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+
+  it('should return undefined when token is empty string', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-hooks-test-'));
+    const configPath = path.join(dir, 'openclaw.json');
+    fs.writeFileSync(configPath, '{"hooks": {"enabled": true, "token": ""}}');
+
+    try {
+      expect(readExistingHooksToken(configPath)).toBeUndefined();
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+
+  it('should return undefined for non-existent file', () => {
+    expect(readExistingHooksToken('/nonexistent/config.json')).toBeUndefined();
+  });
+});
+
+describe('runSetup with enableWebhookBridge', () => {
+  it('should write webhook bridge config to pluginSettings and hooks', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-webhook-test-'));
+    const configPath = path.join(dir, 'openclaw.json');
+    fs.writeFileSync(configPath, '{"agents": {"list": []}}');
+
+    try {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      runSetup({
+        configPath,
+        logger,
+        enableWebhookBridge: true,
+        webhookHooksToken: 'test-token-123',
+      });
+
+      const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+      const ps = (config as any).pluginSettings?.['oh-my-openclaw'];
+      expect(ps?.webhook_bridge_enabled).toBe(true);
+      expect(ps?.hooks_token).toBe('test-token-123');
+
+      const hooks = (config as any).hooks;
+      expect(hooks?.enabled).toBe(true);
+      expect(hooks?.token).toBe('test-token-123');
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+
+  it('should preserve existing hooks.token when already set', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-webhook-test-'));
+    const configPath = path.join(dir, 'openclaw.json');
+    fs.writeFileSync(configPath, '{"agents": {"list": []}, "hooks": {"enabled": true, "token": "existing-token"}}');
+
+    try {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      runSetup({
+        configPath,
+        logger,
+        enableWebhookBridge: true,
+        webhookHooksToken: 'new-token',
+      });
+
+      const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+      const hooks = (config as any).hooks;
+      expect(hooks?.token).toBe('existing-token');
+
+      const ps = (config as any).pluginSettings?.['oh-my-openclaw'];
+      expect(ps?.hooks_token).toBe('new-token');
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+
+  it('should not write webhook config when enableWebhookBridge is falsy', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-webhook-test-'));
+    const configPath = path.join(dir, 'openclaw.json');
+    fs.writeFileSync(configPath, '{"agents": {"list": []}}');
+
+    try {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      runSetup({ configPath, logger });
+
+      const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+      expect((config as any).hooks).toBeUndefined();
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+
+  it('should not write webhook config on dry-run', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-webhook-test-'));
+    const configPath = path.join(dir, 'openclaw.json');
+    fs.writeFileSync(configPath, '{"agents": {"list": []}}');
+
+    try {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      runSetup({
+        configPath,
+        logger,
+        dryRun: true,
+        enableWebhookBridge: true,
+        webhookHooksToken: 'test-token',
+      });
+
+      const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+      expect((config as any).hooks).toBeUndefined();
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
+  });
+
+  it('should preserve existing pluginSettings from other plugins', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omoc-webhook-test-'));
+    const configPath = path.join(dir, 'openclaw.json');
+    fs.writeFileSync(configPath, '{"agents": {"list": []}, "pluginSettings": {"other-plugin": {"key": "val"}}}');
+
+    try {
+      const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      runSetup({
+        configPath,
+        logger,
+        enableWebhookBridge: true,
+        webhookHooksToken: 'abc',
+      });
+
+      const config = parseConfig(fs.readFileSync(configPath, 'utf-8'));
+      const ps = (config as any).pluginSettings;
+      expect(ps?.['other-plugin']?.key).toBe('val');
+      expect(ps?.['oh-my-openclaw']?.webhook_bridge_enabled).toBe(true);
+    } finally {
+      fs.rmSync(dir, { recursive: true });
+    }
   });
 });

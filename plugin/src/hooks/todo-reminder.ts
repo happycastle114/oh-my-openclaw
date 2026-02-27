@@ -1,6 +1,8 @@
 import { OmocPluginApi, TypedHookContext } from '../types.js';
 import { TOOL_PREFIX, LOG_PREFIX } from '../constants.js';
 import { getIncompleteTodos, resetStore } from '../tools/todo/store.js';
+import { getConfig } from '../utils/config.js';
+import { callHooksWake } from '../utils/webhook-client.js';
 
 const TODO_TOOL_NAMES = new Set([
   `${TOOL_PREFIX}todo_create`,
@@ -92,6 +94,15 @@ export function registerAgentEndReminder(api: OmocPluginApi): void {
 
         if (sessionKey) {
           api.runtime.system.enqueueSystemEvent(warning, { sessionKey });
+        }
+
+        const config = getConfig(api);
+        if (config.webhook_bridge_enabled && config.hooks_token) {
+          callHooksWake(
+            `⚠️ Agent ended with ${incomplete.length} incomplete todo(s). Resume work.`,
+            { gateway_url: config.gateway_url, hooks_token: config.hooks_token },
+            api.logger,
+          ).catch(() => {});
         }
 
         api.logger.warn(

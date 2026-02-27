@@ -7,6 +7,8 @@ import { registerCommentChecker } from './hooks/comment-checker.js';
 import { registerMessageMonitor } from './hooks/message-monitor.js';
 import { registerStartupHook } from './hooks/startup.js';
 import { registerRalphLoop } from './services/ralph-loop.js';
+import { registerWebhookBridge } from './services/webhook-bridge.js';
+import { registerSubagentTracker } from './hooks/subagent-tracker.js';
 import { registerDelegateTool } from './tools/task-delegation.js';
 import { registerOmoDelegateTool } from './tools/omo-delegation.js';
 import { registerLookAtTool } from './tools/look-at.js';
@@ -150,6 +152,18 @@ export default function register(api: OmocPluginApi) {
     registerRalphLoop(api);
     registry.services.push('ralph-loop');
     api.logger.info(`[${PLUGIN_ID}] Ralph Loop service registered`);
+  });
+
+  safeRegister(api, 'webhook-bridge', 'service', () => {
+    registerWebhookBridge(api);
+    registry.services.push('webhook-bridge');
+    api.logger.info(`[${PLUGIN_ID}] Webhook Bridge service registered (enabled: ${config.webhook_bridge_enabled})`);
+  });
+
+  safeRegister(api, 'subagent-tracker', 'hook', () => {
+    registerSubagentTracker(guarded);
+    registry.hooks.push('subagent-tracker', 'subagent-announce-detector');
+    api.logger.info(`[${PLUGIN_ID}] Sub-agent tracker hooks registered`);
   });
 
   safeRegister(api, 'omoc_delegate', 'tool', () => {
