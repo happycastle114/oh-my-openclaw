@@ -1,6 +1,8 @@
 import { OmocPluginApi } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
 import { trackSubagentSpawn, clearSubagentTracking } from '../services/webhook-bridge.js';
+import { callHooksWake } from '../utils/webhook-client.js';
+import { getConfig } from '../utils/config.js';
 
 const SPAWN_TOOL_NAME = 'sessions_spawn';
 
@@ -72,13 +74,29 @@ export function registerSubagentTracker(api: OmocPluginApi): void {
       if (runIdMatch) {
         clearSubagentTracking(runIdMatch[1]);
         api.logger.info(`${LOG_PREFIX} Cleared sub-agent tracking: runId=${runIdMatch[1]} (announce received)`);
+
+        // Send wake to ensure the main agent processes the announce and continues work
+        const config = getConfig(api);
+        if (config.webhook_bridge_enabled && config.gateway_url && config.hooks_token) {
+          void callHooksWake(
+            `[System] Sub-agent completed (runId=${runIdMatch[1]}). Process the announce result and continue any pending work.`,
+            { gateway_url: config.gateway_url, hooks_token: config.hooks_token },
+            api.logger,
+          ).then((result) => {
+            if (result.ok) {
+              api.logger.info(`${LOG_PREFIX} Wake sent after sub-agent announce: runId=${runIdMatch[1]}`);
+            } else {
+              api.logger.warn(`${LOG_PREFIX} Wake after announce failed: ${result.error ?? `status ${result.status}`}`);
+            }
+          });
+        }
       }
 
       return undefined;
     },
     {
       name: 'oh-my-openclaw.subagent-announce-detector',
-      description: 'Detects sub-agent announce messages and clears stale tracking',
+      description: 'Detects sub-agent announce messages, clears stale tracking, and wakes main agent',
     },
   );
 }
