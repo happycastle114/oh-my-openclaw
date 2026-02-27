@@ -76,12 +76,22 @@ export interface CommandRegistration<TCtx = { args?: string }> {
   handler: (ctx: TCtx) => { text: string } | Promise<{ text: string }>;
 }
 
+export interface ServiceContext {
+  config: unknown;
+  workspaceDir?: string;
+  stateDir: string;
+  logger: {
+    info: (message: string) => void;
+    warn: (message: string) => void;
+    error: (message: string) => void;
+    debug?: (message: string) => void;
+  };
+}
+
 export interface ServiceRegistration {
   id: string;
-  name: string;
-  description?: string;
-  start?: () => Promise<void>;
-  stop?: () => Promise<void>;
+  start: (ctx: ServiceContext) => void | Promise<void>;
+  stop?: (ctx: ServiceContext) => void | Promise<void>;
 }
 
 // OmocPluginApi interface
