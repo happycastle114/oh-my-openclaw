@@ -52,6 +52,11 @@ export function createMockConfig(overrides?: Partial<PluginConfig>): PluginConfi
     checkpoint_dir: 'workspace/checkpoints',
     tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
     model_routing: undefined,
+    webhook_bridge_enabled: false,
+    gateway_url: 'http://127.0.0.1:18789',
+    hooks_token: '',
+    webhook_reminder_interval_ms: 300000,
+    webhook_subagent_stale_threshold_ms: 600000,
     ...overrides,
   };
 }

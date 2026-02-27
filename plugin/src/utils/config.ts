@@ -15,6 +15,11 @@ export function getConfig(api: OmocPluginApi): PluginConfig {
     checkpoint_dir: join(wsDir, 'checkpoints'),
     tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
     model_routing: undefined,
+    webhook_bridge_enabled: false,
+    gateway_url: process.env.OPENCLAW_GATEWAY_URL ?? 'http://127.0.0.1:18789',
+    hooks_token: process.env.OPENCLAW_HOOKS_TOKEN ?? '',
+    webhook_reminder_interval_ms: 5 * 60 * 1000, // 5 minutes
+    webhook_subagent_stale_threshold_ms: 10 * 60 * 1000, // 10 minutes
   };
 
   const config = { ...defaults, ...(api.pluginConfig ?? api.config) };

@@ -13,6 +13,12 @@ export interface PluginConfig {
   checkpoint_dir: string;
   tmux_socket: string;
   model_routing?: Partial<Record<string, { model: string; alternatives?: string[] }>>;
+  // Webhook bridge configuration
+  webhook_bridge_enabled: boolean;
+  gateway_url: string;
+  hooks_token: string;
+  webhook_reminder_interval_ms: number;
+  webhook_subagent_stale_threshold_ms: number;
 }
 
 // RalphLoopState interface
