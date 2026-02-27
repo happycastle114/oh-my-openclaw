@@ -202,7 +202,7 @@ describe('registerLookAtTool', () => {
     expect(result.content[0].text).toBe('Analysis result text');
   });
 
-  it('uses default model gemini-3-flash-preview when model is not provided', async () => {
+  it('uses default model gemini-2.5-flash when model is not provided', async () => {
     mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
       cb(null, 'output', '');
     });
@@ -216,7 +216,7 @@ describe('registerLookAtTool', () => {
     });
 
     const [, args] = mockedExecFile.mock.calls[0];
-    expect(args[1]).toBe('gemini-3-flash-preview');
+    expect(args[1]).toBe('gemini-2.5-flash');
   });
 
   it('returns toolError when CLI times out (error.killed === true)', async () => {
@@ -255,7 +255,7 @@ describe('registerLookAtTool', () => {
     });
 
     expect(result.content[0].text).toContain('Error');
-    expect(result.content[0].text).toContain('Gemini CLI failed (exit 1)');
+    expect(result.content[0].text).toContain("CLI command 'gemini' failed (exit 1)");
     expect(result.content[0].text).toContain('model not found');
   });
 
@@ -272,7 +272,7 @@ describe('registerLookAtTool', () => {
       goal: 'describe',
     });
 
-    expect(result.content[0].text).toBe('(empty response from Gemini CLI)');
+    expect(result.content[0].text).toBe('(empty response from CLI)');
   });
 
   it('parameters schema has required file_path and goal fields', () => {
@@ -325,7 +325,7 @@ describe('registerWebSearchTool', () => {
     // Verify execFile was called with correct args
     const [cmd, args, opts] = mockedExecFile.mock.calls[0];
     expect(cmd).toBe('gemini');
-    expect(args).toEqual(['-m', 'gemini-3-flash-preview', '--prompt', 'latest TypeScript features', '-o', 'text']);
+    expect(args).toEqual(['-m', 'gemini-2.5-flash', '--prompt', 'latest TypeScript features', '-o', 'text']);
     expect(opts).toMatchObject({ timeout: 90_000 });
   });
 
@@ -374,7 +374,7 @@ describe('registerWebSearchTool', () => {
     });
 
     expect(result.content[0].text).toContain('Error');
-    expect(result.content[0].text).toContain('Gemini CLI returned empty output');
+    expect(result.content[0].text).toContain('CLI returned empty output');
   });
 
   it('parameter schema has required query field', () => {
