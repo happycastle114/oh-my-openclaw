@@ -8,6 +8,7 @@ import { registerMessageMonitor } from './hooks/message-monitor.js';
 import { registerStartupHook } from './hooks/startup.js';
 import { registerRalphLoop } from './services/ralph-loop.js';
 import { registerDelegateTool } from './tools/task-delegation.js';
+import { registerOmoDelegateTool } from './tools/omo-delegation.js';
 import { registerLookAtTool } from './tools/look-at.js';
 import { registerCheckpointTool } from './tools/checkpoint.js';
 import { registerWebSearchTool } from './tools/web-search.js';
@@ -155,6 +156,12 @@ export default function register(api: OmocPluginApi) {
     registerDelegateTool(api);
     registry.tools.push('omoc_delegate');
     api.logger.info(`[${PLUGIN_ID}] Delegate tool registered`);
+  });
+
+  safeRegister(api, 'omo_delegate', 'tool', () => {
+    registerOmoDelegateTool(api);
+    registry.tools.push('omo_delegate');
+    api.logger.info(`[${PLUGIN_ID}] OmO Delegate tool registered (ACP)`);
   });
 
   safeRegister(api, 'omoc_look_at', 'tool', () => {

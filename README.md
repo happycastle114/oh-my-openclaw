@@ -45,7 +45,7 @@ OmO-style multi-agent orchestration for OpenClaw. Your AI agent gets 11 speciali
 | **Todo Enforcer** | Forces task completion. No "I'm done" lies. Every step tracked. |
 | **Comment Checker** | 11 regex patterns detect and kill AI slop comments on sight. |
 | **Gemini CLI** | Native multimodal — PDF, images, video analysis via tmux integration. |
-| **OmO Delegation** | Route coding tasks to OpenCode running in tmux. Full OmO power. |
+| **OmO Delegation** | Route coding tasks to OpenCode via ACP sessions. Full OmO power. |
 | **Checkpoints** | Save/load execution state. Crash recovery. Pick up where you left off. |
 | **11 Agents** | Specialized team: planners, workers, reviewers. Each with a job. |
 | **Agent Setup CLI** | `omoc-setup` injects agent configs into `openclaw.json5` for sub-agent spawning. |
@@ -188,7 +188,7 @@ Edit the `"model"` field. Done. `"alternatives"` shows what else works.
 │  └─────────────────────────────────────────────────────┘ │
 │                                                           │
 │  ┌─────────────────┐    ┌─────────────────────────────┐  │
-│  │  tmux: opencode  │    │  tmux: gemini               │  │
+│  │  ACP: opencode   │    │  tmux: gemini               │  │
 │  │  (OmO Coding)    │    │  (Multimodal Analysis)      │  │
 │  └─────────────────┘    └─────────────────────────────┘  │
 └──────────────────────────────────────────────────────────┘
@@ -249,7 +249,7 @@ These inform agent behavior for tmux delegation and recovery.
 
 | Skill | Purpose |
 |-------|---------|
-| `opencode-controller` | Delegate coding tasks to OpenCode/OmO via tmux sessions |
+| `opencode-controller` | Delegate coding tasks to OpenCode/OmO via ACP sessions |
 | `tmux` | Multi-session tmux orchestration (parallel coding + verification) |
 | `tmux-agents` | Spawn/monitor coding agents (Claude, Codex, Gemini, Ollama) in tmux |
 | `workflow-tool-patterns` | OmO tool → OpenClaw tool mapping reference |
@@ -296,7 +296,8 @@ npm install && npm run build
 | Hook | `message-received-monitor` | Inbound message audit on `message:received` |
 | Hook | `gateway-startup` | Plugin activation logging on `gateway:startup` |
 | CLI | `omoc-setup` | Inject 11 agent configs into `openclaw.json5` |
-| Tool | `omoc_delegate` | Category-based task delegation with model routing |
+| Tool | `omoc_delegate` | Category-based task delegation with model routing (native sub-agents) |
+| Tool | `omo_delegate` | Delegate coding tasks to OmO (OpenCode) via ACP sessions |
 | Tool | `omoc_look_at` | Multimodal analysis via Gemini CLI + tmux |
 | Tool | `omoc_checkpoint` | Save/load/list execution checkpoints |
 | Command | `/omoc` | Activate/switch/list OmOC personas |

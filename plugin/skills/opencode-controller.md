@@ -1,66 +1,97 @@
 ---
 name: opencode-controller
-description: Control OpenCode sessions via tmux. Includes session management, model selection, agent switching (Plan/Build), and OmO delegation patterns.
+description: Control OpenCode sessions via ACP (Agent Client Protocol). Includes session management, model selection, and OmO delegation patterns.
 ---
 
-# opencode-controller — OpenCode Session Control
+# opencode-controller — OpenCode Session Control (ACP)
 
-OpenClaw is not a direct code executor, but an orchestrator that delegates work to OpenCode, collects results, and verifies them.
+OpenClaw is not a direct code executor, but an orchestrator that delegates work to OpenCode via ACP, collects results, and verifies them.
 
 ## Core Principles
 
 - OpenClaw does not write code directly
-- Coding tasks are delegated to the tmux `opencode` session
+- Coding tasks are delegated to OpenCode via ACP sessions (`runtime: "acp"`, `agentId: "opencode"`)
 - OpenClaw is responsible for task decomposition, instruction, monitoring, and result verification
 
 ## Pre-flight Checklist
 
-### 1) Provider/Model Selection
+### 1) ACP Backend Check
 
-- Select OpenCode model based on task difficulty (quick/deep/ultrabrain)
-- Prioritize high-performance models for high-difficulty tasks
+Verify ACP is enabled and the opencode harness is available:
 
-### 2) Authentication Status
+```text
+/acp doctor
+```
+
+If ACP backend is not configured, install it:
+
+```bash
+openclaw plugins install @openclaw/acpx
+openclaw config set plugins.entries.acpx.enabled true
+```
+
+### 2) OpenCode Authentication
 
 - OpenCode CLI provider authentication must be completed
-- If authentication expires, re-login within the session and retry
+- If authentication expires, re-authenticate and retry
 
-### 3) tmux Session Check
+### 3) ACP Session Status
 
-```bash
-SOCKET="/tmp/openclaw-tmux-sockets/openclaw.sock"
-tmux -S "$SOCKET" has-session -t opencode
+```text
+/acp status
+/acp sessions
 ```
 
-## Session Management
+## OmO Delegation Pattern
 
-```bash
-SOCKET="/tmp/openclaw-tmux-sockets/openclaw.sock"
+### 1) One-Shot Delegation (Default)
 
-# Create session
-tmux -S "$SOCKET" new -d -s opencode -n main
+For single tasks that run to completion:
 
-# Session status
-tmux -S "$SOCKET" list-sessions
-
-# Check session output
-tmux -S "$SOCKET" capture-pane -p -J -t opencode:0.0 -S -200
+```json
+sessions_spawn({
+  "task": "ultrawork fix payment failure bug. Include reproduction, root cause analysis, test addition, and regression prevention.",
+  "runtime": "acp",
+  "agentId": "opencode",
+  "mode": "run"
+})
 ```
 
-## Agent Control
+- `sessions_spawn` returns immediately with `{ status: "accepted", runId, childSessionKey }`
+- OpenCode works autonomously on the task
+- On completion, result is announced back to the requester chat channel
+- Use `/subagents info <id>` or `/subagents log <id>` to inspect details
 
-OpenCode agent switching is performed via Tab.
+### 2) Persistent Session (Thread-Bound)
 
-| Agent | Purpose | Switch |
-|----------|------|------|
-| Sisyphus | Default implementation/fixes | Default state |
-| Hephaestus | Deep implementation/refactoring | Tab 1x |
-| Prometheus | Planning/strategy | Tab 2x |
+For multi-turn interactive work in a thread:
 
-```bash
-tmux -S "$SOCKET" send-keys -t opencode:0.0 Tab
-sleep 1
-tmux -S "$SOCKET" capture-pane -p -J -t opencode:0.0 -S -20
+```json
+sessions_spawn({
+  "task": "Set up for auth module refactoring. Start by analyzing the current structure.",
+  "runtime": "acp",
+  "agentId": "opencode",
+  "mode": "session",
+  "thread": true
+})
+```
+
+- Thread binding routes follow-up messages to the same OpenCode session
+- Use `/acp steer <instruction>` to nudge without replacing context
+- Use `/unfocus` to detach from the thread when done
+
+### 3) Model Override
+
+Override the default model for a specific delegation:
+
+```json
+sessions_spawn({
+  "task": "Plan: write scope/risk/verification strategy for auth module refactoring",
+  "runtime": "acp",
+  "agentId": "opencode",
+  "mode": "run",
+  "model": "claude-opus-4-6-thinking"
+})
 ```
 
 ## Model Selection Guide
@@ -71,55 +102,7 @@ tmux -S "$SOCKET" capture-pane -p -J -t opencode:0.0 -S -20
 
 Follow project standard routing (quick/deep/ultrabrain) at execution time.
 
-## Plan -> Build Workflow
-
-1) Establish plan with Prometheus
-2) Approve/refine plan
-3) Switch to Sisyphus or Hephaestus for implementation
-4) Run tests/build/verification
-5) OpenClaw collects results and reports final summary
-
-```bash
-# Plan phase
-tmux -S "$SOCKET" send-keys -t opencode:0.0 Tab
-tmux -S "$SOCKET" send-keys -t opencode:0.0 Tab
-sleep 0.2
-tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- 'Plan: write scope/risk/verification strategy for auth module refactoring'
-tmux -S "$SOCKET" send-keys -t opencode:0.0 Enter
-
-# Build phase switch (e.g., return to Sisyphus for implementation)
-tmux -S "$SOCKET" send-keys -t opencode:0.0 Escape
-tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- 'ultrawork implement based on above plan, complete through testing'
-tmux -S "$SOCKET" send-keys -t opencode:0.0 Enter
-```
-
-## OmO Delegation Pattern
-
-### 1) Validate tmux Session
-
-```bash
-SOCKET="/tmp/openclaw-tmux-sockets/openclaw.sock"
-tmux -S "$SOCKET" has-session -t opencode
-```
-
-### 2) Agent Selection Table
-
-| Purpose | Agent | Switch |
-|------|----------|------|
-| Default execution | Sisyphus | Default |
-| Deep implementation | Hephaestus | Tab 1x |
-| Planning | Prometheus | Tab 2x |
-
-### 3) Send Work (`send-keys -l` + separate Enter)
-
-```bash
-TASK='ultrawork fix payment failure bug. Include reproduction, root cause analysis, test addition, and regression prevention.'
-tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- "$TASK"
-sleep 0.1
-tmux -S "$SOCKET" send-keys -t opencode:0.0 Enter
-```
-
-### 4) Work Templates
+## Work Templates
 
 Feature implementation:
 ```text
@@ -155,17 +138,70 @@ Read [/path/to/research.md] first,
 then ultrawork implement [feature] based on research findings.
 ```
 
-### 5) Progress Monitoring (`capture-pane`)
+## Progress Monitoring
 
-```bash
-tmux -S "$SOCKET" capture-pane -p -J -t opencode:0.0 -S -200
+### Check Active Sessions
+
+```text
+/acp sessions
+/subagents list
 ```
 
-Recommendations:
-- Check progress logs every 10-30 seconds
-- Intervene immediately on signs of blockage (repeated identical output, prompt waiting)
+### Inspect Session Output
 
-### 6) Collect Results (`git status`/`git diff`)
+```text
+/subagents log <id>
+/subagents info <id>
+```
+
+### Steer Active Session
+
+Nudge a running session without replacing context:
+
+```text
+/acp steer focus on the failing test case first
+```
+
+### Session History
+
+After completion, review the full transcript:
+
+```text
+/subagents log <id> 50
+```
+
+## Parallel Delegation
+
+Run multiple OpenCode sessions in parallel:
+
+```json
+// Session 1: Fix auth bug
+sessions_spawn({
+  "task": "ultrawork fix auth bug in src/auth/login.ts",
+  "runtime": "acp",
+  "agentId": "opencode",
+  "mode": "run",
+  "label": "auth-fix"
+})
+
+// Session 2: Enhance payment tests
+sessions_spawn({
+  "task": "ultrawork enhance payment module tests",
+  "runtime": "acp",
+  "agentId": "opencode",
+  "mode": "run",
+  "label": "payment-tests"
+})
+```
+
+- Each session runs independently with its own context
+- Results announce back separately on completion
+- Use `/subagents list` to monitor all active sessions
+- Concurrency is governed by `agents.defaults.subagents.maxConcurrent` (default: 8)
+
+## Collect Results
+
+After announce arrives:
 
 ```bash
 git status
@@ -173,25 +209,45 @@ git diff --stat
 git diff
 ```
 
-OpenClaw summarizes changed files/test results/risks and reports to user.
+OpenClaw summarizes changed files, test results, and risks before reporting to user.
 
-### 7) Error Recovery
+## Error Recovery
 
-```bash
-# Stop current operation
-tmux -S "$SOCKET" send-keys -t opencode:0.0 Escape
+```text
+# Cancel in-flight session
+/acp cancel <session-key>
 
-# Resend fix instruction
-tmux -S "$SOCKET" send-keys -t opencode:0.0 -l -- 'First solve only the test failure cause from the previous step.'
-tmux -S "$SOCKET" send-keys -t opencode:0.0 Enter
+# Close and unbind thread
+/acp close
 
-# Restart session
-tmux -S "$SOCKET" kill-session -t opencode
-tmux -S "$SOCKET" new -d -s opencode -n main
+# Kill specific sub-agent
+/subagents kill <id>
+
+# Retry with new session
+sessions_spawn({
+  "task": "First solve only the test failure cause from the previous step.",
+  "runtime": "acp",
+  "agentId": "opencode",
+  "mode": "run"
+})
 ```
+
+## Session Lifecycle
+
+| Action | Command |
+|--------|---------|
+| Spawn one-shot | `sessions_spawn` with `mode: "run"` |
+| Spawn persistent | `sessions_spawn` with `mode: "session"`, `thread: true` |
+| Check status | `/acp status`, `/subagents list` |
+| Inspect output | `/subagents log <id>`, `/subagents info <id>` |
+| Steer mid-run | `/acp steer <instruction>` |
+| Cancel turn | `/acp cancel` |
+| Close session | `/acp close` |
+| Kill sub-agent | `/subagents kill <id>` |
 
 ## Operation Checklist
 
-- Verify session alive → select agent → send work → monitor → collect results
-- Always use `send-keys -l` + separate Enter
+- Verify ACP health (`/acp doctor`) -> delegate via `sessions_spawn` -> monitor (`/subagents list`) -> collect results (`git diff`) -> report
+- Always use `runtime: "acp"` and `agentId: "opencode"` for OmO delegation
+- Use `label` parameter for easy identification of parallel sessions
 - Validate changes with `git status`/`git diff` before reporting results
