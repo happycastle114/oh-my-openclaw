@@ -159,6 +159,180 @@ describe('registerDelegateTool', () => {
     expect(schema.required).toContain('task_description');
     expect(schema.required).toContain('category');
   });
+
+});
+
+// ─── OmO Delegate Tool Tests ───────────────────────────────────────
+
+import { registerOmoDelegateTool } from '../tools/omo-delegation.js';
+
+describe('registerOmoDelegateTool', () => {
+  let mockApi: any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockApi = createMockApiAny();
+  });
+
+  it("registers with name 'omo_delegate' and optional=true", () => {
+    registerOmoDelegateTool(mockApi);
+
+    expect(mockApi.registerTool).toHaveBeenCalledOnce();
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+    expect(toolConfig.name).toBe('omo_delegate');
+    expect(toolConfig.optional).toBe(true);
+  });
+
+  it('returns ACP instruction with default opencode agent', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: 'fix auth bug in login.ts',
+    });
+
+    const text = result.content[0].text;
+    expect(text).toContain('ACP runtime');
+    expect(text).toContain('runtime: "acp"');
+    expect(text).toContain('agentId: "opencode"');
+    expect(text).toContain('sessions_spawn');
+    expect(text).toContain('fix auth bug in login.ts');
+  });
+
+  it('uses custom agent when provided', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: 'analyze codebase',
+      agent: 'codex',
+    });
+
+    const text = result.content[0].text;
+    expect(text).toContain('agentId: "codex"');
+  });
+
+  it('includes thread and session mode when thread is true', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: 'interactive refactoring session',
+      thread: true,
+    });
+
+    const text = result.content[0].text;
+    expect(text).toContain('thread: true');
+    expect(text).toContain('mode: "session"');
+  });
+
+  it('includes model override when provided', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: 'plan auth refactoring',
+      model: 'claude-opus-4-6-thinking',
+    });
+
+    const text = result.content[0].text;
+    expect(text).toContain('model: "claude-opus-4-6-thinking"');
+  });
+
+  it('includes label and cwd when provided', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: 'fix tests',
+      label: 'test-fix',
+      cwd: '/repo/project',
+    });
+
+    const text = result.content[0].text;
+    expect(text).toContain('label: "test-fix"');
+    expect(text).toContain('cwd: "/repo/project"');
+  });
+
+  it('returns error for empty task', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: '   ',
+    });
+
+    expect(result.content[0].text).toContain('Task is required and cannot be empty');
+  });
+
+  it('returns error for overly long task', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: 'a'.repeat(10001),
+    });
+
+    expect(result.content[0].text).toContain('Task too long');
+  });
+
+  it('returns error for invalid ACP agent', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: 'test',
+      agent: 'invalid-agent',
+    });
+
+    expect(result.content[0].text).toContain('Invalid ACP agent');
+  });
+
+  it('includes opencode_agent mode switching instruction when provided', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: 'analyze auth module',
+      opencode_agent: 'plan',
+    });
+
+    const text = result.content[0].text;
+    expect(text).toContain('setSessionMode');
+    expect(text).toContain('"plan"');
+    expect(text).toContain('switch OpenCode agent mode');
+  });
+
+  it('does not include mode switching when opencode_agent is not provided', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: 'fix auth bug',
+    });
+
+    const text = result.content[0].text;
+    expect(text).not.toContain('setSessionMode');
+    expect(text).not.toContain('switch OpenCode agent mode');
+  });
+
+  it('parameters schema has required task field', () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+    const schema = toolConfig.parameters;
+
+    expect(schema.properties).toHaveProperty('task');
+    expect(schema.required).toContain('task');
+  });
+
+  it('parameters schema includes opencode_agent as optional field', () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+    const schema = toolConfig.parameters;
+
+    expect(schema.properties).toHaveProperty('opencode_agent');
+    expect(schema.required).not.toContain('opencode_agent');
+  });
 });
 
 // ─── Look-At Tool Tests ─────────────────────────────────────────────

@@ -52,7 +52,7 @@ function getModelForCategory(category: Category, api: OmocPluginApi): { model: s
 export function registerDelegateTool(api: OmocPluginApi) {
   api.registerTool({
     name: `${TOOL_PREFIX}delegate`,
-    description: 'Delegate a task to a sub-agent with category-based model routing',
+    description: 'Delegate a task to an OpenClaw-native sub-agent with category-based model routing',
     parameters: DelegateParamsSchema,
     execute: async (_toolCallId: string, params: DelegateParams) => {
       const validCategories = Object.keys(DEFAULT_CATEGORY_MODELS);
