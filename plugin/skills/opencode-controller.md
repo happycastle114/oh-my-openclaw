@@ -80,9 +80,9 @@ sessions_spawn({
 - Use `/acp steer <instruction>` to nudge without replacing context
 - Use `/unfocus` to detach from the thread when done
 
-### 3) Model Override
+### 3) Model Override (Use Sparingly)
 
-Override the default model for a specific delegation:
+Override only when you need a specific model. By default, OpenCode uses its own configured model — leave `model` empty to use that default.
 
 ```json
 sessions_spawn({
@@ -94,11 +94,48 @@ sessions_spawn({
 })
 ```
 
+### 4) OpenCode Agent Mode Selection
+
+OpenCode has internal agents (Build, Plan, custom agents from `.opencode/agents/`). Select which agent handles the task via ACP session mode switching:
+
+```json
+// Use Plan agent (read-only, restricted tools) for planning tasks
+sessions_spawn({
+  "task": "Analyze the auth module structure and propose refactoring strategy",
+  "runtime": "acp",
+  "agentId": "opencode",
+  "mode": "run"
+})
+// After session creation, switch mode: setSessionMode("plan")
+```
+
+**How it works:**
+- ACP session creation returns available `modes` (primary agents only — not subagents, not hidden)
+- Call `setSessionMode(modeId)` to switch the active OpenCode agent
+- Default mode is OpenCode's configured primary agent (usually "build")
+- Available modes: `build` (full tools), `plan` (restricted), plus any custom primary agents
+
+### 5) Subagent Invocation via @mention
+
+OpenCode subagents (Explore, custom subagents from `.opencode/agents/`) are invoked via `@mention` in the task text:
+
+```json
+sessions_spawn({
+  "task": "@explore find all authentication-related files and report their structure",
+  "runtime": "acp",
+  "agentId": "opencode",
+  "mode": "run"
+})
+```
+
+**Note:** Subagents are NOT available as session modes. They are invoked within the agent's conversation via `@agentname` prefix.
+
 ## Model Selection Guide
 
-- Quick fixes: Speed-first model
+- **Default behavior**: Leave `model` empty — OpenCode uses its own configured model
+- Quick fixes: Speed-first model (only override if OpenCode default is too slow)
 - Complex refactoring/design: Deep reasoning model
-- Planning-only phase: Highest reasoning model first
+- Planning-only phase: Use `opencode_agent: "plan"` mode instead of model override
 
 Follow project standard routing (quick/deep/ultrabrain) at execution time.
 
@@ -249,5 +286,8 @@ sessions_spawn({
 
 - Verify ACP health (`/acp doctor`) -> delegate via `sessions_spawn` -> monitor (`/subagents list`) -> collect results (`git diff`) -> report
 - Always use `runtime: "acp"` and `agentId: "opencode"` for OmO delegation
+- `model` is override-only — leave empty to use OpenCode's own configured default
+- Use `opencode_agent` to select OpenCode's internal agent mode (build, plan, custom)
+- Use `@agentname` prefix in task text to invoke OpenCode subagents
 - Use `label` parameter for easy identification of parallel sessions
 - Validate changes with `git status`/`git diff` before reporting results

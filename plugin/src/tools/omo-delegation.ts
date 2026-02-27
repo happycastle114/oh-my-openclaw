@@ -6,9 +6,10 @@ import { toolResponse, toolError } from '../utils/helpers.js';
 const VALID_ACP_AGENTS = ['opencode', 'codex', 'claude', 'gemini', 'pi'] as const;
 
 const OmoDelegateParamsSchema = Type.Object({
-  task: Type.String({ description: 'What OmO (OpenCode) should do — the coding task description' }),
+  task: Type.String({ description: 'What OmO (OpenCode) should do — the coding task description. Use @agentname prefix to invoke OpenCode subagents (e.g., "@explore find auth files").' }),
   agent: Type.Optional(Type.String({ description: 'ACP harness agent ID (default: "opencode"). Valid: opencode, codex, claude, gemini, pi' })),
-  model: Type.Optional(Type.String({ description: 'Override model for the ACP session (e.g., "claude-opus-4-6-thinking")' })),
+  opencode_agent: Type.Optional(Type.String({ description: 'OpenCode internal agent mode (e.g., "build", "plan", or custom agent name). Only applies when agent is "opencode". Defaults to OpenCode\'s configured primary agent. Uses ACP session mode switching.' })),
+  model: Type.Optional(Type.String({ description: 'Override model — only when you need a specific model. Leave empty to use OpenCode\'s own configured default.' })),
   thread: Type.Optional(Type.Boolean({ description: 'Bind to a thread for persistent multi-turn session (default: false)', default: false })),
   label: Type.Optional(Type.String({ description: 'Label for easy identification in /subagents list and /acp sessions' })),
   cwd: Type.Optional(Type.String({ description: 'Working directory for the ACP session' })),
@@ -38,7 +39,7 @@ export function registerOmoDelegateTool(api: OmocPluginApi) {
 
       const sessionMode = params.thread ? 'session' : 'run';
 
-      api.logger.info(`${LOG_PREFIX} OmO delegation:`, { agent, model: params.model, thread: params.thread });
+      api.logger.info(`${LOG_PREFIX} OmO delegation:`, { agent, opencode_agent: params.opencode_agent, model: params.model, thread: params.thread });
 
       const instruction = [
         `OmO Delegation → ACP runtime → harness "${agent}"`,
@@ -54,6 +55,12 @@ export function registerOmoDelegateTool(api: OmocPluginApi) {
         params.cwd ? `  cwd: "${params.cwd}"` : '',
         '',
         'Do NOT just return this metadata. Actually call sessions_spawn NOW.',
+        params.opencode_agent ? [
+          '',
+          `🔀 AFTER session is created, switch OpenCode agent mode to "${params.opencode_agent}":`,
+          `  Use ACP session mode switching (setSessionMode) to select "${params.opencode_agent}"`,
+          '  Available modes are returned in the session creation response',
+        ].join('\n') : '',
         '',
         '⚠️ AFTER the ACP session completes:',
         '  1. Check the announce result immediately',

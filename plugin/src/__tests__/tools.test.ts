@@ -288,6 +288,34 @@ describe('registerOmoDelegateTool', () => {
     expect(result.content[0].text).toContain('Invalid ACP agent');
   });
 
+  it('includes opencode_agent mode switching instruction when provided', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: 'analyze auth module',
+      opencode_agent: 'plan',
+    });
+
+    const text = result.content[0].text;
+    expect(text).toContain('setSessionMode');
+    expect(text).toContain('"plan"');
+    expect(text).toContain('switch OpenCode agent mode');
+  });
+
+  it('does not include mode switching when opencode_agent is not provided', async () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+
+    const result = await toolConfig.execute('test-call-id', {
+      task: 'fix auth bug',
+    });
+
+    const text = result.content[0].text;
+    expect(text).not.toContain('setSessionMode');
+    expect(text).not.toContain('switch OpenCode agent mode');
+  });
+
   it('parameters schema has required task field', () => {
     registerOmoDelegateTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
@@ -295,6 +323,15 @@ describe('registerOmoDelegateTool', () => {
 
     expect(schema.properties).toHaveProperty('task');
     expect(schema.required).toContain('task');
+  });
+
+  it('parameters schema includes opencode_agent as optional field', () => {
+    registerOmoDelegateTool(mockApi);
+    const toolConfig = mockApi.registerTool.mock.calls[0][0];
+    const schema = toolConfig.parameters;
+
+    expect(schema.properties).toHaveProperty('opencode_agent');
+    expect(schema.required).not.toContain('opencode_agent');
   });
 });
 
