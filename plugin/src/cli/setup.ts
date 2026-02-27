@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import * as readline from 'node:readline';
@@ -244,12 +245,29 @@ async function runCustomProviderFlow(
   return customName;
 }
 
+export function readExistingHooksToken(configPath: string): string | undefined {
+  try {
+    const raw = fs.readFileSync(configPath, 'utf-8');
+    const config = JSON5.parse(raw) as Record<string, unknown>;
+    const hooks = config.hooks as { token?: string } | undefined;
+    return hooks?.token && typeof hooks.token === 'string' ? hooks.token : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function generateHooksToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
+
 export interface InteractiveSetupResult {
   provider: string;
   setupMcporter: boolean;
   excludeServers: string[];
   enableTodoEnforcer: boolean;
   enablePlannerGuard: boolean;
+  enableWebhookBridge: boolean;
+  webhookHooksToken: string;
 }
 
 export async function runInteractiveSetup(logger: Logger): Promise<InteractiveSetupResult> {
@@ -264,6 +282,8 @@ export async function runInteractiveSetup(logger: Logger): Promise<InteractiveSe
     excludeServers: [],
     enableTodoEnforcer: false,
     enablePlannerGuard: false,
+    enableWebhookBridge: false,
+    webhookHooksToken: '',
   };
 
   try {
@@ -349,8 +369,30 @@ export async function runInteractiveSetup(logger: Logger): Promise<InteractiveSe
     const guardAnswer = await askQuestion(rl, '  Enable planner guard (prevents prometheus from editing code)? (Y/n): ');
     const enablePlannerGuard = guardAnswer.toLowerCase() !== 'n' && guardAnswer.toLowerCase() !== 'no';
 
+    const webhookAnswer = await askQuestion(rl, '  Enable webhook bridge (proactive agent reminders via hooks/wake)? (Y/n): ');
+    const enableWebhookBridge = webhookAnswer.toLowerCase() !== 'n' && webhookAnswer.toLowerCase() !== 'no';
+
+    let webhookHooksToken = '';
+    if (enableWebhookBridge) {
+      const configPath = findConfigPath();
+      const existingToken = configPath ? readExistingHooksToken(configPath) : undefined;
+
+      if (existingToken) {
+        logger.info(`  Found existing hooks.token in config`);
+        const reuseAnswer = await askQuestion(rl, '  Reuse existing hooks token? (Y/n): ');
+        if (reuseAnswer.toLowerCase() !== 'n' && reuseAnswer.toLowerCase() !== 'no') {
+          webhookHooksToken = existingToken;
+        }
+      }
+
+      if (!webhookHooksToken) {
+        webhookHooksToken = generateHooksToken();
+        logger.info(`  Generated new hooks token`);
+      }
+    }
+
     logger.info('');
-    return { provider, setupMcporter, excludeServers, enableTodoEnforcer, enablePlannerGuard };
+    return { provider, setupMcporter, excludeServers, enableTodoEnforcer, enablePlannerGuard, enableWebhookBridge, webhookHooksToken };
   } finally {
     rl.close();
   }
@@ -367,6 +409,8 @@ export interface SetupOptions {
   excludeServers?: string[];
   enableTodoEnforcer?: boolean;
   enablePlannerGuard?: boolean;
+  enableWebhookBridge?: boolean;
+  webhookHooksToken?: string;
   interactive?: boolean;
   logger: Logger;
 }
@@ -478,6 +522,28 @@ export function runSetup(options: SetupOptions): MergeResult {
     logger.info(`Todo enforcer: ${options.enableTodoEnforcer ? 'enabled' : 'disabled'}`);
   }
 
+  if (options.enableWebhookBridge && options.webhookHooksToken) {
+    const pluginSettings = ((config as Record<string, unknown>).pluginSettings ?? {}) as Record<string, Record<string, unknown>>;
+    if (!pluginSettings['oh-my-openclaw']) {
+      pluginSettings['oh-my-openclaw'] = {};
+    }
+    pluginSettings['oh-my-openclaw']['webhook_bridge_enabled'] = true;
+    pluginSettings['oh-my-openclaw']['hooks_token'] = options.webhookHooksToken;
+    (config as Record<string, unknown>).pluginSettings = pluginSettings;
+
+    const hooksSection = ((config as Record<string, unknown>).hooks ?? {}) as Record<string, unknown>;
+    hooksSection.enabled = true;
+    if (!hooksSection.token) {
+      hooksSection.token = options.webhookHooksToken;
+    }
+    (config as Record<string, unknown>).hooks = hooksSection;
+
+    if (!dryRun) {
+      fs.writeFileSync(configPath, serializeConfig(config), 'utf-8');
+    }
+    logger.info('Webhook bridge enabled with hooks token configured');
+  }
+
   if (options.setupMcporter) {
     logger.info('');
     logger.info('Setting up mcporter MCP servers...');
@@ -525,6 +591,8 @@ export function registerSetupCli(ctx: {
         let excludeServers: string[] = [];
         let enableTodoEnforcer: boolean | undefined;
         let enablePlannerGuard: boolean | undefined;
+        let enableWebhookBridge: boolean | undefined;
+        let webhookHooksToken: string | undefined;
 
         if (!provider && process.stdin.isTTY) {
           const result = await runInteractiveSetup(ctx.logger);
@@ -534,6 +602,8 @@ export function registerSetupCli(ctx: {
           excludeServers = result.excludeServers;
           enableTodoEnforcer = result.enableTodoEnforcer;
           enablePlannerGuard = result.enablePlannerGuard;
+          enableWebhookBridge = result.enableWebhookBridge;
+          webhookHooksToken = result.webhookHooksToken;
         }
 
         runSetup({
@@ -546,6 +616,8 @@ export function registerSetupCli(ctx: {
           excludeServers,
           enableTodoEnforcer,
           enablePlannerGuard,
+          enableWebhookBridge,
+          webhookHooksToken,
           logger: ctx.logger,
         });
 
