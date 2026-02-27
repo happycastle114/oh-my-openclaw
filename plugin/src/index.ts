@@ -18,6 +18,7 @@ import { registerRalphCommands } from './commands/ralph-commands.js';
 import { registerStatusCommands } from './commands/status-commands.js';
 import { registerPersonaCommands } from './commands/persona-commands.js';
 import { registerContextInjector } from './hooks/context-injector.js';
+import { registerGuardrailInjector } from './hooks/guardrail-injector.js';
 import { registerSessionSync } from './hooks/session-sync.js';
 import { registerSpawnGuard } from './hooks/spawn-guard.js';
 import { registerKeywordDetector } from './hooks/keyword-detector/hook.js';
@@ -110,6 +111,12 @@ export default function register(api: OmocPluginApi) {
     registerContextInjector(guarded);
     registry.hooks.push('context-injector');
     api.logger.info(`[${PLUGIN_ID}] Context injector hook registered (before_prompt_build)`);
+  });
+
+  safeRegister(api, 'guardrail-injector', 'hook', () => {
+    registerGuardrailInjector(guarded);
+    registry.hooks.push('guardrail-injector');
+    api.logger.info(`[${PLUGIN_ID}] Guardrail injector hook registered (before_prompt_build, priority 90)`);
   });
 
   safeRegister(api, 'session-sync', 'hook', () => {
