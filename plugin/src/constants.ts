@@ -20,3 +20,13 @@ export const CATEGORIES = [
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];
+
+// CLI backend definitions
+export const CLI_BACKENDS = ['gemini', 'codex', 'opencode'] as const;
+
+export type CliBackend = (typeof CLI_BACKENDS)[number];
+
+// ACP harness definitions
+export const ACP_HARNESSES = ['pi', 'claude', 'codex', 'opencode', 'gemini'] as const;
+
+export type AcpHarness = (typeof ACP_HARNESSES)[number];

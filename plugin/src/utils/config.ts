@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { PluginConfig, OmocPluginApi, ABSOLUTE_MAX_RALPH_ITERATIONS } from '../types.js';
+import { PluginConfig, OmocPluginApi, ABSOLUTE_MAX_RALPH_ITERATIONS, CLI_BACKENDS, ACP_HARNESSES } from '../types.js';
 import { resolveOpenClawWorkspaceDir } from './paths.js';
 
 export function getConfig(api: OmocPluginApi): PluginConfig {
@@ -15,9 +15,20 @@ export function getConfig(api: OmocPluginApi): PluginConfig {
     checkpoint_dir: join(wsDir, 'checkpoints'),
     tmux_socket: '/tmp/openclaw-tmux-sockets/openclaw.sock',
     model_routing: undefined,
+    cli_backend: { look_at: 'gemini', web_search: 'gemini' },
+    acp: { enabled: false, default_harness: 'codex', delegate_via_acp: false },
   };
 
-  const config = { ...defaults, ...(api.pluginConfig ?? api.config) };
+  const userConfig = api.pluginConfig ?? api.config;
+  const mergedCliBackend = { ...defaults.cli_backend!, ...(userConfig?.cli_backend ?? {}) };
+  const mergedAcp = { ...defaults.acp!, ...(userConfig?.acp ?? {}) };
+  const config: PluginConfig = {
+    ...defaults,
+    ...userConfig,
+    // Deep merge nested objects so partial overrides don't lose defaults
+    cli_backend: mergedCliBackend,
+    acp: mergedAcp,
+  };
   const validation = validateConfig(config);
 
   if (!validation.valid) {
@@ -59,6 +70,23 @@ export function validateConfig(config: Partial<PluginConfig>): { valid: boolean;
   if (config.todo_enforcer_max_failures !== undefined) {
     if (config.todo_enforcer_max_failures < 0) {
       errors.push('todo_enforcer_max_failures must be >= 0 (negative values clamped to 0)');
+    }
+  }
+
+  if (config.cli_backend !== undefined) {
+    const validBackends = CLI_BACKENDS as readonly string[];
+    if (config.cli_backend.look_at && !validBackends.includes(config.cli_backend.look_at)) {
+      errors.push(`cli_backend.look_at must be one of: ${CLI_BACKENDS.join(', ')}`);
+    }
+    if (config.cli_backend.web_search && !validBackends.includes(config.cli_backend.web_search)) {
+      errors.push(`cli_backend.web_search must be one of: ${CLI_BACKENDS.join(', ')}`);
+    }
+  }
+
+  if (config.acp !== undefined) {
+    const validHarnesses = ACP_HARNESSES as readonly string[];
+    if (config.acp.default_harness && !validHarnesses.includes(config.acp.default_harness)) {
+      errors.push(`acp.default_harness must be one of: ${ACP_HARNESSES.join(', ')}`);
     }
   }
 

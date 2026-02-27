@@ -1,6 +1,12 @@
 // Re-export constants from constants.ts for backward compatibility
 export { PLUGIN_ID, TOOL_PREFIX, ABSOLUTE_MAX_RALPH_ITERATIONS, LOG_PREFIX, READ_ONLY_DENY } from './constants.js';
 
+// Re-export new constants and types
+export { CLI_BACKENDS, ACP_HARNESSES } from './constants.js';
+export type { CliBackend, AcpHarness } from './constants.js';
+
+import type { CliBackend, AcpHarness } from './constants.js';
+
 // PluginConfig interface
 export interface PluginConfig {
   max_ralph_iterations: number;
@@ -13,6 +19,15 @@ export interface PluginConfig {
   checkpoint_dir: string;
   tmux_socket: string;
   model_routing?: Partial<Record<string, { model: string; alternatives?: string[] }>>;
+  cli_backend?: {
+    look_at: CliBackend;
+    web_search: CliBackend;
+  };
+  acp?: {
+    enabled: boolean;
+    default_harness: AcpHarness;
+    delegate_via_acp: boolean;
+  };
 }
 
 // RalphLoopState interface
