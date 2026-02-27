@@ -1,35 +1,52 @@
-name: Publish to npm
+name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - master
+      - dev
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org/'
-      - name: Install dependencies
+
+      - name: Install plugin dependencies
         run: npm ci
         working-directory: plugin
+
       - name: Typecheck
         run: npm run typecheck
         working-directory: plugin
+
       - name: Test
         run: npm run test
         working-directory: plugin
+
       - name: Build
         run: npm run build
         working-directory: plugin
-      - name: Publish
-        run: npm publish --access public
-        working-directory: plugin
+
+      - name: Install semantic-release
+        run: npm install -g semantic-release @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/npm @semantic-release/exec @semantic-release/git @semantic-release/github conventional-changelog-conventionalcommits
+
+      - name: Release
+        run: semantic-release
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
