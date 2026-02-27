@@ -30,12 +30,26 @@ const DEFAULT_CATEGORY_AGENTS: Record<Category, string> = {
   writing: 'omoc_sisyphus',
 };
 
+/** Maps agent IDs to ACP harness names */
+const AGENT_TO_ACP_HARNESS: Record<string, string> = {
+  omoc_sisyphus: 'codex',
+  omoc_hephaestus: 'codex',
+  omoc_oracle: 'codex',
+  omoc_explore: 'gemini',
+  omoc_librarian: 'gemini',
+  omoc_frontend: 'opencode',
+  omoc_looker: 'gemini',
+  omoc_metis: 'codex',
+  omoc_momus: 'codex',
+};
+
 const DelegateParamsSchema = Type.Object({
   task_description: Type.String({ description: 'What the sub-agent should do' }),
   category: Type.String({ description: 'Task category for model routing (quick, deep, ultrabrain, etc.)' }),
   agent_id: Type.Optional(Type.String({ description: 'Target agent ID (e.g., omoc_sisyphus, omoc_oracle). Routes to specialized agent config.' })),
   skills: Type.Optional(Type.Array(Type.String(), { description: 'Skill names to load' })),
   background: Type.Optional(Type.Boolean({ description: 'Run in background (default: false)', default: false })),
+  runtime: Type.Optional(Type.String({ description: 'Runtime: "subagent" (default) or "acp". When "acp", uses OpenClaw ACP backend instead of native sub-agents.' })),
 });
 
 type DelegateParams = Static<typeof DelegateParamsSchema>;
@@ -73,10 +87,50 @@ export function registerDelegateTool(api: OmocPluginApi) {
       const { model, alternatives } = getModelForCategory(category, api);
       const agentId = params.agent_id || DEFAULT_CATEGORY_AGENTS[category];
 
+      // Determine runtime: ACP or native sub-agent
+      const config = getConfig(api);
+      const useAcp = params.runtime === 'acp' || (config.acp?.delegate_via_acp && params.runtime !== 'subagent');
+
+      if (useAcp && !config.acp?.enabled) {
+        return toolError('ACP runtime is not enabled. Set acp.enabled: true in plugin config, or use runtime: "subagent".');
+      }
+
+      if (useAcp) {
+        // ACP runtime path
+        const acpHarness = params.agent_id
+          ? AGENT_TO_ACP_HARNESS[params.agent_id] || config.acp?.default_harness || 'codex'
+          : config.acp?.default_harness || 'codex';
+        const label = `acp-${agentId}-${category}`;
+
+        api.logger.info(`${LOG_PREFIX} Delegating task (ACP):`, { category, agentId, acpHarness, label });
+
+        const instruction = [
+          `Category "${category}" → agent "${agentId}" → ACP harness "${acpHarness}" (runtime: acp)`,
+          '',
+          '⚡ NOW CALL sessions_spawn with these parameters:',
+          `  task: "${params.task_description}"`,
+          `  runtime: "acp"`,
+          `  agentId: "${acpHarness}"`,
+          `  mode: "run"`,
+          `  label: "${label}"`,
+          params.background ? '  (background execution — results will arrive via push notification)' : '',
+          '',
+          'Do NOT just return this metadata. Actually call sessions_spawn NOW.',
+          '',
+          '⚠️ AFTER the subagent completes:',
+          '  1. Check the result immediately',
+          '  2. Verify against success criteria',
+          '  3. Proceed to next task — do NOT stop',
+        ].filter(Boolean).join('\n');
+
+        return toolResponse(instruction);
+      }
+
+      // Native sub-agent runtime path (default)
        api.logger.info(`${LOG_PREFIX} Delegating task:`, { category, model, agentId });
 
       const instruction = [
-        `Category "${category}" → agent "${agentId}" → model "${model}"`,
+        `Category "${category}" → agent "${agentId}" → model "${model}" (runtime: subagent)`,
         '',
         '⚡ NOW CALL sessions_spawn with these parameters:',
         `  task: "${params.task_description}"`,
