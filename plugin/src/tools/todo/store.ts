@@ -7,6 +7,8 @@ export interface TodoItem {
   status: TodoStatus;
   priority: TodoPriority;
   createdAt: string;
+  /** Session key that created/owns this todo */
+  ownerSessionKey?: string;
 }
 
 interface SessionStore {
@@ -32,6 +34,7 @@ export function createTodo(
   priority: TodoPriority = 'medium',
   status: TodoStatus = 'pending',
   sessionKey?: string,
+  ownerSessionKey?: string,
 ): TodoItem {
   const store = getSession(sessionKey);
   const item: TodoItem = {
@@ -40,6 +43,7 @@ export function createTodo(
     status,
     priority,
     createdAt: new Date().toISOString(),
+    ownerSessionKey: ownerSessionKey ?? sessionKey,
   };
   store.todos.push(item);
   return item;
