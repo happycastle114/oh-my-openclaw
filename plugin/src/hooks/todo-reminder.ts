@@ -98,11 +98,16 @@ export function registerAgentEndReminder(api: OmocPluginApi): void {
 
         const config = getConfig(api);
         if (config.webhook_bridge_enabled && config.hooks_token) {
-          callHooksWake(
-            `⚠️ Agent ended with ${incomplete.length} incomplete todo(s). Resume work.`,
-            { gateway_url: config.gateway_url, hooks_token: config.hooks_token },
-            api.logger,
-          ).catch(() => {});
+          if (!sessionKey) {
+            api.logger.warn(`${LOG_PREFIX} No sessionKey available for wake after agent_end — skipping to avoid new session creation`);
+          } else {
+            callHooksWake(
+              `⚠️ Agent ended with ${incomplete.length} incomplete todo(s). Resume work.`,
+              { gateway_url: config.gateway_url, hooks_token: config.hooks_token },
+              api.logger,
+              { sessionKey },
+            ).catch(() => {});
+          }
         }
 
         api.logger.warn(

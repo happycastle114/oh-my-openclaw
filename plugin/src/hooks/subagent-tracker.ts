@@ -143,10 +143,12 @@ export function registerSubagentTracker(api: OmocPluginApi): void {
           ? `[System] Sub-agent completed (runId=${runId}, requester=${requesterSessionKey}). Process the result and continue pending work.`
           : `[System] Sub-agent completed (runId=${runId}). Process the result and continue pending work.`;
 
+        const targetSession = requesterSessionKey ?? callerSession;
         const result = await callHooksWake(
           wakeMessage,
           { gateway_url: config.gateway_url, hooks_token: config.hooks_token },
           api.logger,
+          targetSession ? { sessionKey: targetSession } : undefined,
         );
 
         if (result.ok) {
@@ -183,6 +185,7 @@ export function registerSubagentTracker(api: OmocPluginApi): void {
           `[System] Sub-agent completed (runId=${matchedRunId}). Process the announce result and continue any pending work.`,
           { gateway_url: config.gateway_url, hooks_token: config.hooks_token },
           api.logger,
+          callerSession ? { sessionKey: callerSession } : undefined,
         ).then((result) => {
           if (result.ok) {
             api.logger.info(`${LOG_PREFIX} Wake sent after sub-agent announce: runId=${matchedRunId}`);
