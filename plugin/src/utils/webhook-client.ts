@@ -12,6 +12,11 @@ export interface HooksAgentOptions {
   deliver?: boolean;
 }
 
+export interface HooksWakeOptions {
+  /** Target a specific session instead of creating a new one */
+  sessionKey?: string;
+}
+
 export interface WebhookResult {
   ok: boolean;
   status?: number;
@@ -22,19 +27,25 @@ export async function callHooksWake(
   text: string,
   config: WebhookConfig,
   logger?: { warn: (...args: unknown[]) => void },
+  options?: HooksWakeOptions,
 ): Promise<WebhookResult> {
   if (!config.hooks_token) {
     return { ok: false, error: 'hooks_token not configured' };
   }
 
   try {
+    const payload: Record<string, unknown> = { text, mode: 'now' };
+    if (options?.sessionKey) {
+      payload.sessionKey = options.sessionKey;
+    }
+
     const res = await fetch(`${config.gateway_url}/hooks/wake`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${config.hooks_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text, mode: 'now' }),
+      body: JSON.stringify(payload),
     });
 
     return { ok: res.ok, status: res.status };

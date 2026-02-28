@@ -112,21 +112,42 @@ async function checkStaleSubagents(api: OmocPluginApi): Promise<void> {
 
   if (stale.length === 0) return;
 
-  const details = stale
-    .map((s) => `  - runId=${s.runId} task="${s.task.substring(0, 80)}" (${Math.round((now - s.spawnedAt) / 60000)}m ago)`)
-    .join('\n');
+  // Group stale entries by callerSessionKey and send separate wakes per group
+  const grouped = new Map<string, TrackedSubagent[]>();
+  for (const s of stale) {
+    const key = s.callerSessionKey ?? '__default__';
+    const group = grouped.get(key) ?? [];
+    group.push(s);
+    grouped.set(key, group);
+  }
 
-  const message =
-    `[OmOC Sub-agent Alert] ${stale.length} sub-agent(s) may have completed without announce:\n${details}\n\n` +
-    `Check sub-agent status with \`/subagents list\` or \`/subagents info <id>\`. ` +
-    `If completed, collect results and proceed. If still running, wait.`;
+  for (const [sessionKey, entries] of grouped) {
+    const details = entries
+      .map((s) => `  - runId=${s.runId} task="${s.task.substring(0, 80)}" (${Math.round((now - s.spawnedAt) / 60000)}m ago)`)
+      .join('\n');
 
-  const result = await callHooksWake(message, webhookConfig, api.logger);
+    const message =
+      `[OmOC Sub-agent Alert] ${entries.length} sub-agent(s) may have completed without announce:\n${details}\n\n` +
+      `Check sub-agent status with \`/subagents list\` or \`/subagents info <id>\`. ` +
+      `If completed, collect results and proceed. If still running, wait.`;
 
-  if (result.ok) {
-    api.logger.info(`${LOG_PREFIX} Stale sub-agent alert sent via hooks/wake (${stale.length} stale)`);
-    for (const s of stale) {
-      trackedSubagents.delete(s.runId);
+    const targetSession = sessionKey !== '__default__' ? sessionKey : undefined;
+    if (!targetSession) {
+      api.logger.warn(`${LOG_PREFIX} No sessionKey available for stale sub-agent alert (${entries.length} stale) — cleaning up without wake to avoid new session creation`);
+      // Still clean up tracking to prevent infinite reprocessing
+      for (const s of entries) {
+        trackedSubagents.delete(s.runId);
+      }
+      continue;
+    }
+
+    const result = await callHooksWake(message, webhookConfig, api.logger, { sessionKey: targetSession });
+
+    if (result.ok) {
+      api.logger.info(`${LOG_PREFIX} Stale sub-agent alert sent via hooks/wake (${entries.length} stale, target=${targetSession})`);
+      for (const s of entries) {
+        trackedSubagents.delete(s.runId);
+      }
     }
   }
 }
