@@ -59,7 +59,13 @@ export function registerTodoUpdateTool(api: OmocPluginApi): void {
 
       if (!updated) return toolResponse(JSON.stringify({ error: 'todo_not_found', id }));
 
-      return toolResponse(JSON.stringify({ todo: updated }, null, 2));
+      // Include completion notice when status changes to completed
+      const result: Record<string, unknown> = { todo: updated };
+      if (params.status === 'completed') {
+        result.notice = `✅ Todo ${updated.id} completed: ${updated.content}`;
+      }
+
+      return toolResponse(JSON.stringify(result, null, 2));
     },
   });
 }
