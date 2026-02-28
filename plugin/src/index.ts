@@ -17,6 +17,7 @@ import { registerWebSearchTool } from './tools/web-search.js';
 import { registerRalphCommands } from './commands/ralph-commands.js';
 import { registerStatusCommands } from './commands/status-commands.js';
 import { registerPersonaCommands } from './commands/persona-commands.js';
+import { registerTodoCommands } from './commands/todo-commands.js';
 import { registerContextInjector } from './hooks/context-injector.js';
 import { registerGuardrailInjector } from './hooks/guardrail-injector.js';
 import { registerSessionSync } from './hooks/session-sync.js';
@@ -215,6 +216,12 @@ export default function register(api: OmocPluginApi) {
     registerStatusCommands(api);
     registry.commands.push('omoc_health', 'omoc_config');
     api.logger.info(`[${PLUGIN_ID}] Status commands registered (omoc_health, omoc_config)`);
+  });
+
+  safeRegister(api, 'todo-commands', 'command', () => {
+    registerTodoCommands(api);
+    registry.commands.push('todos');
+    api.logger.info(`[${PLUGIN_ID}] Todo commands registered (/todos)`);
   });
 
   initPersonaState(api);
