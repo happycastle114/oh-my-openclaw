@@ -40,7 +40,7 @@ const DelegateParamsSchema = Type.Object({
 
 type DelegateParams = Static<typeof DelegateParamsSchema>;
 
-function getModelForCategory(category: Category, api: OmocPluginApi): { model: string; alternatives?: string[] } {
+function getRecommendedModelForCategory(category: Category, api: OmocPluginApi): { model: string; alternatives?: string[] } {
   const config = getConfig(api);
   const override = config.model_routing?.[category];
   if (override?.model) {
@@ -70,7 +70,7 @@ export function registerDelegateTool(api: OmocPluginApi) {
        }
 
       const category = params.category as Category;
-      const { model, alternatives } = getModelForCategory(category, api);
+      const { model, alternatives } = getRecommendedModelForCategory(category, api);
       const agentId = params.agent_id || DEFAULT_CATEGORY_AGENTS[category];
 
        api.logger.info(`${LOG_PREFIX} Delegating task:`, { category, model, agentId });
@@ -81,12 +81,12 @@ export function registerDelegateTool(api: OmocPluginApi) {
         '⚡ NOW CALL sessions_spawn with these parameters:',
         `  task: "${params.task_description}"`,
         `  mode: "run"`,
-        `  model: "${model}"`,
         `  agentId: "${agentId}"`,
-        alternatives?.length ? `  fallback_models: ${JSON.stringify(alternatives)}` : '',
-        alternatives?.length ? `  If "${model}" is unavailable, try: ${alternatives.join(', ')}` : '',
+        `  # recommended model (do NOT pass to sessions_spawn): ${model}`,
+        alternatives?.length ? `  Recommended fallback models (informational only): ${alternatives.join(', ')}` : '',
         params.background ? '  (background execution — results will arrive via push notification)' : '',
         '',
+        'Do NOT set sessions_spawn model unless explicitly asked by user.',
         'Do NOT just return this metadata. Actually call sessions_spawn NOW.',
         '',
         '⚠️ AFTER the subagent completes:',

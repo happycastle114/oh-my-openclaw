@@ -132,7 +132,7 @@ describe('registerDelegateTool', () => {
       category: 'deep',
     });
 
-    expect(result.content[0].text).toContain('If "custom-deep-model" is unavailable, try: fallback-a, fallback-b');
+    expect(result.content[0].text).toContain('Recommended fallback models (informational only): fallback-a, fallback-b');
   });
 
   it('execute returns error for invalid category', async () => {
