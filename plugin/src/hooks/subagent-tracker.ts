@@ -1,7 +1,7 @@
 import { OmocPluginApi, TypedHookContext } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
 import { trackSubagentSpawn, clearSubagentTracking, getCallerSessionKey, getTrackedSubagents } from '../services/webhook-bridge.js';
-import { callHooksAgent } from '../utils/webhook-client.js';
+import { callHooksWake } from '../utils/webhook-client.js';
 import { getConfig } from '../utils/config.js';
 
 const SPAWN_TOOL_NAME = 'sessions_spawn';
@@ -143,22 +143,19 @@ export function registerSubagentTracker(api: OmocPluginApi): void {
           ? `[System] Sub-agent completed (runId=${runId}, requester=${requesterSessionKey}). Process the result and continue pending work.`
           : `[System] Sub-agent completed (runId=${runId}). Process the result and continue pending work.`;
 
-        const targetSession = requesterSessionKey ?? callerSession;
-        const result = await callHooksAgent(
+        // Use /hooks/wake to directly inject system event into the main session
+        // and trigger an immediate heartbeat. /hooks/agent creates a NEW isolated
+        // session which is not what we want — we need the main agent to wake up.
+        const result = await callHooksWake(
           wakeMessage,
           { gateway_url: config.gateway_url, hooks_token: config.hooks_token },
-          {
-            name: 'OmOC-SubagentComplete',
-            deliver: false,
-            ...(targetSession ? { sessionKey: targetSession } : {}),
-          },
           api.logger,
         );
 
         if (result.ok) {
-          api.logger.info(`${LOG_PREFIX} Agent turn triggered from subagent_ended: runId=${runId}`);
+          api.logger.info(`${LOG_PREFIX} Wake triggered from subagent_ended: runId=${runId}`);
         } else {
-          api.logger.warn(`${LOG_PREFIX} Agent turn from subagent_ended failed: ${result.error ?? `status ${result.status}`}`);
+          api.logger.warn(`${LOG_PREFIX} Wake from subagent_ended failed: ${result.error ?? `status ${result.status}`}`);
         }
       }
     },
@@ -182,23 +179,18 @@ export function registerSubagentTracker(api: OmocPluginApi): void {
       clearSubagentTracking(matchedRunId);
       api.logger.info(`${LOG_PREFIX} Sub-agent announce detected: runId=${matchedRunId} (callerSession=${callerSession ?? 'unknown'})`);
 
-      // Send wake to ensure the main agent processes the announce and continues work
+      // Use /hooks/wake to directly inject into main session and trigger heartbeat
       const config = getConfig(api);
       if (config.webhook_bridge_enabled && config.gateway_url && config.hooks_token) {
-        void callHooksAgent(
+        void callHooksWake(
           `[System] Sub-agent completed (runId=${matchedRunId}). Process the announce result and continue any pending work.`,
           { gateway_url: config.gateway_url, hooks_token: config.hooks_token },
-          {
-            name: 'OmOC-SubagentAnnounce',
-            deliver: false,
-            ...(callerSession ? { sessionKey: callerSession } : {}),
-          },
           api.logger,
         ).then((result) => {
           if (result.ok) {
-            api.logger.info(`${LOG_PREFIX} Agent turn triggered after sub-agent announce: runId=${matchedRunId}`);
+            api.logger.info(`${LOG_PREFIX} Wake triggered after sub-agent announce: runId=${matchedRunId}`);
           } else {
-            api.logger.warn(`${LOG_PREFIX} Agent turn after announce failed: ${result.error ?? `status ${result.status}`}`);
+            api.logger.warn(`${LOG_PREFIX} Wake after announce failed: ${result.error ?? `status ${result.status}`}`);
           }
         });
       }
