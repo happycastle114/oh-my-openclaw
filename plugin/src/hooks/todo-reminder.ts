@@ -1,6 +1,7 @@
 import { OmocPluginApi, TypedHookContext } from '../types.js';
 import { TOOL_PREFIX, LOG_PREFIX } from '../constants.js';
 import { getIncompleteTodos, resetStore } from '../tools/todo/store.js';
+import { setCurrentSessionKey } from '../tools/todo/session-key.js';
 import { getConfig } from '../utils/config.js';
 import { callHooksWake } from '../utils/webhook-client.js';
 
@@ -147,6 +148,7 @@ export function registerSessionCleanup(api: OmocPluginApi): void {
       const sessionKey = ctx.sessionKey ?? ctx.sessionId ?? event.sessionId;
       if (!sessionKey) return;
 
+      setCurrentSessionKey(sessionKey);
       clearSession(sessionKey, api, 'new session');
     },
     { priority: 190 },
@@ -158,6 +160,7 @@ export function registerSessionCleanup(api: OmocPluginApi): void {
       const sessionKey = ctx.sessionId ?? event.sessionId;
       if (!sessionKey) return;
 
+      setCurrentSessionKey(undefined);
       clearSession(sessionKey, api, 'session_end');
     },
     { priority: 50 },

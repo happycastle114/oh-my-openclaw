@@ -3,7 +3,7 @@ import { OmocPluginApi, ToolResult } from '../../types.js';
 import { toolResponse, toolError } from '../../utils/helpers.js';
 import { TOOL_PREFIX } from '../../constants.js';
 import { updateTodo, TodoStatus, TodoPriority } from './store.js';
-import { extractSessionKey } from './session-key.js';
+import { resolveSessionKey } from './session-key.js';
 
 const TodoUpdateParamsSchema = Type.Object({
   id: Type.String({ description: 'Todo ID (e.g. todo-1)' }),
@@ -46,7 +46,7 @@ export function registerTodoUpdateTool(api: OmocPluginApi): void {
         return toolError('At least one of status, priority, or content must be provided');
       }
 
-      const sessionKey = extractSessionKey(options);
+      const sessionKey = resolveSessionKey(options);
       const updated = updateTodo(
         id,
         {

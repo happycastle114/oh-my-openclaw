@@ -1,6 +1,6 @@
 {
   "name": "@happycastle/oh-my-openclaw",
-  "version": "0.21.3",
+  "version": "0.21.4",
   "description": "Oh-My-OpenClaw plugin \u2014 multi-agent orchestration, todo enforcer, ralph loop, and custom tools for OpenClaw",
   "type": "module",
   "main": "dist/index.js",
