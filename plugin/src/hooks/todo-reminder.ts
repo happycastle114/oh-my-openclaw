@@ -1,6 +1,7 @@
 import { OmocPluginApi, TypedHookContext } from '../types.js';
 import { TOOL_PREFIX, LOG_PREFIX } from '../constants.js';
 import { getIncompleteTodos, resetStore } from '../tools/todo/store.js';
+import { setCurrentSessionKey, getCurrentSessionKey, clearCurrentSessionKey } from '../tools/todo/session-key.js';
 import { getConfig } from '../utils/config.js';
 import { callHooksWake } from '../utils/webhook-client.js';
 
@@ -49,7 +50,21 @@ export function registerTodoReminder(api: OmocPluginApi): void {
 
       const sessionKey = getSessionKey(payload);
 
+      // Safety net: validate sessionKey for todo tools
+      // The singleton pattern is safe due to OpenClaw's sequential execution model,
+      // but we add this as an additional safeguard
       if (TODO_TOOL_NAMES.has(toolName)) {
+        const capturedKey = getCurrentSessionKey();
+        const payloadSessionId = (payload as Record<string, unknown>).sessionId as string | undefined;
+
+        // If we have a captured session key but the payload has a different sessionId,
+        // log a warning (this shouldn't happen in normal OpenClaw execution)
+        if (capturedKey && payloadSessionId && capturedKey !== payloadSessionId) {
+          api.logger.warn(
+            `${LOG_PREFIX} SessionKey mismatch for ${toolName}: captured=${capturedKey}, payload=${payloadSessionId}`,
+          );
+        }
+
         sessionCounters.set(sessionKey, 0);
         return undefined;
       }
@@ -147,6 +162,7 @@ export function registerSessionCleanup(api: OmocPluginApi): void {
       const sessionKey = ctx.sessionKey ?? ctx.sessionId ?? event.sessionId;
       if (!sessionKey) return;
 
+      setCurrentSessionKey(sessionKey);
       clearSession(sessionKey, api, 'new session');
     },
     { priority: 190 },
@@ -158,6 +174,8 @@ export function registerSessionCleanup(api: OmocPluginApi): void {
       const sessionKey = ctx.sessionId ?? event.sessionId;
       if (!sessionKey) return;
 
+      setCurrentSessionKey(undefined);
+      clearCurrentSessionKey();
       clearSession(sessionKey, api, 'session_end');
     },
     { priority: 50 },
