@@ -13,6 +13,40 @@ OpenClaw is not a direct code executor, but an orchestrator that delegates work 
 - Coding tasks are delegated to OpenCode via ACP sessions (`runtime: "acp"`, `agentId: "opencode"`)
 - OpenClaw is responsible for task decomposition, instruction, monitoring, and result verification
 
+## Known Gotchas
+
+### acpx `--cwd` is not supported
+
+The `acpx opencode` subcommand does **not** accept a `--cwd` flag. This is a common source of confusion because `--cwd` exists on the OpenCode CLI itself, but acpx does not pass it through.
+
+**Wrong:**
+```bash
+acpx opencode --cwd /path/to/project -s my-session
+```
+
+**Correct:**
+```bash
+cd /path/to/project && acpx opencode -s my-session
+```
+
+If acpx is invoked from the wrong directory, OpenCode will operate on the wrong codebase silently. Always `cd` to the target directory before running acpx.
+
+### ACP session must be created from the correct working directory
+
+OpenCode inherits the working directory of the process that spawned it. If the session is started from the wrong directory, file operations will target the wrong path. Verify with `pwd` before spawning.
+
+### Verification must be done independently
+
+Do **not** trust OpenCode's self-reported completion status. After delegation:
+
+1. Run verification commands yourself (tests, build, lint)
+2. Read every file OpenCode claims to have changed
+3. Cross-check what it *said* it did vs. what actually changed in `git diff`
+
+OpenCode will report success even when logic is incorrect, tests are skipped, or changes are incomplete. The orchestrating agent is responsible for catching this.
+
+---
+
 ## Pre-flight Checklist
 
 ### 1) ACP Backend Check
