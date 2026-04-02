@@ -1,7 +1,7 @@
 import { Type } from '@sinclair/typebox';
 import { execFile } from 'child_process';
 
-import { OmocPluginApi } from '../types.js';
+import type { OpenClawPluginApi } from '../types.js';
 import { TOOL_PREFIX } from '../constants.js';
 import { toolResponse, toolError } from '../utils/helpers.js';
 
@@ -12,7 +12,7 @@ interface WebSearchParams {
   model?: string;
 }
 
-export function registerWebSearchTool(api: OmocPluginApi) {
+export function registerWebSearchTool(api: OpenClawPluginApi) {
   api.registerTool({
     name: `${TOOL_PREFIX}web_search`,
     description:

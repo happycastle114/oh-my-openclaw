@@ -1,5 +1,6 @@
-import { OmocPluginApi, CommentViolation } from '../types.js';
-import { getConfig } from '../utils/config.js';
+import type { OpenClawPluginApi, PluginHookAgentEndEvent } from '../types.js';
+import { CommentViolation } from '../types.js';
+import { getPluginConfig } from '../types.js';
 
 interface ToolResultPayload {
   tool?: string;
@@ -78,11 +79,11 @@ function appendViolationSummary(content: string, violations: CommentViolation[])
   return `${content}\n\n---\n⚠️ [OMOC Comment Checker] Found ${violations.length} AI slop comment(s):\n${details}\n\nConsider removing these obvious/narrating comments to keep code clean.`;
 }
 
-export function registerCommentChecker(api: OmocPluginApi): void {
+export function registerCommentChecker(api: OpenClawPluginApi): void {
   api.registerHook(
     'tool_result_persist',
     (payload: ToolResultPayload): ToolResultPayload | undefined => {
-      const config = getConfig(api);
+      const config = getPluginConfig(api);
       if (!config.comment_checker_enabled) {
         return undefined;
       }

@@ -1,8 +1,9 @@
 import { Type, Static } from '@sinclair/typebox';
-import { OmocPluginApi, TOOL_PREFIX } from '../types.js';
+import type { OpenClawPluginApi } from '../types.js';
+import { TOOL_PREFIX, LOG_PREFIX } from '../constants.js';
 import { isValidCategory } from '../utils/validation.js';
-import { type Category, LOG_PREFIX } from '../constants.js';
-import { getConfig } from '../utils/config.js';
+import { type Category } from '../constants.js';
+import { getPluginConfig } from '../types.js';
 import { toolResponse, toolError } from '../utils/helpers.js';
 
 const DEFAULT_CATEGORY_MODELS: Record<Category, string> = {
@@ -40,8 +41,8 @@ const DelegateParamsSchema = Type.Object({
 
 type DelegateParams = Static<typeof DelegateParamsSchema>;
 
-function getRecommendedModelForCategory(category: Category, api: OmocPluginApi): { model: string; alternatives?: string[] } {
-  const config = getConfig(api);
+function getRecommendedModelForCategory(category: Category, api: OpenClawPluginApi): { model: string; alternatives?: string[] } {
+  const config = getPluginConfig(api);
   const override = config.model_routing?.[category];
   if (override?.model) {
     return { model: override.model, alternatives: override.alternatives };
@@ -49,7 +50,7 @@ function getRecommendedModelForCategory(category: Category, api: OmocPluginApi):
   return { model: DEFAULT_CATEGORY_MODELS[category], alternatives: undefined };
 }
 
-export function registerDelegateTool(api: OmocPluginApi) {
+export function registerDelegateTool(api: OpenClawPluginApi) {
   api.registerTool({
     name: `${TOOL_PREFIX}delegate`,
     description: 'Delegate a task to an OpenClaw-native sub-agent with category-based model routing',

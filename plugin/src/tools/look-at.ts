@@ -1,7 +1,8 @@
 import { Type } from '@sinclair/typebox';
 import { execFile } from 'child_process';
 
-import { OmocPluginApi, TOOL_PREFIX } from '../types.js';
+import type { OpenClawPluginApi } from '../types.js';
+import { TOOL_PREFIX } from '../types.js';
 import { toolResponse, toolError } from '../utils/helpers.js';
 
 const GEMINI_TIMEOUT_MS = 60_000;
@@ -12,7 +13,7 @@ interface LookAtParams {
   model?: string;
 }
 
-export function registerLookAtTool(api: OmocPluginApi) {
+export function registerLookAtTool(api: OpenClawPluginApi) {
   api.registerTool({
     name: `${TOOL_PREFIX}look_at`,
     description: 'Analyze files (PDF, images, video) using Gemini CLI',

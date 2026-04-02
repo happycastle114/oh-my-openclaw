@@ -1,4 +1,4 @@
-import { OmocPluginApi } from '../types.js';
+import type { OpenClawPluginApi } from '../types.js';
 import { TodoItem, TodoStatus, _sessions } from '../tools/todo/store.js';
 
 const STATUS_EMOJI: Record<TodoStatus, string> = {
@@ -56,7 +56,7 @@ function collectAllTodos(): TodoItem[] {
   return all;
 }
 
-export function registerTodoCommands(api: OmocPluginApi): void {
+export function registerTodoCommands(api: OpenClawPluginApi): void {
   api.registerCommand({
     name: 'todos',
     description: 'Show current todo list (auto-reply, no AI invocation)',

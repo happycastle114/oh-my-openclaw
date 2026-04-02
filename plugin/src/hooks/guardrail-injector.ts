@@ -1,4 +1,4 @@
-import { OmocPluginApi, TypedHookContext, BeforePromptBuildEvent, BeforePromptBuildResult } from '../types.js';
+import type { OpenClawPluginApi, PluginHookBeforePromptBuildEvent, PluginHookBeforePromptBuildResult } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
 
 const GUARDRAIL_RULES = `
@@ -29,10 +29,10 @@ These rules are NON-NEGOTIABLE. Violating them is a critical failure.
 </anti-hallucination-guardrails>
 `.trim();
 
-export function registerGuardrailInjector(api: OmocPluginApi): void {
-  api.on<BeforePromptBuildEvent, BeforePromptBuildResult>(
+export function registerGuardrailInjector(api: OpenClawPluginApi): void {
+  api.on<PluginHookBeforePromptBuildEvent, PluginHookBeforePromptBuildResult>(
     'before_prompt_build',
-    (_event: BeforePromptBuildEvent, _ctx: TypedHookContext): BeforePromptBuildResult | void => {
+    (_event: PluginHookBeforePromptBuildEvent): PluginHookBeforePromptBuildResult | void => {
       api.logger.info(`${LOG_PREFIX} Guardrail rules injected via before_prompt_build`);
 
       return {

@@ -1,7 +1,65 @@
-// Re-export constants from constants.ts for backward compatibility
+// Oh-My-OpenClaw Plugin Types
+// 完全使用 OpenClaw Plugin SDK 类型导入
+
+// ============================================================================
+// SDK 类型导入（完全使用新 SDK）
+// ============================================================================
+
+import type {
+  OpenClawPluginApi as SDKOpenClawPluginApi,
+  OpenClawConfig as SDKOpenClawConfig,
+  PluginLogger as SDKPluginLogger,
+  PluginRuntime as SDKPluginRuntime,
+  PluginHookName,
+  PluginHookHandlerMap,
+  PluginHookBeforePromptBuildEvent,
+  PluginHookBeforePromptBuildResult,
+  PluginHookAgentEndEvent,
+  PluginHookSessionStartEvent,
+  PluginHookSessionEndEvent,
+  PluginHookBeforeToolCallEvent,
+  PluginHookBeforeToolCallResult,
+  PluginHookToolResultPersistEvent,
+  PluginHookMessageReceivedEvent,
+  PluginHookSubagentEndedEvent,
+  InternalHookHandler,
+  OpenClawPluginHookOptions,
+  OpenClawPluginToolOptions,
+  AnyAgentTool,
+} from 'openclaw/plugin-sdk';
+
+// Re-export SDK types
+export type {
+  SDKOpenClawPluginApi as OpenClawPluginApi,
+  SDKOpenClawConfig as OpenClawConfig,
+  SDKPluginLogger as PluginLogger,
+  SDKPluginRuntime as PluginRuntime,
+  PluginHookName,
+  PluginHookHandlerMap,
+  PluginHookBeforePromptBuildEvent,
+  PluginHookBeforePromptBuildResult,
+  PluginHookAgentEndEvent,
+  PluginHookSessionStartEvent,
+  PluginHookSessionEndEvent,
+  PluginHookBeforeToolCallEvent,
+  PluginHookBeforeToolCallResult,
+  PluginHookToolResultPersistEvent,
+  PluginHookMessageReceivedEvent,
+  PluginHookSubagentEndedEvent,
+  InternalHookHandler,
+  OpenClawPluginHookOptions,
+  OpenClawPluginToolOptions,
+  AnyAgentTool,
+};
+
+// Re-export constants
 export { PLUGIN_ID, TOOL_PREFIX, ABSOLUTE_MAX_RALPH_ITERATIONS, LOG_PREFIX, READ_ONLY_DENY } from './constants.js';
 
-// PluginConfig interface
+// ============================================================================
+// 项目特定类型（Oh-My-OpenClaw 专用）
+// ============================================================================
+
+/** PluginConfig */
 export interface PluginConfig {
   max_ralph_iterations: number;
   todo_enforcer_enabled: boolean;
@@ -9,8 +67,7 @@ export interface PluginConfig {
   todo_enforcer_max_failures: number;
   comment_checker_enabled: boolean;
   checkpoint_dir: string;
-  model_routing?: Partial<Record<string, { model: string; alternatives?: string[] }>>;
-  // Webhook bridge configuration
+  model_routing?: Record<string, { model: string; alternatives?: string[] }>;
   webhook_bridge_enabled: boolean;
   gateway_url: string;
   hooks_token: string;
@@ -18,7 +75,7 @@ export interface PluginConfig {
   webhook_subagent_stale_threshold_ms: number;
 }
 
-// RalphLoopState interface
+/** RalphLoopState */
 export interface RalphLoopState {
   active: boolean;
   iteration: number;
@@ -27,7 +84,7 @@ export interface RalphLoopState {
   startedAt: string;
 }
 
-// CheckpointData interface
+/** CheckpointData */
 export interface CheckpointData {
   type: 'session-checkpoint';
   session_id: string;
@@ -43,7 +100,7 @@ export interface CheckpointData {
   timestamp: string;
 }
 
-// CommentViolation interface
+/** CommentViolation */
 export interface CommentViolation {
   file: string;
   line: number;
@@ -51,97 +108,65 @@ export interface CommentViolation {
   reason: string;
 }
 
-// Hook/Tool/Command/Service registration types
+/** HookMeta */
 export interface HookMeta {
-  name: string;
+  name?: string;
   description?: string;
+  priority?: number;
 }
 
+/** ToolResult */
 export interface ToolResult {
   content: Array<{ type: string; text: string }>;
 }
 
-export interface ToolRegistration<TParams = unknown> {
-  name: string;
-  description: string;
-  parameters: unknown;
-  execute: (toolCallId: string, params: TParams, options?: unknown, callback?: unknown) => Promise<ToolResult>;
-  optional?: boolean;
-}
-
-export interface CommandRegistration<TCtx = { args?: string }> {
-  name: string;
-  description: string;
-  acceptsArgs?: boolean;
-  handler: (ctx: TCtx) => { text: string } | Promise<{ text: string }>;
-}
-
+/** ServiceContext */
 export interface ServiceContext {
-  config: unknown;
+  config: SDKOpenClawConfig;
   workspaceDir?: string;
   stateDir: string;
-  logger: {
-    info: (message: string) => void;
-    warn: (message: string) => void;
-    error: (message: string) => void;
-    debug?: (message: string) => void;
-  };
+  logger: SDKPluginLogger;
 }
 
+/** ServiceRegistration */
 export interface ServiceRegistration {
   id: string;
   start: (ctx: ServiceContext) => void | Promise<void>;
   stop?: (ctx: ServiceContext) => void | Promise<void>;
 }
 
-// OmocPluginApi interface
-export interface OmocPluginApi {
-  pluginConfig?: PluginConfig;
-  config: PluginConfig;
-  workspaceDir?: string;
-  logger: {
-    info: (...args: unknown[]) => void;
-    warn: (...args: unknown[]) => void;
-    error: (...args: unknown[]) => void;
+// ============================================================================
+// 配置辅助函数
+// ============================================================================
+
+export function getPluginConfig(api: SDKOpenClawPluginApi): PluginConfig {
+  const defaults: PluginConfig = {
+    max_ralph_iterations: 10,
+    todo_enforcer_enabled: false,
+    todo_enforcer_cooldown_ms: 2000,
+    todo_enforcer_max_failures: 5,
+    comment_checker_enabled: true,
+    checkpoint_dir: api.workspaceDir ? `${api.workspaceDir}/checkpoints` : './checkpoints',
+    webhook_bridge_enabled: false,
+    gateway_url: process.env.OPENCLAW_GATEWAY_URL ?? 'http://127.0.0.1:18789',
+    hooks_token: process.env.OPENCLAW_HOOKS_TOKEN ?? '',
+    webhook_reminder_interval_ms: 300000,
+    webhook_subagent_stale_threshold_ms: 600000,
   };
-  runtime: {
-    system: {
-      enqueueSystemEvent: (text: string, options: { sessionKey: string; contextKey?: string | null }) => void;
-    };
+
+  const coreConfig = api.config as Partial<PluginConfig> | undefined;
+  const pluginConfig = api.pluginConfig as Partial<PluginConfig> | undefined;
+
+  const config = {
+    ...defaults,
+    ...coreConfig,
+    ...pluginConfig,
   };
-  registerHook: <TEvent>(event: string, handler: (event: TEvent) => TEvent | void | undefined, meta?: HookMeta) => void;
-  registerTool: <TParams>(config: ToolRegistration<TParams>) => void;
-  registerCommand: <TCtx = { args?: string }>(config: CommandRegistration<TCtx>) => void;
-  registerService: (config: ServiceRegistration) => void;
-  registerGatewayMethod: (name: string, handler: () => unknown) => void;
-  registerCli: (registrar: (ctx: { program: unknown; config: unknown; workspaceDir?: string; logger: OmocPluginApi['logger'] }) => void | Promise<void>, opts?: { commands?: string[] }) => void;
-  on: <TEvent = unknown, TResult = unknown>(
-    hookName: string,
-    handler: (event: TEvent, ctx: TypedHookContext) => TResult | Promise<TResult> | void,
-    opts?: { priority?: number }
-  ) => void;
-}
 
-// Typed hook context provided by OpenClaw hookRunner to api.on() handlers
-export interface TypedHookContext {
-  agentId?: string;
-  sessionKey?: string;
-  sessionId?: string;
-  workspaceDir?: string;
-  messageProvider?: unknown;
-}
+  // Clamp values to valid ranges
+  config.max_ralph_iterations = Math.max(0, Math.min(config.max_ralph_iterations, 100));
+  config.todo_enforcer_cooldown_ms = Math.max(0, config.todo_enforcer_cooldown_ms);
+  config.todo_enforcer_max_failures = Math.max(0, config.todo_enforcer_max_failures);
 
-// Result shape for before_prompt_build / before_agent_start hooks
-export interface BeforePromptBuildResult {
-  systemPrompt?: string;
-  prependContext?: string;
-}
-
-// Event shape for before_prompt_build / before_agent_start hooks
-// OpenClaw passes the current system prompt text so plugins can read/modify it
-// without parsing the messages array (see attempt.ts resolvePromptBuildHookResult).
-export interface BeforePromptBuildEvent {
-  prompt?: string;
-  messages?: unknown[];
-  systemPrompt?: string;
+  return config;
 }

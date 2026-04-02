@@ -1,9 +1,9 @@
 import { Type, Static } from '@sinclair/typebox';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import { OmocPluginApi, CheckpointData, ToolResult } from '../types.js';
+import type { OpenClawPluginApi, CheckpointData, ToolResult } from '../types.js';
 import { readState, writeState, ensureDir } from '../utils/state.js';
-import { getConfig } from '../utils/config.js';
+import { getPluginConfig } from '../types.js';
 import { toolResponse, toolError } from '../utils/helpers.js';
 import { TOOL_PREFIX } from '../constants.js';
 
@@ -106,13 +106,13 @@ async function handleList(checkpointDir: string): Promise<ToolResult> {
   }
 }
 
-export function registerCheckpointTool(api: OmocPluginApi) {
+export function registerCheckpointTool(api: OpenClawPluginApi) {
   api.registerTool({
     name: `${TOOL_PREFIX}checkpoint`,
     description: 'Save, load, or list session checkpoints for crash recovery',
     parameters: CheckpointParamsSchema,
     execute: async (_toolCallId: string, params: CheckpointParams) => {
-      const config = getConfig(api);
+      const config = getPluginConfig(api);
       const checkpointDir = config.checkpoint_dir;
       await ensureDir(checkpointDir);
 

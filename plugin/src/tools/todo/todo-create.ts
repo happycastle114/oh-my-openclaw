@@ -1,5 +1,5 @@
 import { Type, Static } from '@sinclair/typebox';
-import { OmocPluginApi, ToolResult } from '../../types.js';
+import type { OpenClawPluginApi, ToolResult } from '../../types.js';
 import { toolResponse, toolError } from '../../utils/helpers.js';
 import { TOOL_PREFIX } from '../../constants.js';
 import { createTodo, TodoPriority, TodoStatus } from './store.js';
@@ -25,7 +25,7 @@ const TodoCreateParamsSchema = Type.Object({
 
 type TodoCreateParams = Static<typeof TodoCreateParamsSchema>;
 
-export function registerTodoCreateTool(api: OmocPluginApi): void {
+export function registerTodoCreateTool(api: OpenClawPluginApi): void {
   api.registerTool<TodoCreateParams>({
     name: `${TOOL_PREFIX}todo_create`,
     description:

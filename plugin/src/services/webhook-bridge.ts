@@ -1,6 +1,6 @@
-import { OmocPluginApi, PLUGIN_ID } from '../types.js';
+import type { OpenClawPluginApi, PLUGIN_ID } from '../types.js';
 import { LOG_PREFIX, TOOL_PREFIX } from '../constants.js';
-import { getConfig } from '../utils/config.js';
+import { getPluginConfig } from '../types.js';
 import { getIncompleteTodos } from '../tools/todo/store.js';
 import { callHooksAgent, callHooksWake, WebhookConfig } from '../utils/webhook-client.js';
 
@@ -41,17 +41,17 @@ export function resetWebhookBridgeState(): void {
   }
 }
 
-function buildWebhookConfig(api: OmocPluginApi): WebhookConfig {
-  const config = getConfig(api);
+function buildWebhookConfig(api: OpenClawPluginApi): WebhookConfig {
+  const config = getPluginConfig(api);
   return {
     gateway_url: config.gateway_url,
     hooks_token: config.hooks_token,
   };
 }
 
-async function checkIncompleteTodos(api: OmocPluginApi): Promise<void> {
+async function checkIncompleteTodos(api: OpenClawPluginApi): Promise<void> {
   const webhookConfig = buildWebhookConfig(api);
-  const config = getConfig(api);
+  const config = getPluginConfig(api);
 
   const allSessionKeys = ['__default__', 'agent:main:main'];
   let totalIncomplete = 0;
@@ -97,9 +97,9 @@ async function checkIncompleteTodos(api: OmocPluginApi): Promise<void> {
   }
 }
 
-async function checkStaleSubagents(api: OmocPluginApi): Promise<void> {
+async function checkStaleSubagents(api: OpenClawPluginApi): Promise<void> {
   const webhookConfig = buildWebhookConfig(api);
-  const config = getConfig(api);
+  const config = getPluginConfig(api);
   const threshold = config.webhook_subagent_stale_threshold_ms;
   const now = Date.now();
 
@@ -152,8 +152,8 @@ async function checkStaleSubagents(api: OmocPluginApi): Promise<void> {
   }
 }
 
-export function registerWebhookBridge(api: OmocPluginApi): void {
-  const config = getConfig(api);
+export function registerWebhookBridge(api: OpenClawPluginApi): void {
+  const config = getPluginConfig(api);
 
   api.registerService({
     id: 'omoc-webhook-bridge',

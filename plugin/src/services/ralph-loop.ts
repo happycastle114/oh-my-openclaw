@@ -1,9 +1,9 @@
-import { getConfig } from '../utils/config.js';
+import { getPluginConfig } from '../types.js';
 import { join } from 'path';
 
 import {
   ABSOLUTE_MAX_RALPH_ITERATIONS,
-  OmocPluginApi,
+  OpenClawPluginApi,
   PLUGIN_ID,
   RalphLoopState,
 } from '../types.js';
@@ -19,7 +19,7 @@ const DEFAULT_STATE: RalphLoopState = {
   startedAt: '',
 };
 
-let apiRef: OmocPluginApi | null = null;
+let apiRef: OpenClawPluginApi | null = null;
 let stateFilePath = '';
 let currentState: RalphLoopState = { ...DEFAULT_STATE };
 let stateLock: Promise<void> = Promise.resolve();
@@ -39,7 +39,7 @@ async function withStateLock<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-function getApi(): OmocPluginApi {
+function getApi(): OpenClawPluginApi {
   if (!apiRef) {
     throw new Error('Ralph Loop service is not registered');
   }
@@ -72,9 +72,9 @@ async function saveStateToFile(): Promise<void> {
   await writeState(stateFilePath, currentState);
 }
 
-export function registerRalphLoop(api: OmocPluginApi): void {
+export function registerRalphLoop(api: OpenClawPluginApi): void {
   apiRef = api;
-  const config = getConfig(api);
+  const config = getPluginConfig(api);
   stateFilePath = join(config.checkpoint_dir, 'ralph-loop-state.json');
 
   api.registerService({

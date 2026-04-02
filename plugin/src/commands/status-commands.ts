@@ -1,16 +1,17 @@
-import { OmocPluginApi, PLUGIN_ID } from '../types.js';
+import type { OpenClawPluginApi } from '../types.js';
+import { PLUGIN_ID } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
 import { VERSION } from '../version.js';
-import { getConfig } from '../utils/config.js';
+import { getPluginConfig } from '../types.js';
 import { getStatus as getRalphStatus } from '../services/ralph-loop.js';
 import { getMessageCount } from '../hooks/message-monitor.js';
 
-export function registerStatusCommands(api: OmocPluginApi) {
+export function registerStatusCommands(api: OpenClawPluginApi) {
   api.registerCommand({
     name: 'omoc_health',
     description: 'Plugin health check (auto-reply, no AI invocation)',
     handler: async () => {
-      const config = getConfig(api);
+      const config = getPluginConfig(api);
       const ralphState = await getRalphStatus();
       const messageCount = getMessageCount();
 
@@ -31,7 +32,7 @@ export function registerStatusCommands(api: OmocPluginApi) {
     name: 'omoc_config',
     description: 'Show current plugin configuration (auto-reply)',
     handler: () => {
-      const config = getConfig(api);
+      const config = getPluginConfig(api);
 
        const safeConfig: Record<string, unknown> = {};
        for (const [key, value] of Object.entries(config)) {

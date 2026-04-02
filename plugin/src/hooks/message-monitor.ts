@@ -1,4 +1,4 @@
-import { OmocPluginApi } from '../types.js';
+import type { OpenClawPluginApi } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
 
 interface MessageContext {
@@ -13,7 +13,7 @@ const messageCounts = new Map<string, number>();
  * Registers the message monitor hook
  * Logs message events for audit purposes without modifying messages
  */
-export function registerMessageMonitor(api: OmocPluginApi) {
+export function registerMessageMonitor(api: OpenClawPluginApi) {
   api.registerHook(
     'message:sent',
     (context: MessageContext) => {

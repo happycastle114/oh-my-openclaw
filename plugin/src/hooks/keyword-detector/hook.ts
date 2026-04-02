@@ -1,13 +1,13 @@
-import { OmocPluginApi, TypedHookContext, BeforePromptBuildEvent, BeforePromptBuildResult } from '../../types.js';
+import type { OpenClawPluginApi, PluginHookBeforePromptBuildEvent, PluginHookBeforePromptBuildResult } from '../../types.js';
 import { LOG_PREFIX } from '../../constants.js';
 import { detectKeywords, WORKFLOW_PERSONA_MAP } from './detector.js';
 import { setActivePersonaId, replaceAgentsMd } from '../../utils/persona-state.js';
 import { readPersonaPrompt } from '../../agents/persona-prompts.js';
 
-export function registerKeywordDetector(api: OmocPluginApi): void {
-  api.on<BeforePromptBuildEvent, BeforePromptBuildResult>(
+export function registerKeywordDetector(api: OpenClawPluginApi): void {
+  api.on<PluginHookBeforePromptBuildEvent, PluginHookBeforePromptBuildResult>(
     'before_prompt_build',
-    (event: BeforePromptBuildEvent, _ctx: TypedHookContext): BeforePromptBuildResult | void => {
+    (event: PluginHookBeforePromptBuildEvent): PluginHookBeforePromptBuildResult | void => {
       const prompt = event.prompt;
       if (!prompt || typeof prompt !== 'string') return;
 
@@ -32,7 +32,7 @@ export function registerKeywordDetector(api: OmocPluginApi): void {
   );
 }
 
-function switchPersona(api: OmocPluginApi, personaId: string): void {
+function switchPersona(api: OpenClawPluginApi, personaId: string): void {
   setActivePersonaId(personaId)
     .then(() => readPersonaPrompt(personaId))
     .then((content) => replaceAgentsMd(content))

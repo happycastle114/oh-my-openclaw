@@ -331,15 +331,15 @@ describe('Agent End Reminder', () => {
   });
 
   it('fires enqueueSystemEvent when incomplete todos exist', async () => {
+    mockApi.config.sessionKey = 'test-session';
     createTodo('Implement auth', 'high', 'pending', 'test-session');
     createTodo('Write tests', 'medium', 'in_progress', 'test-session');
     createTodo('Deploy', 'low', 'completed', 'test-session');
 
     registerAgentEndReminder(mockApi);
     const handler = getOnHandler(mockApi, 'agent_end');
-    const ctx = createMockContext({ sessionKey: 'test-session' });
 
-    await handler({ messages: [], success: true }, ctx);
+    await handler({ messages: [], success: true });
 
     expect(mockApi.runtime.system.enqueueSystemEvent).toHaveBeenCalledOnce();
     const [warning, opts] = mockApi.runtime.system.enqueueSystemEvent.mock.calls[0];
@@ -352,42 +352,45 @@ describe('Agent End Reminder', () => {
   });
 
   it('does not fire when all todos are complete', async () => {
+    mockApi.config.sessionKey = 'test-session';
     createTodo('Task A', 'high', 'completed', 'test-session');
     createTodo('Task B', 'medium', 'completed', 'test-session');
 
     registerAgentEndReminder(mockApi);
     const handler = getOnHandler(mockApi, 'agent_end');
-    const ctx = createMockContext({ sessionKey: 'test-session' });
 
-    await handler({ messages: [], success: true }, ctx);
+    await handler({ messages: [], success: true });
 
     expect(mockApi.runtime.system.enqueueSystemEvent).not.toHaveBeenCalled();
   });
 
   it('does not fire when no todos exist', async () => {
+    mockApi.config.sessionKey = 'test-session';
     registerAgentEndReminder(mockApi);
     const handler = getOnHandler(mockApi, 'agent_end');
-    const ctx = createMockContext({ sessionKey: 'test-session' });
 
-    await handler({ messages: [], success: true }, ctx);
+    await handler({ messages: [], success: true });
 
     expect(mockApi.runtime.system.enqueueSystemEvent).not.toHaveBeenCalled();
   });
 
   it('falls back to sessionId when sessionKey is absent', async () => {
+    mockApi.config.sessionId = 'fallback-id';
+    mockApi.config.sessionKey = undefined;
     createTodo('Pending task', 'high', 'pending', 'fallback-id');
 
     registerAgentEndReminder(mockApi);
     const handler = getOnHandler(mockApi, 'agent_end');
     const ctx = createMockContext({ sessionKey: undefined, sessionId: 'fallback-id' });
 
-    await handler({ messages: [], success: true }, ctx);
+    await handler({ messages: [], success: true });
 
     const [, opts] = mockApi.runtime.system.enqueueSystemEvent.mock.calls[0];
     expect(opts.sessionKey).toBe('fallback-id');
   });
 
   it('does not throw on errors (graceful degradation)', async () => {
+    mockApi.config.sessionKey = 'test-session';
     createTodo('Pending', 'high', 'pending', 'test-session');
 
     mockApi.runtime.system.enqueueSystemEvent.mockImplementation(() => {
@@ -396,19 +399,18 @@ describe('Agent End Reminder', () => {
 
     registerAgentEndReminder(mockApi);
     const handler = getOnHandler(mockApi, 'agent_end');
-    const ctx = createMockContext({ sessionKey: 'test-session' });
 
-    await expect(handler({ messages: [], success: false }, ctx)).resolves.not.toThrow();
+    await expect(handler({ messages: [], success: false })).resolves.not.toThrow();
   });
 
   it('logs warning when incomplete todos found', async () => {
+    mockApi.config.sessionKey = 'test-session';
     createTodo('Pending', 'high', 'pending', 'test-session');
 
     registerAgentEndReminder(mockApi);
     const handler = getOnHandler(mockApi, 'agent_end');
-    const ctx = createMockContext({ sessionKey: 'test-session' });
 
-    await handler({ messages: [], success: true }, ctx);
+    await handler({ messages: [], success: true });
 
     expect(mockApi.logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('1 incomplete todo(s)'),
@@ -448,7 +450,7 @@ describe('Session Cleanup', () => {
       const handler = getOnHandler(mockApi, 'session_start');
       const ctx = createMockContext({ sessionKey: 'sess-abc' });
 
-      await handler({ sessionId: 'sess-abc' }, ctx);
+      await handler({ sessionId: 'sess-abc' });
 
       expect(listTodos(undefined, 'sess-abc')).toHaveLength(0);
       expect(_sessionCounters.has('sess-abc')).toBe(false);
@@ -461,7 +463,7 @@ describe('Session Cleanup', () => {
       const handler = getOnHandler(mockApi, 'session_start');
       const ctx = createMockContext({ sessionKey: 'sess-resume' });
 
-      await handler({ sessionId: 'sess-resume', resumedFrom: 'old-sess' }, ctx);
+      await handler({ sessionId: 'sess-resume', resumedFrom: 'old-sess' });
 
       expect(listTodos(undefined, 'sess-resume')).toHaveLength(1);
     });
@@ -473,7 +475,7 @@ describe('Session Cleanup', () => {
       const handler = getOnHandler(mockApi, 'session_start');
       const ctx = createMockContext({ sessionKey: undefined, sessionId: undefined });
 
-      await handler({ sessionId: 'evt-sid' }, ctx);
+      await handler({ sessionId: 'evt-sid' });
 
       expect(listTodos(undefined, 'evt-sid')).toHaveLength(0);
     });
@@ -488,7 +490,7 @@ describe('Session Cleanup', () => {
       const handler = getOnHandler(mockApi, 'session_end');
       const ctx = createMockContext({ sessionId: 'sess-end' });
 
-      await handler({ sessionId: 'sess-end', messageCount: 42 }, ctx);
+      await handler({ sessionId: 'sess-end', messageCount: 42 });
 
       expect(listTodos(undefined, 'sess-end')).toHaveLength(0);
       expect(_sessionCounters.has('sess-end')).toBe(false);
@@ -501,7 +503,7 @@ describe('Session Cleanup', () => {
       const handler = getOnHandler(mockApi, 'session_end');
       const ctx = createMockContext({ sessionKey: undefined, sessionId: undefined });
 
-      await handler({ sessionId: 'evt-end', messageCount: 10 }, ctx);
+      await handler({ sessionId: 'evt-end', messageCount: 10 });
 
       expect(listTodos(undefined, 'evt-end')).toHaveLength(0);
     });

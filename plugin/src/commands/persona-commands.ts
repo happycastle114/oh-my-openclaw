@@ -1,4 +1,4 @@
-import { OmocPluginApi } from '../types.js';
+import type { OpenClawPluginApi } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
 import { getActivePersona, setActivePersonaId, resetPersonaState, replaceAgentsMd, restoreAgentsMdToDefault } from '../utils/persona-state.js';
 import { resolvePersonaId, listPersonas, readPersonaPrompt, DEFAULT_PERSONA_ID } from '../agents/persona-prompts.js';
@@ -8,7 +8,7 @@ function getDisplayName(personaId: string): string {
   return persona ? `${persona.emoji} ${persona.displayName}` : personaId;
 }
 
-export function registerPersonaCommands(api: OmocPluginApi) {
+export function registerPersonaCommands(api: OpenClawPluginApi) {
   api.registerCommand({
     name: 'omoc',
     description: 'OmOC mode — activate, switch, or list personas',
@@ -51,18 +51,18 @@ export function registerPersonaCommands(api: OmocPluginApi) {
         const personas = listPersonas();
         const activeId = await getActivePersona();
         const lines = personas.map((p) => {
-          const active = p.id === activeId ? ' ← active' : '';
-          return `| ${p.emoji} | \`${p.shortName}\` | ${p.displayName} | ${p.theme} |${active}`;
+          const active = p.id === activeId ? ' ← **active**' : '';
+          return `| ${p.emoji} | \`${p.shortName}\` | ${p.displayName} | ${p.descriptionCn} | \`${p.model}\` |${active}`;
         });
 
         return {
           text: [
             '# OmOC Personas',
             '',
-            `Active: ${activeId ? `**${getDisplayName(activeId)}**` : '_none_'}`,
+            `**Active**: ${activeId ? `**${getDisplayName(activeId)}**` : '_none_'}`,
             '',
-            '| | Command | Name | Role |',
-            '|---|---------|------|------|',
+            '| | Command | Name | 描述 | 模型 |',
+            '|---|---------|------|------|------|',
             ...lines,
             '',
             'Usage: `/omoc <command>` — e.g., `/omoc prometheus`',

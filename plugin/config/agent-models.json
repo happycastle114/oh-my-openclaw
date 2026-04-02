@@ -1,0 +1,47 @@
+{
+  "description": "Agent model configuration - runtime editable, no rebuild required",
+  "agents": {
+    "omoc_prometheus": {
+      "primary": "bailian/qwen3-max-2026-01-23",
+      "fallbacks": ["bailian/qwen3.5-plus"]
+    },
+    "omoc_atlas": {
+      "primary": "bailian/qwen3.5-plus",
+      "fallbacks": ["bailian/glm-5"]
+    },
+    "omoc_sisyphus": {
+      "primary": "bailian/qwen3-coder-plus",
+      "fallbacks": ["bailian/qwen3-coder-next"]
+    },
+    "omoc_hephaestus": {
+      "primary": "bailian/qwen3-coder-plus",
+      "fallbacks": ["bailian/MiniMax-M2.5"]
+    },
+    "omoc_oracle": {
+      "primary": "bailian/qwen3-max-2026-01-23",
+      "fallbacks": ["bailian/qwen3.5-plus"]
+    },
+    "omoc_explore": {
+      "primary": "bailian/qwen3-coder-next"
+    },
+    "omoc_librarian": {
+      "primary": "bailian/qwen3.5-plus"
+    },
+    "omoc_metis": {
+      "primary": "bailian/qwen3-max-2026-01-23",
+      "fallbacks": ["bailian/qwen3.5-plus"]
+    },
+    "omoc_momus": {
+      "primary": "bailian/qwen3-max-2026-01-23",
+      "fallbacks": ["bailian/qwen3.5-plus"]
+    },
+    "omoc_looker": {
+      "primary": "bailian/kimi-k2.5",
+      "fallbacks": ["bailian/qwen3.5-plus"]
+    },
+    "omoc_frontend": {
+      "primary": "bailian/kimi-k2.5",
+      "fallbacks": ["bailian/qwen3-coder-plus"]
+    }
+  }
+}

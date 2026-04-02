@@ -1,15 +1,15 @@
 import { contextCollector } from '../features/context-collector.js';
-import { OmocPluginApi, TypedHookContext, BeforePromptBuildEvent, BeforePromptBuildResult } from '../types.js';
+import type { OpenClawPluginApi, PluginHookBeforePromptBuildEvent, PluginHookBeforePromptBuildResult } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
 
-export function registerContextInjector(api: OmocPluginApi): void {
-  // Use the typed hook system (api.on) instead of api.registerHook.
-  // api.registerHook registers into the internal hook system which does NOT
-  // trigger before_prompt_build — only hookRunner (typed hooks) does.
-  api.on<BeforePromptBuildEvent, BeforePromptBuildResult>(
+export function registerContextInjector(api: OpenClawPluginApi): void {
+  api.on<PluginHookBeforePromptBuildEvent, PluginHookBeforePromptBuildResult>(
     'before_prompt_build',
-    (_event: BeforePromptBuildEvent, ctx: TypedHookContext): BeforePromptBuildResult | void => {
-      const sessionKey = ctx.sessionKey ?? ctx.sessionId ?? ctx.agentId ?? 'default';
+    (event: PluginHookBeforePromptBuildEvent): PluginHookBeforePromptBuildResult | void => {
+      // SDK typed hooks don't provide TypedHookContext
+      // Context info available from api.config/api.runtime if needed
+      // SDK typed hooks don't provide TypedHookContext - read from api.config
+      const sessionKey = (api.config.sessionKey as string) ?? (api.config.sessionId as string) ?? (api.config.agentId as string) ?? 'default';
 
       if (!contextCollector.hasEntries(sessionKey)) {
         return;

@@ -1,15 +1,15 @@
 import { vi } from 'vitest';
-import type { OmocPluginApi, PluginConfig, TypedHookContext } from '../../types.js';
+import type { OpenClawPluginApi, PluginConfig } from '../../types.js';
 
 /**
- * Creates a fully-typed mock OmocPluginApi with sensible defaults.
+ * Creates a fully-typed mock OpenClawPluginApi with sensible defaults.
  * Superset of all mock shapes used across 7 test files.
  * All methods are vi.fn() mocks for assertion support.
  *
  * @param overrides - Partial config overrides (spread last)
- * @returns Mock OmocPluginApi with all required methods
+ * @returns Mock OpenClawPluginApi with all required methods
  */
-export function createMockApi(overrides?: Partial<OmocPluginApi>): OmocPluginApi {
+export function createMockApi(overrides?: Partial<OpenClawPluginApi>): OpenClawPluginApi {
   return {
     config: createMockConfig(),
     logger: {
@@ -35,12 +35,12 @@ export function createMockApi(overrides?: Partial<OmocPluginApi>): OmocPluginApi
 
 /**
  * Creates a fully-typed mock PluginConfig with sensible defaults.
- * Includes all fields from PluginConfig interface.
+ * Includes all fields from PluginConfig interface plus runtime context fields.
  *
  * @param overrides - Partial config overrides (spread last)
  * @returns Mock PluginConfig with all required fields
  */
-export function createMockConfig(overrides?: Partial<PluginConfig>): PluginConfig {
+export function createMockConfig(overrides?: Partial<PluginConfig> & { sessionKey?: string; sessionId?: string; agentId?: string }): PluginConfig & { sessionKey?: string; sessionId?: string; agentId?: string } {
   return {
     max_ralph_iterations: 10,
     todo_enforcer_enabled: false,
@@ -54,24 +54,26 @@ export function createMockConfig(overrides?: Partial<PluginConfig>): PluginConfi
     hooks_token: '',
     webhook_reminder_interval_ms: 300000,
     webhook_subagent_stale_threshold_ms: 600000,
+    sessionKey: undefined,
+    sessionId: undefined,
+    agentId: undefined,
     ...overrides,
   };
 }
 
 /**
- * Creates a fully-typed mock TypedHookContext.
+ * Creates a fully-typed mock Record<string, unknown>.
  * Provides context for hook handlers (agentId, sessionKey, sessionId, etc).
  *
  * @param overrides - Partial context overrides (spread last)
- * @returns Mock TypedHookContext with sensible defaults
+ * @returns Mock Record<string, unknown> with sensible defaults
  */
-export function createMockContext(overrides?: Partial<TypedHookContext>): TypedHookContext {
+export function createMockContext(overrides?: Partial<Record<string, unknown>>): Record<string, unknown> {
   return {
     agentId: 'test-agent',
     sessionKey: 'test-session-key',
     sessionId: 'test-session-id',
     workspaceDir: '/tmp/test-workspace',
-    messageProvider: undefined,
     ...overrides,
   };
 }

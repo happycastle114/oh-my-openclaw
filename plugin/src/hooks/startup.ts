@@ -1,7 +1,8 @@
-import { OmocPluginApi, PLUGIN_ID } from '../types.js';
+import type { OpenClawPluginApi } from '../types.js';
+import { PLUGIN_ID } from '../types.js';
 import { VERSION } from '../version.js';
 
-export function registerStartupHook(api: OmocPluginApi) {
+export function registerStartupHook(api: OpenClawPluginApi) {
   api.registerHook(
     'gateway:startup',
     () => {
