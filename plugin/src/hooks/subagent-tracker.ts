@@ -1,8 +1,8 @@
-import { OmocPluginApi, TypedHookContext } from '../types.js';
+import type { OpenClawPluginApi, PluginHookSubagentEndedEvent } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
 import { trackSubagentSpawn, clearSubagentTracking, getCallerSessionKey, getTrackedSubagents } from '../services/webhook-bridge.js';
 import { callHooksWake } from '../utils/webhook-client.js';
-import { getConfig } from '../utils/config.js';
+import { getPluginConfig } from '../types.js';
 
 const SPAWN_TOOL_NAME = 'sessions_spawn';
 
@@ -88,7 +88,7 @@ function findTrackedSubagentInContent(content: string): string | null {
   return null;
 }
 
-export function registerSubagentTracker(api: OmocPluginApi): void {
+export function registerSubagentTracker(api: OpenClawPluginApi): void {
   api.registerHook(
     'tool_result_persist',
     (payload: ToolResultPayload): ToolResultPayload | undefined => {
@@ -119,9 +119,9 @@ export function registerSubagentTracker(api: OmocPluginApi): void {
   );
 
 
-  api.on<SubagentEndedEvent, void>(
+  api.on<PluginHookSubagentEndedEvent, void>(
     'subagent_ended',
-    async (event: SubagentEndedEvent, ctx: TypedHookContext): Promise<void> => {
+    async (event: PluginHookSubagentEndedEvent): Promise<void> => {
       const runId = typeof event?.runId === 'string' ? event.runId : undefined;
       if (!runId) return;
 
@@ -134,10 +134,10 @@ export function registerSubagentTracker(api: OmocPluginApi): void {
 
       api.logger.info(`${LOG_PREFIX} subagent_ended received: runId=${runId} (callerSession=${callerSession ?? 'unknown'})`);
 
-      const config = getConfig(api);
+      const config = getPluginConfig(api);
       if (config.webhook_bridge_enabled && config.gateway_url && config.hooks_token) {
-        const requesterSessionKey = typeof (ctx as unknown as { requesterSessionKey?: unknown })?.requesterSessionKey === 'string'
-          ? ((ctx as unknown as { requesterSessionKey?: string }).requesterSessionKey)
+        const requesterSessionKey = typeof (api.config.requesterSessionKey as string) === 'string'
+          ? (api.config.requesterSessionKey as string)
           : undefined;
         const wakeMessage = requesterSessionKey
           ? `[System] Sub-agent completed (runId=${runId}, requester=${requesterSessionKey}). Process the result and continue pending work.`
@@ -180,7 +180,7 @@ export function registerSubagentTracker(api: OmocPluginApi): void {
       api.logger.info(`${LOG_PREFIX} Sub-agent announce detected: runId=${matchedRunId} (callerSession=${callerSession ?? 'unknown'})`);
 
       // Use /hooks/wake to directly inject into main session and trigger heartbeat
-      const config = getConfig(api);
+      const config = getPluginConfig(api);
       if (config.webhook_bridge_enabled && config.gateway_url && config.hooks_token) {
         void callHooksWake(
           `[System] Sub-agent completed (runId=${matchedRunId}). Process the announce result and continue any pending work.`,

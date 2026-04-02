@@ -6,11 +6,11 @@ import { registerMessageMonitor, getMessageCount } from '../hooks/message-monito
 import { registerStartupHook } from '../hooks/startup.js';
 import { ContextCollector, contextCollector } from '../features/context-collector.js';
 import { createTodo, resetStore } from '../tools/todo/store.js';
-import type { OmocPluginApi, BeforePromptBuildEvent, BeforePromptBuildResult, TypedHookContext } from '../types.js';
+import type { OpenClawPluginApi, PluginHookPluginHookBeforePromptBuildEvent, PluginHookPluginHookBeforePromptBuildResult } from '../types.js';
 import { createMockApi as createFactoryMockApi, createMockConfig } from './helpers/mock-factory.js';
 
 type MockApi = Omit<
-  OmocPluginApi,
+  OpenClawPluginApi,
   'logger' | 'registerHook' | 'registerTool' | 'registerCommand' | 'registerService' | 'registerGatewayMethod' | 'registerCli' | 'on'
 > & {
   logger: {
@@ -27,7 +27,7 @@ type MockApi = Omit<
   on: ReturnType<typeof vi.fn>;
 };
 
-const createMockApi = (overrides?: Partial<OmocPluginApi>): MockApi => {
+const createMockApi = (overrides?: Partial<OpenClawPluginApi>): MockApi => {
   return createFactoryMockApi(overrides) as unknown as MockApi;
 };
 
@@ -221,13 +221,12 @@ describe('todo-enforcer continuation hook (before_prompt_build)', () => {
     );
     if (!onCall) throw new Error('before_prompt_build handler not found on api.on');
     return onCall[1] as (
-      event: BeforePromptBuildEvent,
-      ctx: TypedHookContext,
-    ) => BeforePromptBuildResult | void;
+      event: PluginHookBeforePromptBuildEvent,
+    ) => PluginHookBeforePromptBuildResult | void;
   }
 
   it('returns continuation context when incomplete todos exist', () => {
-    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true, sessionKey: 'sess-cont' }) });
     registerTodoEnforcer(api);
 
     createTodo('Build the feature', 'high', 'in_progress', 'sess-cont');
@@ -236,7 +235,6 @@ describe('todo-enforcer continuation hook (before_prompt_build)', () => {
     const handler = getContinuationHandler(api);
     const result = handler(
       { prompt: 'subagent completed' },
-      { sessionKey: 'sess-cont' },
     );
 
     expect(result).toBeDefined();
@@ -276,7 +274,7 @@ describe('todo-enforcer continuation hook (before_prompt_build)', () => {
   });
 
   it('includes todo status and content in prepended context', () => {
-    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true, sessionKey: 'sess-detail' }) });
     registerTodoEnforcer(api);
 
     createTodo('Task A', 'high', 'in_progress', 'sess-detail');
@@ -286,7 +284,6 @@ describe('todo-enforcer continuation hook (before_prompt_build)', () => {
     const handler = getContinuationHandler(api);
     const result = handler(
       { prompt: 'announce result' },
-      { sessionKey: 'sess-detail' },
     );
 
     expect(result).toBeDefined();
@@ -296,7 +293,7 @@ describe('todo-enforcer continuation hook (before_prompt_build)', () => {
   });
 
   it('falls back through sessionId and agentId when sessionKey is missing', () => {
-    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true, agentId: 'my-agent' }) });
     registerTodoEnforcer(api);
 
     createTodo('Fallback task', 'high', 'pending', 'my-agent');
@@ -305,7 +302,6 @@ describe('todo-enforcer continuation hook (before_prompt_build)', () => {
 
     const result = handler(
       { prompt: 'hello' },
-      { agentId: 'my-agent' },
     );
 
     expect(result).toBeDefined();
@@ -319,20 +315,20 @@ describe('todo-enforcer continuation hook (before_prompt_build)', () => {
     createTodo('Default task', 'high', 'pending', 'default');
 
     const handler = getContinuationHandler(api);
-    const result = handler({ prompt: 'hello' }, {});
+    const result = handler({ prompt: 'hello' });
 
     expect(result).toBeDefined();
     expect(result!.prependContext).toContain('Default task');
   });
 
   it('logs when continuation is injected', () => {
-    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true }) });
+    const api = createMockApi({ config: createMockConfig({ todo_enforcer_enabled: true, sessionKey: 'sess-log' }) });
     registerTodoEnforcer(api);
 
     createTodo('Log task', 'high', 'pending', 'sess-log');
 
     const handler = getContinuationHandler(api);
-    handler({ prompt: 'hello' }, { sessionKey: 'sess-log' });
+    handler({ prompt: 'hello' });
 
     expect(api.logger.info).toHaveBeenCalledWith(
       expect.stringContaining('Todo continuation injected: 1 incomplete todo(s)'),
@@ -455,7 +451,7 @@ describe('context-injector hook (typed hook)', () => {
   });
 
   it('injects collected context entries via prependContext', () => {
-    const api = createMockApi();
+    const api = createMockApi({ config: createMockConfig({ agentId: 'omoc_atlas' }) });
     registerContextInjector(api);
 
     contextCollector.register('omoc_atlas', {
@@ -473,8 +469,7 @@ describe('context-injector hook (typed hook)', () => {
 
     const handler = api.on.mock.calls[0][1];
     const event = { prompt: 'hello' };
-    const ctx = { agentId: 'omoc_atlas' };
-    const result = handler(event, ctx);
+    const result = handler(event);
 
     expect(result).toBeDefined();
     expect(result.prependContext).toContain('persona prompt');
@@ -514,7 +509,7 @@ describe('context-injector hook (typed hook)', () => {
   });
 
   it('returns undefined when no collector entries for session', () => {
-    const api = createMockApi();
+    const api = createMockApi({ config: createMockConfig({ agentId: 'omoc_other' }) });
     registerContextInjector(api);
 
     contextCollector.register('default', {
@@ -525,8 +520,7 @@ describe('context-injector hook (typed hook)', () => {
 
     const handler = api.on.mock.calls[0][1];
     const event = { prompt: 'hello' };
-    const ctx = { agentId: 'omoc_other' };
-    const result = handler(event, ctx);
+    const result = handler(event);
 
     expect(result).toBeUndefined();
     expect(contextCollector.hasEntries('default')).toBe(true);

@@ -1,7 +1,7 @@
-import { OmocPluginApi, TypedHookContext } from '../types.js';
+import type { OpenClawPluginApi, PluginHookAgentEndEvent, PluginHookSessionStartEvent, PluginHookSessionEndEvent } from 'openclaw/plugin-sdk';
 import { TOOL_PREFIX, LOG_PREFIX } from '../constants.js';
 import { getIncompleteTodos, resetStore } from '../tools/todo/store.js';
-import { getConfig } from '../utils/config.js';
+import { getPluginConfig } from '../types.js';
 import { callHooksWake } from '../utils/webhook-client.js';
 
 const TODO_TOOL_NAMES = new Set([
@@ -40,7 +40,7 @@ function getSessionKey(payload: ToolResultPayload): string {
   return typeof sessionId === 'string' ? sessionId : '__default__';
 }
 
-export function registerTodoReminder(api: OmocPluginApi): void {
+export function registerTodoReminder(api: OpenClawPluginApi): void {
   api.registerHook(
     'tool_result_persist',
     (payload: ToolResultPayload): ToolResultPayload | undefined => {
@@ -75,12 +75,12 @@ export function registerTodoReminder(api: OmocPluginApi): void {
   );
 }
 
-export function registerAgentEndReminder(api: OmocPluginApi): void {
+export function registerAgentEndReminder(api: OpenClawPluginApi): void {
   api.on<AgentEndEvent, void>(
     'agent_end',
-    async (_event: AgentEndEvent, ctx: TypedHookContext): Promise<void> => {
+    async (_event: AgentEndEvent): Promise<void> => {
       try {
-        const sessionKey = ctx.sessionKey ?? ctx.sessionId;
+        const sessionKey = (api.config.sessionKey as string) ?? (api.config.sessionId as string);
         const incomplete = getIncompleteTodos(sessionKey);
         if (incomplete.length === 0) return;
 
@@ -92,11 +92,11 @@ export function registerAgentEndReminder(api: OmocPluginApi): void {
           `⚠️ [OMOC] ${incomplete.length} incomplete todo(s):\n${summary}\n\n` +
           `Call \`${TOOL_PREFIX}todo_list\` to review and resume work.`;
 
-        if (sessionKey) {
+        if (sessionKey && api.runtime.system) {
           api.runtime.system.enqueueSystemEvent(warning, { sessionKey });
         }
 
-        const config = getConfig(api);
+        const config = getPluginConfig(api);
         if (config.webhook_bridge_enabled && config.hooks_token) {
           if (!sessionKey) {
             api.logger.warn(`${LOG_PREFIX} No sessionKey available for wake after agent_end — skipping to avoid new session creation`);
@@ -132,19 +132,19 @@ interface SessionEndEvent {
   durationMs?: number;
 }
 
-function clearSession(sessionKey: string, api: OmocPluginApi, reason: string): void {
+function clearSession(sessionKey: string, api: OpenClawPluginApi, reason: string): void {
   resetStore(sessionKey);
   sessionCounters.delete(sessionKey);
   api.logger.info(`${LOG_PREFIX} Todo store cleared (${reason}, session=${sessionKey})`);
 }
 
-export function registerSessionCleanup(api: OmocPluginApi): void {
+export function registerSessionCleanup(api: OpenClawPluginApi): void {
   api.on<SessionStartEvent, void>(
     'session_start',
-    async (event: SessionStartEvent, ctx: TypedHookContext): Promise<void> => {
+    async (event: PluginHookSessionStartEvent): Promise<void> => {
       if (event.resumedFrom) return;
 
-      const sessionKey = ctx.sessionKey ?? ctx.sessionId ?? event.sessionId;
+      const sessionKey = (api.config.sessionKey as string) ?? (api.config.sessionId as string) ?? event.sessionId;
       if (!sessionKey) return;
 
       clearSession(sessionKey, api, 'new session');
@@ -154,8 +154,8 @@ export function registerSessionCleanup(api: OmocPluginApi): void {
 
   api.on<SessionEndEvent, void>(
     'session_end',
-    async (event: SessionEndEvent, ctx: TypedHookContext): Promise<void> => {
-      const sessionKey = ctx.sessionId ?? event.sessionId;
+    async (event: PluginHookSessionEndEvent): Promise<void> => {
+      const sessionKey = (api.config.sessionId as string) ?? event.sessionId;
       if (!sessionKey) return;
 
       clearSession(sessionKey, api, 'session_end');

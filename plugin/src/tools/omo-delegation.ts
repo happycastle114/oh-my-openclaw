@@ -1,5 +1,6 @@
 import { Type, Static } from '@sinclair/typebox';
-import { OmocPluginApi, TOOL_PREFIX } from '../types.js';
+import type { OpenClawPluginApi } from '../types.js';
+import { TOOL_PREFIX } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
 import { toolResponse, toolError } from '../utils/helpers.js';
 
@@ -17,7 +18,7 @@ const OmoDelegateParamsSchema = Type.Object({
 
 type OmoDelegateParams = Static<typeof OmoDelegateParamsSchema>;
 
-export function registerOmoDelegateTool(api: OmocPluginApi) {
+export function registerOmoDelegateTool(api: OpenClawPluginApi) {
   api.registerTool({
     name: `${TOOL_PREFIX.replace('omoc_', 'omo_')}delegate`,
     description: 'Delegate a coding task to OmO (OpenCode) via ACP session. Use this for coding work — implementation, bug fixes, refactoring, testing.',

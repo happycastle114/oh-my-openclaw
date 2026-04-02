@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { validateConfig, getConfig } from '../utils/config.js';
+import { validateConfig } from '../utils/validation.js';
+import { getPluginConfig } from '../types.js';
 import { isValidCategory, sanitizeToolName, clampIterations } from '../utils/validation.js';
 import { CATEGORIES } from '../constants.js';
 import { VERSION } from '../version.js';
@@ -50,28 +51,28 @@ describe('validateConfig', () => {
   });
 });
 
-describe('getConfig', () => {
+describe('getPluginConfig', () => {
   it('clamps negative cooldown_ms to 0', () => {
     const api = createMockApi({ config: createMockConfig({ todo_enforcer_cooldown_ms: -500 }) });
-    const config = getConfig(api);
+    const config = getPluginConfig(api);
     expect(config.todo_enforcer_cooldown_ms).toBe(0);
   });
 
   it('clamps negative max_failures to 0', () => {
     const api = createMockApi({ config: createMockConfig({ todo_enforcer_max_failures: -3 }) });
-    const config = getConfig(api);
+    const config = getPluginConfig(api);
     expect(config.todo_enforcer_max_failures).toBe(0);
   });
 
   it('clamps max_ralph_iterations to 100', () => {
     const api = createMockApi({ config: createMockConfig({ max_ralph_iterations: 200 }) });
-    const config = getConfig(api);
+    const config = getPluginConfig(api);
     expect(config.max_ralph_iterations).toBe(100);
   });
 
   it('clamps negative max_ralph_iterations to 0', () => {
     const api = createMockApi({ config: createMockConfig({ max_ralph_iterations: -5 }) });
-    const config = getConfig(api);
+    const config = getPluginConfig(api);
     expect(config.max_ralph_iterations).toBe(0);
   });
 });

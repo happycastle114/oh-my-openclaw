@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { dirname, join } from 'path';
-import type { OmocPluginApi } from '../types.js';
+import type { OpenClawPluginApi } from '../types.js';
 import { resolveOpenClawWorkspaceDir } from './paths.js';
 import { ALL_AGENT_IDS } from '../agents/agent-ids.js';
 
@@ -17,7 +17,7 @@ function resolveStateFilePath(workspaceDir?: string): string {
   return join(resolveStateDir(workspaceDir), 'active-persona');
 }
 
-export async function initPersonaState(_api: OmocPluginApi): Promise<void> {
+export async function initPersonaState(_api: OpenClawPluginApi): Promise<void> {
   try {
     await mkdir(resolveStateDir(), { recursive: true });
   } catch (error) {

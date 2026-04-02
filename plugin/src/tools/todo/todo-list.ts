@@ -1,5 +1,5 @@
 import { Type, Static } from '@sinclair/typebox';
-import { OmocPluginApi, ToolResult } from '../../types.js';
+import type { OpenClawPluginApi, ToolResult } from '../../types.js';
 import { toolResponse } from '../../utils/helpers.js';
 import { TOOL_PREFIX } from '../../constants.js';
 import { listTodos, TodoStatus } from './store.js';
@@ -17,7 +17,7 @@ const TodoListParamsSchema = Type.Object({
 
 type TodoListParams = Static<typeof TodoListParamsSchema>;
 
-export function registerTodoListTool(api: OmocPluginApi): void {
+export function registerTodoListTool(api: OpenClawPluginApi): void {
   api.registerTool<TodoListParams>({
     name: `${TOOL_PREFIX}todo_list`,
     description:

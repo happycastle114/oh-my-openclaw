@@ -1,9 +1,9 @@
-import { OmocPluginApi } from '../types.js';
+import type { OpenClawPluginApi } from '../types.js';
 import { startLoop, stopLoop, getStatus } from '../services/ralph-loop.js';
 import { getMessageCount } from '../hooks/message-monitor.js';
-import { getConfig } from '../utils/config.js';
+import { getPluginConfig } from '../types.js';
 
-export function registerRalphCommands(api: OmocPluginApi) {
+export function registerRalphCommands(api: OpenClawPluginApi) {
   // /ralph_loop command
   api.registerCommand({
     name: 'ralph_loop',
@@ -11,7 +11,7 @@ export function registerRalphCommands(api: OmocPluginApi) {
     acceptsArgs: true,
     handler: async (ctx: { args?: string }) => {
       const args = (ctx.args || '').trim().split(/\s+/).filter(Boolean);
-      const config = getConfig(api);
+      const config = getPluginConfig(api);
       const maxIterations = args[0] ? parseInt(args[0], 10) : config.max_ralph_iterations;
       const taskFile = args[1] || '';
 
@@ -45,7 +45,7 @@ export function registerRalphCommands(api: OmocPluginApi) {
     name: 'omoc_status',
     description: 'Show Oh-My-OpenClaw plugin status',
     handler: async () => {
-      const config = getConfig(api);
+      const config = getPluginConfig(api);
       const ralphState = await getStatus();
       const messageCount = getMessageCount();
 

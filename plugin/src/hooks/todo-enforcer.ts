@@ -1,6 +1,6 @@
-import { OmocPluginApi, TypedHookContext, BeforePromptBuildEvent, BeforePromptBuildResult } from '../types.js';
+import type { OpenClawPluginApi, PluginHookBeforePromptBuildEvent, PluginHookBeforePromptBuildResult } from '../types.js';
 import { LOG_PREFIX } from '../constants.js';
-import { getConfig } from '../utils/config.js';
+import { getPluginConfig } from '../types.js';
 import { contextCollector } from '../features/context-collector.js';
 import { ORCHESTRATOR_IDS, WORKER_IDS } from '../agents/agent-ids.js';
 import { getIncompleteTodos } from '../tools/todo/store.js';
@@ -59,11 +59,11 @@ export function getEnforcerState() {
   return {};
 }
 
-export function registerTodoEnforcer(api: OmocPluginApi): void {
+export function registerTodoEnforcer(api: OpenClawPluginApi): void {
   api.registerHook(
     'agent:bootstrap',
     (event: AgentBootstrapEvent): void => {
-      const config = getConfig(api);
+      const config = getPluginConfig(api);
 
       if (!config.todo_enforcer_enabled) {
         return;
@@ -96,13 +96,14 @@ export function registerTodoEnforcer(api: OmocPluginApi): void {
     }
   );
 
-  api.on<BeforePromptBuildEvent, BeforePromptBuildResult>(
+  api.on<PluginHookBeforePromptBuildEvent, PluginHookBeforePromptBuildResult>(
     'before_prompt_build',
-    (_event: BeforePromptBuildEvent, ctx: TypedHookContext): BeforePromptBuildResult | void => {
-      const config = getConfig(api);
+    (_event: PluginHookBeforePromptBuildEvent): PluginHookBeforePromptBuildResult | void => {
+      const config = getPluginConfig(api);
       if (!config.todo_enforcer_enabled) return;
 
-      const sessionKey = ctx.sessionKey ?? ctx.sessionId ?? ctx.agentId ?? 'default';
+      // SDK typed hooks don't provide TypedHookContext - read from api.config
+      const sessionKey = (api.config.sessionKey as string) ?? (api.config.sessionId as string) ?? (api.config.agentId as string) ?? 'default';
       const incomplete = getIncompleteTodos(sessionKey);
       if (incomplete.length === 0) return;
 

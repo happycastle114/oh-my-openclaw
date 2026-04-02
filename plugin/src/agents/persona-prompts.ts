@@ -77,12 +77,45 @@ export async function readPersonaPrompt(agentId: string): Promise<string> {
   }
 }
 
+/**
+ * Chinese descriptions for each persona (for /omoc list display)
+ */
+const PERSONA_DESCRIPTIONS_CN: Record<string, string> = {
+  omoc_prometheus: '战略规划师 - 制定高级计划和策略',
+  omoc_atlas: '任务编排师 - 协调和分配任务',
+  omoc_sisyphus: '主要编码员 - 执行核心编码任务',
+  omoc_hephaestus: '深度编码专家 - 处理复杂编码任务',
+  omoc_oracle: '架构顾问 - 提供架构建议（只读）',
+  omoc_explore: '代码搜索专家 - 搜索和分析代码库（只读）',
+  omoc_librarian: '文档研究专家 - 查找和整理文档（只读）',
+  omoc_metis: '预规划分析师 - 规划前的差距分析',
+  omoc_momus: '计划审查员 - 审查和批评计划',
+  omoc_looker: '视觉分析专家 - 分析图像和图表（只读）',
+  omoc_frontend: '前端工程师 - UI/UX 设计和实现',
+};
+
+/**
+ * Get model display string (handles both string and object formats)
+ */
+function getModelDisplay(model: string | { primary: string; fallbacks?: string[] } | undefined): string {
+  if (!model) return '未配置';
+  if (typeof model === 'string') return model;
+  if (typeof model === 'object' && model.primary) {
+    return model.fallbacks && model.fallbacks.length > 0
+      ? `${model.primary} (+${model.fallbacks.length} 备用)`
+      : model.primary;
+  }
+  return '未知';
+}
+
 export function listPersonas(): Array<{
   id: string;
   shortName: string;
   displayName: string;
   emoji: string;
   theme: string;
+  descriptionCn: string;
+  model: string;
 }> {
   return OMOC_AGENT_CONFIGS.map((agent) => ({
     id: agent.id,
@@ -90,6 +123,8 @@ export function listPersonas(): Array<{
     displayName: agent.identity?.name ?? agent.name ?? agent.id,
     emoji: agent.identity?.emoji ?? '',
     theme: agent.identity?.theme ?? '',
+    descriptionCn: PERSONA_DESCRIPTIONS_CN[agent.id] ?? agent.identity?.theme ?? '',
+    model: getModelDisplay(agent.model),
   }));
 }
 
