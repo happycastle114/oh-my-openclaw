@@ -94,8 +94,36 @@ export interface ServiceRegistration {
   stop?: (ctx: ServiceContext) => void | Promise<void>;
 }
 
+// PluginRuntime interface
+export interface PluginRuntime {
+  system: {
+    enqueueSystemEvent: (text: string, options: { sessionKey: string; contextKey?: string | null }) => void;
+  };
+  agent?: {
+    resolveAgentDir: () => string | Promise<string>;
+    resolveAgentWorkspaceDir: () => string | Promise<string>;
+    resolveAgentIdentity: () => { id: string; name: string };
+    resolveThinkingDefault: () => boolean;
+    resolveAgentTimeoutMs: () => number;
+    ensureAgentWorkspace: () => void | Promise<void>;
+    session?: {
+      get: (key: string) => unknown | Promise<unknown>;
+      set: (key: string, value: unknown) => void | Promise<void>;
+      delete: (key: string) => void | Promise<void>;
+    };
+  };
+}
+
 // OmocPluginApi interface
 export interface OmocPluginApi {
+  // Identity fields
+  id: string;
+  name?: string;
+  version?: string;
+  description?: string;
+  source: string;
+  rootDir?: string;
+
   pluginConfig?: PluginConfig;
   config: PluginConfig;
   workspaceDir?: string;
@@ -103,12 +131,10 @@ export interface OmocPluginApi {
     info: (...args: unknown[]) => void;
     warn: (...args: unknown[]) => void;
     error: (...args: unknown[]) => void;
+    debug: (...args: unknown[]) => void;
   };
-  runtime: {
-    system: {
-      enqueueSystemEvent: (text: string, options: { sessionKey: string; contextKey?: string | null }) => void;
-    };
-  };
+  runtime: PluginRuntime;
+  resolvePath: (path: string) => string;
   registerHook: <TEvent>(event: string, handler: (event: TEvent) => TEvent | void | undefined, meta?: HookMeta) => void;
   registerTool: <TParams>(config: ToolRegistration<TParams>) => void;
   registerCommand: <TCtx = { args?: string }>(config: CommandRegistration<TCtx>) => void;

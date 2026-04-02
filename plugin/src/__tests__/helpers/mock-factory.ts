@@ -11,15 +11,36 @@ import type { OmocPluginApi, PluginConfig, TypedHookContext } from '../../types.
  */
 export function createMockApi(overrides?: Partial<OmocPluginApi>): OmocPluginApi {
   return {
+    id: 'oh-my-openclaw',
+    name: 'Oh-My-OpenClaw',
+    version: '0.22.0',
+    description: 'Test plugin',
+    source: '/test/source',
+    rootDir: '/test/root',
     config: createMockConfig(),
     logger: {
       info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
+      debug: vi.fn(),
     },
+    resolvePath: vi.fn((path: string) => path),
     runtime: {
       system: {
         enqueueSystemEvent: vi.fn(),
+      },
+      agent: {
+        resolveAgentDir: vi.fn(() => '/test/agent'),
+        resolveAgentWorkspaceDir: vi.fn(() => '/test/workspace'),
+        resolveAgentIdentity: vi.fn(() => ({ id: 'test', name: 'Test Agent' })),
+        resolveThinkingDefault: vi.fn(() => false),
+        resolveAgentTimeoutMs: vi.fn(() => 300000),
+        ensureAgentWorkspace: vi.fn(),
+        session: {
+          get: vi.fn(),
+          set: vi.fn(),
+          delete: vi.fn(),
+        },
       },
     },
     registerHook: vi.fn(),
