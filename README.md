@@ -2,9 +2,9 @@
 
 # Oh-My-OpenClaw (OmOC)
 
-[![GitHub Stars](https://img.shields.io/github/stars/happycastle114/oh-my-openclaw?color=ffcb47&labelColor=black&style=flat-square)](https://github.com/happycastle114/oh-my-openclaw/stargazers)
-[![GitHub Issues](https://img.shields.io/github/issues/happycastle114/oh-my-openclaw?color=ff80eb&labelColor=black&style=flat-square)](https://github.com/happycastle114/oh-my-openclaw/issues)
-[![License](https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square)](https://github.com/happycastle114/oh-my-openclaw/blob/master/LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/lileilei-camera/oh-my-openclaw?color=ffcb47&labelColor=black&style=flat-square)](https://github.com/lileilei-camera/oh-my-openclaw/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/lileilei-camera/oh-my-openclaw?color=ff80eb&labelColor=black&style=flat-square)](https://github.com/lileilei-camera/oh-my-openclaw/issues)
+[![License](https://img.shields.io/badge/license-MIT-white?labelColor=black&style=flat-square)](https://github.com/lileilei-camera/oh-my-openclaw/blob/master/LICENSE)
 
 **OmO, but on Discord and Telegram. Not your terminal.**
 
@@ -395,11 +395,11 @@ In any channel connected to OpenClaw (Discord, Telegram, etc.):
 
 ## Star History
 
-<a href="https://star-history.com/#happycastle114/oh-my-openclaw&Date">
+<a href="https://star-history.com/#lileilei-camera/oh-my-openclaw&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=happycastle114/oh-my-openclaw&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=happycastle114/oh-my-openclaw&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=happycastle114/oh-my-openclaw&type=Date" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=lileilei-camera/oh-my-openclaw&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=lileilei-camera/oh-my-openclaw&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=lileilei-camera/oh-my-openclaw&type=Date" />
  </picture>
 </a>
 
@@ -407,4 +407,4 @@ In any channel connected to OpenClaw (Discord, Telegram, etc.):
 
 ## License
 
-MIT — [@happycastle114](https://github.com/happycastle114)
+MIT — [@lileilei-camera](https://github.com/lileilei-camera)
