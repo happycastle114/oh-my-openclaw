@@ -1,8 +1,8 @@
 import { Type } from '@sinclair/typebox';
-import { execFile } from 'child_process';
 
 import { OmocPluginApi, TOOL_PREFIX } from '../types.js';
 import { toolResponse, toolError } from '../utils/helpers.js';
+import { execFileAsync } from '../utils/exec-adapter.js';
 
 const GEMINI_TIMEOUT_MS = 60_000;
 
@@ -30,30 +30,20 @@ export function registerLookAtTool(api: OmocPluginApi) {
       const model = params.model ?? 'gemini-3-flash-preview';
 
       try {
-        const stdout = await new Promise<string>((resolve, reject) => {
-          execFile(
-            'gemini',
-            ['-m', model, '--prompt', params.goal, '-f', params.file_path, '-o', 'text'],
-            { timeout: GEMINI_TIMEOUT_MS, maxBuffer: 10 * 1024 * 1024 },
-            (error, stdout, stderr) => {
-              if (error) {
-                if (error.killed) {
-                  reject(new Error(`Gemini CLI timed out after ${GEMINI_TIMEOUT_MS / 1000} seconds`));
-                } else {
-                  const detail = stderr?.trim() || error.message;
-                  reject(new Error(`Gemini CLI failed (exit ${error.code}): ${detail}`));
-                }
-                return;
-              }
-              resolve(stdout);
-            },
-          );
-        });
+        const { stdout } = await execFileAsync(
+          'gemini',
+          ['-m', model, '--prompt', params.goal, '-f', params.file_path, '-o', 'text'],
+          { timeout: GEMINI_TIMEOUT_MS, maxBuffer: 10 * 1024 * 1024 },
+        );
 
         return toolResponse(stdout.trim() || '(empty response from Gemini CLI)');
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return toolError(message);
+      } catch (error: unknown) {
+        const err = error as { killed?: boolean; code?: number; stderr?: string; message?: string };
+        if (err.killed) {
+          return toolError(`Gemini CLI timed out after ${GEMINI_TIMEOUT_MS / 1000} seconds`);
+        }
+        const detail = err.stderr?.trim() || err.message || String(error);
+        return toolError(`Gemini CLI failed (exit ${err.code}): ${detail}`);
       }
     },
     optional: true,

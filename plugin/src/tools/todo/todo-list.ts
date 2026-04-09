@@ -3,7 +3,7 @@ import { OmocPluginApi, ToolResult } from '../../types.js';
 import { toolResponse } from '../../utils/helpers.js';
 import { TOOL_PREFIX } from '../../constants.js';
 import { listTodos, TodoStatus } from './store.js';
-import { extractSessionKey } from './session-key.js';
+import { resolveSessionKey } from './session-key.js';
 
 const TodoListParamsSchema = Type.Object({
   status: Type.Optional(
@@ -30,7 +30,7 @@ export function registerTodoListTool(api: OmocPluginApi): void {
       params: TodoListParams,
       options?: unknown,
     ): Promise<ToolResult> => {
-      const sessionKey = extractSessionKey(options);
+      const sessionKey = resolveSessionKey(options);
       const items = listTodos(params.status, sessionKey);
       return toolResponse(JSON.stringify({ todos: items, count: items.length }, null, 2));
     },

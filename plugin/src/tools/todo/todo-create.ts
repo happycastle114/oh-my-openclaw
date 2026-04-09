@@ -3,7 +3,7 @@ import { OmocPluginApi, ToolResult } from '../../types.js';
 import { toolResponse, toolError } from '../../utils/helpers.js';
 import { TOOL_PREFIX } from '../../constants.js';
 import { createTodo, TodoPriority, TodoStatus } from './store.js';
-import { extractSessionKey } from './session-key.js';
+import { extractSessionKey, resolveSessionKey } from './session-key.js';
 
 const TodoCreateParamsSchema = Type.Object({
   content: Type.String({ description: 'What needs to be done' }),
@@ -41,7 +41,7 @@ export function registerTodoCreateTool(api: OmocPluginApi): void {
       const content = params.content?.trim();
       if (!content) return toolError('content is required');
 
-      const sessionKey = extractSessionKey(options);
+      const sessionKey = resolveSessionKey(options);
       const item = createTodo(content, params.priority, params.status, sessionKey);
       return toolResponse(JSON.stringify({ todo: item }, null, 2));
     },

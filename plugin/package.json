@@ -1,6 +1,6 @@
 {
   "name": "@happycastle/oh-my-openclaw",
-  "version": "0.21.3",
+  "version": "0.21.4",
   "description": "Oh-My-OpenClaw plugin \u2014 multi-agent orchestration, todo enforcer, ralph loop, and custom tools for OpenClaw",
   "type": "module",
   "main": "dist/index.js",
@@ -9,7 +9,8 @@
     "oh-my-openclaw": "bin/oh-my-openclaw.mjs"
   },
   "scripts": {
-    "build": "tsc",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -31,7 +32,20 @@
   "openclaw": {
     "extensions": [
       "dist/index.js"
-    ]
+    ],
+    "hooks": {
+      "entry": "dist/index.js",
+      "events": [
+        "before_prompt_build",
+        "session_start",
+        "session_end",
+        "before_tool_call",
+        "agent_end",
+        "tool_result_persist",
+        "gateway:startup",
+        "agent:bootstrap"
+      ]
+    }
   },
   "files": [
     "dist",
