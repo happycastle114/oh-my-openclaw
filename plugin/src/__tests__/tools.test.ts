@@ -13,9 +13,10 @@ vi.mock('fs', () => ({
   readFileSync: vi.fn(),
 }));
 
-vi.mock('child_process', () => ({
-  execSync: vi.fn(),
-  execFile: vi.fn(),
+vi.mock('../utils/exec-adapter.js', () => ({
+  execFileAsync: vi.fn(),
+  shellExecAsync: vi.fn(),
+  spawnInheritAsync: vi.fn(),
 }));
 
 vi.mock('../utils/state.js', () => ({
@@ -30,17 +31,17 @@ vi.mock('../utils/config.js', () => ({
   })),
 }));
 
-import { execFile } from 'child_process';
 import { promises as fs } from 'fs';
 import { registerDelegateTool } from '../tools/task-delegation.js';
 import { registerLookAtTool } from '../tools/look-at.js';
 import { registerWebSearchTool } from '../tools/web-search.js';
 import { registerCheckpointTool } from '../tools/checkpoint.js';
+import { execFileAsync } from '../utils/exec-adapter.js';
 import { readState, writeState, ensureDir } from '../utils/state.js';
 import { createMockApi, createMockConfig } from './helpers/mock-factory.js';
 
 const createMockApiAny = createMockApi as (...args: any[]) => any;
-const mockedExecFile = vi.mocked(execFile) as any;
+const mockedExecFileAsync = vi.mocked(execFileAsync);
 
 // ─── Delegate Tool Tests ────────────────────────────────────────────
 
@@ -354,10 +355,8 @@ describe('registerLookAtTool', () => {
     expect(toolConfig.optional).toBe(true);
   });
 
-  it('calls execFile with correct arguments', async () => {
-    mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-      cb(null, 'Analysis result text', '');
-    });
+  it('calls execFileAsync with correct arguments', async () => {
+    mockedExecFileAsync.mockResolvedValue({ stdout: 'Analysis result text', stderr: '' });
 
     registerLookAtTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
@@ -368,8 +367,8 @@ describe('registerLookAtTool', () => {
       model: 'gemini-2.5-pro',
     });
 
-    expect(mockedExecFile).toHaveBeenCalledOnce();
-    const [cmd, args, opts] = mockedExecFile.mock.calls[0];
+    expect(mockedExecFileAsync).toHaveBeenCalledOnce();
+    const [cmd, args, opts] = mockedExecFileAsync.mock.calls[0];
     expect(cmd).toBe('gemini');
     expect(args).toEqual(['-m', 'gemini-2.5-pro', '--prompt', 'describe this image', '-f', '/path/to/image.png', '-o', 'text']);
     expect(opts).toMatchObject({ timeout: 60_000, maxBuffer: 10 * 1024 * 1024 });
@@ -377,9 +376,7 @@ describe('registerLookAtTool', () => {
   });
 
   it('uses default model gemini-3-flash-preview when model is not provided', async () => {
-    mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-      cb(null, 'output', '');
-    });
+    mockedExecFileAsync.mockResolvedValue({ stdout: 'output', stderr: '' });
 
     registerLookAtTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
@@ -389,16 +386,14 @@ describe('registerLookAtTool', () => {
       goal: 'analyze',
     });
 
-    const [, args] = mockedExecFile.mock.calls[0];
+    const [, args] = mockedExecFileAsync.mock.calls[0];
     expect(args[1]).toBe('gemini-3-flash-preview');
   });
 
   it('returns toolError when CLI times out (error.killed === true)', async () => {
-    mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-      const error = new Error('process killed') as any;
-      error.killed = true;
-      cb(error, '', '');
-    });
+    const error = new Error('process killed') as any;
+    error.killed = true;
+    mockedExecFileAsync.mockRejectedValue(error);
 
     registerLookAtTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
@@ -413,12 +408,11 @@ describe('registerLookAtTool', () => {
   });
 
   it('returns toolError with stderr detail on non-zero exit', async () => {
-    mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-      const error = new Error('exit 1') as any;
-      error.killed = false;
-      error.code = 1;
-      cb(error, '', 'model not found');
-    });
+    const error = new Error('exit 1') as any;
+    error.killed = false;
+    error.code = 1;
+    error.stderr = 'model not found';
+    mockedExecFileAsync.mockRejectedValue(error);
 
     registerLookAtTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
@@ -434,9 +428,7 @@ describe('registerLookAtTool', () => {
   });
 
   it('returns fallback message for empty stdout', async () => {
-    mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-      cb(null, '   ', '');
-    });
+    mockedExecFileAsync.mockResolvedValue({ stdout: '   ', stderr: '' });
 
     registerLookAtTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
@@ -481,9 +473,7 @@ describe('registerWebSearchTool', () => {
   });
 
   it('successful web search returns markdown text', async () => {
-    mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-      cb(null, '## Search Results\n\n- Result 1\n- Result 2', '');
-    });
+    mockedExecFileAsync.mockResolvedValue({ stdout: '## Search Results\n\n- Result 1\n- Result 2', stderr: '' });
 
     registerWebSearchTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
@@ -496,8 +486,8 @@ describe('registerWebSearchTool', () => {
     // Verify no "Error:" prefix
     expect(result.content[0].text).not.toContain('Error');
 
-    // Verify execFile was called with correct args
-    const [cmd, args, opts] = mockedExecFile.mock.calls[0];
+    // Verify execFileAsync was called with correct args
+    const [cmd, args, opts] = mockedExecFileAsync.mock.calls[0];
     expect(cmd).toBe('gemini');
     expect(args).toEqual(['-m', 'gemini-3-flash-preview', '--prompt', 'latest TypeScript features', '-o', 'text']);
     expect(opts).toMatchObject({ timeout: 90_000 });
@@ -513,16 +503,15 @@ describe('registerWebSearchTool', () => {
 
     expect(result.content[0].text).toContain('Error');
     expect(result.content[0].text).toContain('Query is required and must not be empty');
-    // execFile should NOT have been called
-    expect(mockedExecFile).not.toHaveBeenCalled();
+    // execFileAsync should NOT have been called
+    expect(mockedExecFileAsync).not.toHaveBeenCalled();
   });
 
   it('returns toolError with stderr on CLI failure', async () => {
-    mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-      const error = new Error('command failed') as any;
-      error.code = 1;
-      cb(error, '', 'authentication error');
-    });
+    const error = new Error('command failed') as any;
+    error.code = 1;
+    error.stderr = 'authentication error';
+    mockedExecFileAsync.mockRejectedValue(error);
 
     registerWebSearchTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
@@ -536,9 +525,7 @@ describe('registerWebSearchTool', () => {
   });
 
   it('returns toolError for empty output', async () => {
-    mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-      cb(null, '  ', '');
-    });
+    mockedExecFileAsync.mockResolvedValue({ stdout: '  ', stderr: '' });
 
     registerWebSearchTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
@@ -561,9 +548,7 @@ describe('registerWebSearchTool', () => {
   });
 
   it('uses custom model when provided', async () => {
-    mockedExecFile.mockImplementation((_cmd: string, _args: string[], _opts: any, cb: Function) => {
-      cb(null, 'results', '');
-    });
+    mockedExecFileAsync.mockResolvedValue({ stdout: 'results', stderr: '' });
 
     registerWebSearchTool(mockApi);
     const toolConfig = mockApi.registerTool.mock.calls[0][0];
@@ -573,7 +558,7 @@ describe('registerWebSearchTool', () => {
       model: 'gemini-2.5-pro',
     });
 
-    const [, args] = mockedExecFile.mock.calls[0];
+    const [, args] = mockedExecFileAsync.mock.calls[0];
     expect(args[1]).toBe('gemini-2.5-pro');
   });
 });

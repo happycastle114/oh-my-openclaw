@@ -1,9 +1,9 @@
 import { Type } from '@sinclair/typebox';
-import { execFile } from 'child_process';
 
 import { OmocPluginApi } from '../types.js';
 import { TOOL_PREFIX } from '../constants.js';
 import { toolResponse, toolError } from '../utils/helpers.js';
+import { execFileAsync } from '../utils/exec-adapter.js';
 
 const GEMINI_TIMEOUT_MS = 90_000;
 
@@ -34,28 +34,23 @@ export function registerWebSearchTool(api: OmocPluginApi) {
 
       const model = params.model ?? 'gemini-3-flash-preview';
 
-      return new Promise((resolve) => {
-        execFile(
+      try {
+        const { stdout } = await execFileAsync(
           'gemini',
           ['-m', model, '--prompt', query, '-o', 'text'],
           { timeout: GEMINI_TIMEOUT_MS, maxBuffer: 10 * 1024 * 1024 },
-          (error, stdout, stderr) => {
-            if (error) {
-              const message = stderr?.trim() || error.message || 'Gemini CLI execution failed';
-              resolve(toolError(message));
-              return;
-            }
-
-            const result = stdout?.trim();
-            if (!result) {
-              resolve(toolError('Gemini CLI returned empty output'));
-              return;
-            }
-
-            resolve(toolResponse(result));
-          },
         );
-      });
+
+        if (!stdout.trim()) {
+          return toolError('Gemini CLI returned empty output');
+        }
+
+        return toolResponse(stdout.trim());
+      } catch (error: unknown) {
+        const err = error as { stderr?: string; message?: string };
+        const message = err.stderr?.trim() || err.message || 'Gemini CLI execution failed';
+        return toolError(message);
+      }
     },
     optional: true,
   });

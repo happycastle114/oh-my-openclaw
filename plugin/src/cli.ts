@@ -7,10 +7,10 @@
  *   npx @happycastle/oh-my-openclaw init      — Initialize workspace only (notepads, plans)
  */
 
-import { execSync } from 'node:child_process';
 import { existsSync, lstatSync, mkdirSync, readlinkSync, symlinkSync, writeFileSync, unlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { shellExecAsync, spawnInheritAsync } from './utils/exec-adapter.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -60,27 +60,26 @@ function heading(msg: string): void {
   console.log(`\n${BLUE}${msg}${RESET}`);
 }
 
-function commandExists(cmd: string): boolean {
+async function commandExists(cmd: string): Promise<boolean> {
   try {
-    execSync(`command -v ${cmd}`, { stdio: 'ignore' });
+    await shellExecAsync(`command -v ${cmd}`);
     return true;
-  } catch (error) {
-    // command not found — expected for optional tools
+  } catch {
     return false;
   }
 }
 
-function run(cmd: string, opts?: { cwd?: string; silent?: boolean; throwOnError?: boolean }): string {
+async function run(cmd: string, opts?: { cwd?: string; silent?: boolean; throwOnError?: boolean }): Promise<string> {
   const throwOnError = opts?.throwOnError ?? false;
   try {
-    return execSync(cmd, {
-      cwd: opts?.cwd,
-      stdio: opts?.silent ? 'pipe' : 'inherit',
-      encoding: 'utf-8',
-    })?.toString().trim() ?? '';
+    if (opts?.silent) {
+      return await shellExecAsync(cmd, { cwd: opts?.cwd });
+    }
+    await spawnInheritAsync(cmd, { cwd: opts?.cwd });
+    return '';
   } catch (e: unknown) {
     if (!throwOnError) {
-      const err = e as { stdout?: Buffer | string };
+      const err = e as { stdout?: string };
       return err.stdout?.toString().trim() ?? '';
     }
     throw e;
@@ -91,22 +90,21 @@ function isSymlink(p: string): boolean {
   try {
     const lstat = lstatSync(p);
     return lstat.isSymbolicLink();
-  } catch (error) {
-    // path does not exist or is not accessible — expected for missing files
+  } catch {
     return false;
   }
 }
 
 // ── Commands ───────────────────────────────────────────────────────────────────
 
-function install(installDir: string): void {
+async function install(installDir: string): Promise<void> {
   console.log(`\n${BLUE}🔧 Oh-My-OpenClaw Installer${RESET}`);
   console.log('='.repeat(40));
 
   // Step 1: Prerequisites
   heading('Checking prerequisites...');
 
-  if (!commandExists('git')) {
+  if (!(await commandExists('git'))) {
     fail('git not found. Install git first.');
     process.exit(1);
   }
@@ -126,13 +124,13 @@ function install(installDir: string): void {
   if (existsSync(join(installDir, '.git'))) {
     info(`Existing installation found at ${installDir}`);
     dim('Pulling latest changes...');
-    run('git pull --ff-only', { cwd: installDir, silent: true });
+    await run('git pull --ff-only', { cwd: installDir, silent: true });
     ok('Repository updated');
   } else if (existsSync(installDir)) {
     warn(`${installDir} exists but is not a git repo. Skipping clone.`);
   } else {
     info(`Cloning to ${installDir}`);
-    run(`git clone ${REPO_URL} "${installDir}"`);
+    await run(`git clone ${REPO_URL} "${installDir}"`);
     ok('Clone complete');
   }
 
@@ -173,12 +171,12 @@ function install(installDir: string): void {
   const pluginDir = join(installDir, 'plugin');
   if (existsSync(join(pluginDir, 'package.json'))) {
     info('Installing dependencies...');
-    run('npm install', { cwd: pluginDir, throwOnError: true });
+    await run('npm install', { cwd: pluginDir, throwOnError: true });
     ok('Dependencies installed');
 
     info('Building TypeScript...');
     try {
-      run('npm run build', { cwd: pluginDir, throwOnError: true });
+      await run('npm run build', { cwd: pluginDir, throwOnError: true });
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       fail(`Plugin build failed: ${message}`);
@@ -188,7 +186,7 @@ function install(installDir: string): void {
 
     // Run tests silently to verify
     info('Running tests...');
-    const testResult = run('npm run test -- --run 2>&1', { cwd: pluginDir, silent: true });
+    const testResult = await run('npm run test -- --run 2>&1', { cwd: pluginDir, silent: true });
     if (testResult.includes('passed') || testResult.includes('✓')) {
       ok('Tests passing');
     } else {
@@ -234,7 +232,7 @@ function initWorkspace(baseDir: string): void {
   }
 }
 
-function status(): void {
+async function status(): Promise<void> {
   console.log(`\n${BLUE}📊 Oh-My-OpenClaw Status${RESET}`);
   console.log('='.repeat(40));
 
@@ -242,7 +240,7 @@ function status(): void {
   const installDir = DEFAULT_INSTALL_DIR;
   if (existsSync(join(installDir, '.git'))) {
     ok(`Repository: ${installDir}`);
-    const branch = run('git branch --show-current', { cwd: installDir, silent: true });
+    const branch = await run('git branch --show-current', { cwd: installDir, silent: true });
     dim(`Branch: ${branch || 'unknown'}`);
   } else if (existsSync(installDir)) {
     warn(`${installDir} exists but is not a git repo`);
@@ -292,7 +290,7 @@ const installDir = args.includes('--dir') ? args[args.indexOf('--dir') + 1] : DE
 
 switch (command) {
   case 'install':
-    install(installDir);
+    await install(installDir);
     break;
   case 'init':
     heading('Initializing workspace...');
@@ -300,7 +298,7 @@ switch (command) {
     console.log(`\n${GREEN}Workspace initialized.${RESET}\n`);
     break;
   case 'status':
-    status();
+    await status();
     break;
   case '--help':
   case '-h':
